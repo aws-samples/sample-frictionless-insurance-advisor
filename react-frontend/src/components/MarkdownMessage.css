@@ -1,0 +1,146 @@
+/*
+ * Scoped styles for agent Markdown responses inside a chat bubble.
+ *
+ * Inherits the new design-system CSS variables defined in src/index.css so
+ * the content stays readable in both light and dark themes. Vertical
+ * spacing stays tight because chat bubbles are narrow.
+ */
+
+.markdown-message {
+  color: inherit;
+  font-size: inherit;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.markdown-message > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-message > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-message p {
+  margin: 0.4em 0;
+}
+
+.markdown-message h1,
+.markdown-message h2,
+.markdown-message h3,
+.markdown-message h4,
+.markdown-message h5,
+.markdown-message h6 {
+  margin: 0.8em 0 0.3em;
+  font-weight: 600;
+  line-height: 1.25;
+  color: rgb(var(--foreground));
+}
+
+.markdown-message h1 { font-size: 1.15em; }
+.markdown-message h2 { font-size: 1.10em; }
+.markdown-message h3,
+.markdown-message h4,
+.markdown-message h5,
+.markdown-message h6 { font-size: 1.05em; }
+
+.markdown-message strong {
+  font-weight: 600;
+}
+
+.markdown-message em {
+  font-style: italic;
+}
+
+.markdown-message ul,
+.markdown-message ol {
+  margin: 0.3em 0;
+  padding-left: 1.4em;
+}
+
+.markdown-message li {
+  margin: 0.15em 0;
+}
+
+.markdown-message li > p {
+  margin: 0;
+}
+
+.markdown-message code {
+  padding: 0.1em 0.35em;
+  border-radius: 0.3em;
+  background-color: rgb(var(--background-muted));
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.9em;
+  color: rgb(var(--brand-2));
+}
+
+.markdown-message pre {
+  margin: 0.5em 0;
+  padding: 0.7em 0.9em;
+  border-radius: 0.5em;
+  background-color: rgb(var(--background-muted));
+  border: 1px solid rgb(var(--border));
+  overflow-x: auto;
+}
+
+.markdown-message pre > code {
+  padding: 0;
+  background-color: transparent;
+  color: rgb(var(--foreground));
+}
+
+.markdown-message blockquote {
+  margin: 0.5em 0;
+  padding: 0.2em 0.9em;
+  border-left: 3px solid rgb(var(--brand-2));
+  color: rgb(var(--foreground-muted));
+  background: rgb(var(--brand-2) / 0.05);
+  border-radius: 0 0.4em 0.4em 0;
+}
+
+.markdown-message a {
+  color: rgb(var(--brand-2));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-message a:hover {
+  color: rgb(var(--brand-1));
+}
+
+.markdown-message hr {
+  margin: 0.8em 0;
+  border: none;
+  border-top: 1px solid rgb(var(--border));
+}
+
+.markdown-message table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.95em;
+  border: 1px solid rgb(var(--border));
+  border-radius: 0.5em;
+}
+
+.markdown-message thead tr {
+  background-color: rgb(var(--background-muted));
+}
+
+.markdown-message th,
+.markdown-message td {
+  padding: 0.4em 0.7em;
+  border: 1px solid rgb(var(--border));
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-message input[type='checkbox'] {
+  margin-right: 0.3em;
+  accent-color: rgb(var(--brand-2));
+}

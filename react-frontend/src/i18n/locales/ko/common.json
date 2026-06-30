@@ -1,0 +1,37 @@
+{
+  "common": {
+    "app": {
+      "title": "보험 어드바이저"
+    },
+    "nav": {
+      "assistant": "텍스트 어시스턴트",
+      "voice": "텍스트+음성 어시스턴트",
+      "comparator": "비교",
+      "signOut": "로그아웃",
+      "language": "언어",
+      "pitchDeck": "프레젠테이션 열기"
+    },
+    "actions": {
+      "send": "보내기",
+      "clear": "지우기",
+      "refresh": "새로 고침",
+      "cancel": "취소"
+    },
+    "states": {
+      "loading": "불러오는 중...",
+      "comingSoon": "곧 제공될 예정입니다."
+    },
+    "errors": {
+      "loadFailed": "데이터를 불러오지 못했습니다: {{message}}"
+    },
+    "errorBoundary": {
+      "title": "문제가 발생했습니다",
+      "body": "앱에서 예기치 않은 오류가 발생하여 이 화면을 표시할 수 없습니다. 데이터는 안전합니다. 새로고침하면 대개 해결됩니다.",
+      "reload": "새로고침"
+    },
+    "brand": {
+      "nameAccent": "Unicorn",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "Clientes",
+      "collapse": "Contraer barra lateral",
+      "expand": "Expandir barra lateral",
+      "newProspect": "+ Nuevo Prospecto"
+    },
+    "welcome": {
+      "heading": "Bienvenido",
+      "body": "Selecciona un cliente en la barra lateral para ver su perfil, sus pólizas y empezar un chat.",
+      "totalCustomers": "Clientes totales",
+      "activePolicies": "Pólizas activas"
+    },
+    "customer": {
+      "contactSection": "Contacto",
+      "accountSection": "Cuenta",
+      "policiesSection": "Pólizas",
+      "thirdPartyPoliciesSection": "Pólizas de terceros",
+      "recommendationSection": "Análisis de cobertura",
+      "fields": {
+        "email": "Correo",
+        "phone": "Teléfono",
+        "address": "Dirección",
+        "joinDate": "Cliente desde",
+        "policiesCount": "Pólizas",
+        "occupation": "Ocupación",
+        "maritalStatus": "Estado civil"
+      }
+    },
+    "policies": {
+      "emptyProspect": "Todavía no hay pólizas — es un cliente potencial.",
+      "id": "ID",
+      "insurer": "Aseguradora",
+      "coverage": "Cobertura",
+      "renews": "Renueva",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "Detalles",
+        "vehicle": {
+          "title": "Vehículo",
+          "make": "Marca",
+          "model": "Modelo",
+          "year": "Año",
+          "registration": "Matrícula"
+        },
+        "property": {
+          "title": "Inmueble",
+          "address": "Dirección",
+          "type": "Tipo",
+          "yearBuilt": "Año de construcción",
+          "size": "Superficie",
+          "squareFeet": "{{value}} pies cuadrados"
+        },
+        "health": {
+          "title": "Plan",
+          "tier": "Nivel",
+          "network": "Red",
+          "dependents": "Dependientes"
+        },
+        "disability": {
+          "title": "Cobertura",
+          "benefitPeriod": "Período de prestación",
+          "benefitYears": "{{count}} años",
+          "waitingPeriod": "Período de espera",
+          "waitingDays": "{{count}} días",
+          "occupationClass": "Clase de ocupación"
+        },
+        "life": {
+          "title": "Póliza",
+          "lifeType": "Tipo de seguro de vida",
+          "beneficiary": "Beneficiario",
+          "smoker": "Fumador",
+          "smokerYes": "Sí",
+          "smokerNo": "No",
+          "termYears": "Plazo",
+          "termYearsValue": "{{count}} años",
+          "premiumSchedule": "Plan de primas",
+          "dividendOption": "Opción de dividendos",
+          "deathBenefitOption": "Opción de capital por fallecimiento",
+          "currentCreditedRate": "Tasa acreditada actual",
+          "guaranteedMinimumRate": "Mínimo garantizado",
+          "cashValueEstimate": "Valor en efectivo (est.)",
+          "subAccountAllocation": "Asignación de subcuentas"
+        },
+        "subAccounts": {
+          "equity_growth": "Renta variable — Crecimiento",
+          "equity_international": "Renta variable — Internacional",
+          "fixed_income": "Renta fija",
+          "money_market": "Mercado monetario",
+          "balanced": "Equilibrado",
+          "equity_value": "Renta variable — Valor"
+        }
+      }
+    },
+    "chat": {
+      "headingCustomer": "Chat de pólizas con IA",
+      "headingProspect": "Coaching de cliente potencial",
+      "selectCustomer": "Selecciona un cliente para iniciar un chat.",
+      "emptyPlaceholder": "Haz una pregunta o elige una sugerencia abajo.",
+      "messageLabel": "Mensaje",
+      "placeholderCustomer": "Pregunta sobre las pólizas...",
+      "placeholderProspect": "Pregunta sobre este cliente potencial...",
+      "userBubbleLabel": "Tú",
+      "assistantBubbleLabel": "Asistente",
+      "thinking": "Pensando...",
+      "quickQuestions": "Preguntas rápidas",
+      "attachDocument": "Adjuntar documento de póliza (PDF, imagen o texto)",
+      "removeAttachment": "Quitar archivo adjunto",
+      "uploadingFilename": "Subiendo {{filename}}...",
+      "uploadFailed": "Error al subir",
+      "placeholderWithAttachment": "Añade una nota o envía directamente para extraer la póliza...",
+      "samplePolicies": {
+        "cta": "¿Necesitas un archivo de prueba? Descarga una muestra",
+        "heading": "Póliza de muestra para {{name}}",
+        "subtext": "Pólizas de terceros ficticias para probar la subida.",
+        "notice": "Compañías ficticias. Sin cobertura real."
+      }
+    },
+    "prompts": {
+      "customer": {
+        "policies": "¿Qué pólizas tengo?",
+        "coverageGap": "¿Qué huecos de cobertura tengo y cómo puedo solucionarlos?",
+        "premiumDelta": "¿Por qué su prima es más alta o más baja que la de la competencia?",
+        "claimsModel": "¿Ofrecen pagos directos al hospital o solo reembolso?",
+        "incomeVsLumpSum": "¿Ofrecen opciones de reemplazo de ingresos o pago de suma global?",
+        "mentalHealthMaternity": "¿Cubren salud mental, maternidad o tratamientos alternativos?",
+        "outpatientDentalOptical": "¿Cubren tratamientos ambulatorios, dental u óptica?",
+        "dayOneCover": "¿Cuál es su cobertura desde el primer día frente al período de espera de la competencia?",
+        "preExistingWaiting": "¿Cuál es su período de espera para condiciones preexistentes frente a la competencia?"
+      },
+      "prospect": {
+        "firstProducts": "¿Qué seguro debería considerar primero este cliente potencial?",
+        "discovery": "Ayúdame a iniciar una conversación de descubrimiento",
+        "bestProducts": "¿Cuáles son los mejores productos según su perfil?",
+        "company": "Cuéntame sobre Unicorn Insurance",
+        "whyUnicorn": "¿Por qué debería elegir Unicorn en lugar de BigRival?",
+        "qualifyQuestions": "¿Qué preguntas debería hacer para calificar a este cliente potencial?"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "Voz"
+      },
+      "comparator": {
+        "heading": "Comparador",
+        "intro": "Compara productos de seguros entre Unicorn Insurance y sus competidores. Selecciona un tipo de producto y luego elige entre 2 y 4 productos para comparar.",
+        "typeLabel": "Tipo de producto",
+        "typePlaceholder": "Selecciona un tipo de producto",
+        "productsLabel": "Productos a comparar",
+        "productsHelp": "Selecciona entre {{min}} y {{max}} productos.",
+        "selectType": "Elige un tipo de producto para ver los productos disponibles.",
+        "noProductsForType": "No hay productos disponibles para este tipo.",
+        "tierBadge": "Nivel {{tier}}",
+        "selectedCount": "{{count}} seleccionados",
+        "compareButton": "Comparar",
+        "clearButton": "Limpiar selección",
+        "comparing": "Generando comparación...",
+        "comparingHint": "Esto tarda 10–20 segundos mientras el asistente lee la documentación de cada producto.",
+        "errorTitle": "Comparación fallida",
+        "errorRetry": "Reintentar",
+        "resultSummary": "Resumen",
+        "carrier": "Aseguradora",
+        "disclaimer": "Comparación generada por IA",
+        "minProducts": "Selecciona al menos {{min}} productos.",
+        "maxProducts": "Puedes comparar como máximo {{max}} productos."
+      }
+    },
+    "voice": {
+      "heading": "Chat de voz",
+      "selectCustomer": "Selecciona un cliente para iniciar una conversación por voz.",
+      "startVoice": "Iniciar chat de voz",
+      "stopVoice": "Detener chat de voz",
+      "typePlaceholder": "Escribe un mensaje...",
+      "connecting": "Conectando...",
+      "emptyConnecting": "Conectando con el agente...",
+      "emptyConnected": "Escribe un mensaje abajo o pulsa Iniciar chat de voz para hablar. Borrar reinicia la conversación.",
+      "hintText": "El asistente responde solo en texto. Pulsa Iniciar chat de voz para hablar y escuchar respuestas.",
+      "hintVoice": "El chat de voz está activo — el asistente responderá con voz y texto. Pulsa Detener chat de voz para volver solo a texto.",
+      "status": {
+        "connecting": "Conectando",
+        "connected": "Conectado",
+        "listening": "Escuchando",
+        "speaking": "Hablando"
+      }
+    },
+    "recommendation": {
+      "loading": "Analizando la cobertura y buscando brechas...",
+      "noGaps": "No se han identificado brechas de cobertura significativas: el cliente está bien cubierto para su perfil.",
+      "error": "No se pudo generar la recomendación: {{message}}"
+    }
+  }
+}

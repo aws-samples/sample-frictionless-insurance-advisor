@@ -1,0 +1,37 @@
+{
+  "common": {
+    "app": {
+      "title": "Conseiller en Assurance"
+    },
+    "nav": {
+      "assistant": "Assistant",
+      "voice": "Voix",
+      "comparator": "Comparateur",
+      "signOut": "Déconnexion",
+      "language": "Langue",
+      "pitchDeck": "Ouvrir la présentation"
+    },
+    "actions": {
+      "send": "Envoyer",
+      "clear": "Effacer",
+      "refresh": "Actualiser",
+      "cancel": "Annuler"
+    },
+    "states": {
+      "loading": "Chargement...",
+      "comingSoon": "Bientôt disponible."
+    },
+    "errors": {
+      "loadFailed": "Échec du chargement des données : {{message}}"
+    },
+    "errorBoundary": {
+      "title": "Une erreur est survenue",
+      "body": "L'application a rencontré une erreur inattendue et n'a pas pu afficher cette vue. Vos données sont en sécurité — recharger résout généralement le problème.",
+      "reload": "Recharger"
+    },
+    "brand": {
+      "nameAccent": "Unicorn",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "顧客",
+      "collapse": "サイドバーを折りたたむ",
+      "expand": "サイドバーを展開",
+      "newProspect": "+ 新規見込み顧客"
+    },
+    "welcome": {
+      "heading": "ようこそ",
+      "body": "サイドバーから顧客を選択すると、プロフィールや契約内容を確認したり、チャットを開始できます。",
+      "totalCustomers": "顧客数",
+      "activePolicies": "有効な契約数"
+    },
+    "customer": {
+      "contactSection": "連絡先",
+      "accountSection": "アカウント",
+      "policiesSection": "契約",
+      "thirdPartyPoliciesSection": "他社の契約",
+      "recommendationSection": "補償ギャップ分析",
+      "fields": {
+        "email": "メール",
+        "phone": "電話",
+        "address": "住所",
+        "joinDate": "加入日",
+        "policiesCount": "契約数",
+        "occupation": "職業",
+        "maritalStatus": "配偶者の有無"
+      }
+    },
+    "policies": {
+      "emptyProspect": "契約はまだありません — 見込み顧客です。",
+      "id": "ID",
+      "insurer": "保険会社",
+      "coverage": "補償額",
+      "renews": "更新日",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "詳細",
+        "vehicle": {
+          "title": "車両",
+          "make": "メーカー",
+          "model": "モデル",
+          "year": "年式",
+          "registration": "登録番号"
+        },
+        "property": {
+          "title": "物件",
+          "address": "住所",
+          "type": "種類",
+          "yearBuilt": "築年",
+          "size": "広さ",
+          "squareFeet": "{{value}} 平方フィート"
+        },
+        "health": {
+          "title": "プラン",
+          "tier": "ティア",
+          "network": "ネットワーク",
+          "dependents": "扶養人数"
+        },
+        "disability": {
+          "title": "補償",
+          "benefitPeriod": "給付期間",
+          "benefitYears": "{{count}} 年",
+          "waitingPeriod": "待機期間",
+          "waitingDays": "{{count}} 日",
+          "occupationClass": "職業クラス"
+        },
+        "life": {
+          "title": "契約",
+          "lifeType": "生命保険の種類",
+          "beneficiary": "受取人",
+          "smoker": "喫煙",
+          "smokerYes": "はい",
+          "smokerNo": "いいえ",
+          "termYears": "保険期間",
+          "termYearsValue": "{{count}} 年",
+          "premiumSchedule": "保険料払込期間",
+          "dividendOption": "配当金の取り扱い",
+          "deathBenefitOption": "死亡保険金オプション",
+          "currentCreditedRate": "現在の積立利率",
+          "guaranteedMinimumRate": "最低保証利率",
+          "cashValueEstimate": "解約返戻金(概算)",
+          "subAccountAllocation": "特別勘定の配分"
+        },
+        "subAccounts": {
+          "equity_growth": "株式 — グロース",
+          "equity_international": "株式 — 海外",
+          "fixed_income": "債券",
+          "money_market": "マネーマーケット",
+          "balanced": "バランス型",
+          "equity_value": "株式 — バリュー"
+        }
+      }
+    },
+    "chat": {
+      "headingCustomer": "AI 契約チャット",
+      "headingProspect": "見込み顧客コーチング",
+      "selectCustomer": "チャットを開始するには顧客を選択してください。",
+      "emptyPlaceholder": "質問を入力するか、下の候補から選んでください。",
+      "messageLabel": "メッセージ",
+      "placeholderCustomer": "契約について質問する...",
+      "placeholderProspect": "この見込み顧客について質問する...",
+      "userBubbleLabel": "あなた",
+      "assistantBubbleLabel": "アシスタント",
+      "thinking": "考え中...",
+      "quickQuestions": "クイック質問",
+      "attachDocument": "保険証券ファイル（PDF、画像、テキスト）を添付",
+      "removeAttachment": "添付ファイルを削除",
+      "uploadingFilename": "{{filename}} をアップロード中...",
+      "uploadFailed": "アップロード失敗",
+      "placeholderWithAttachment": "メモを追加するか、そのまま送信して保険内容を抽出...",
+      "samplePolicies": {
+        "cta": "テスト用のファイルが必要？サンプルをダウンロード",
+        "heading": "{{name}}様用のサンプル保険証書",
+        "subtext": "アップロード機能のテスト用の架空の他社保険証書。",
+        "notice": "架空の会社です。実際の補償ではありません。"
+      }
+    },
+    "prompts": {
+      "customer": {
+        "policies": "私はどのような契約に加入していますか？",
+        "coverageGap": "補償に不足している部分はありますか？どのように対処できますか？",
+        "premiumDelta": "なぜ御社の保険料は競合他社より高い／低いのですか？",
+        "claimsModel": "病院でのキャッシュレス支払いに対応していますか、それとも償還払いのみですか？",
+        "incomeVsLumpSum": "収入補償と一時金支払いのどちらにも対応していますか？",
+        "mentalHealthMaternity": "メンタルヘルス、妊娠・出産、代替医療は補償の対象ですか？",
+        "outpatientDentalOptical": "外来診療、歯科、視力ケアは補償の対象ですか？",
+        "dayOneCover": "他社の待機期間と比べて、御社の初日からの補償はどうなっていますか？",
+        "preExistingWaiting": "既往症に対する待機期間は競合他社と比べてどうですか？"
+      },
+      "prospect": {
+        "firstProducts": "この見込み顧客が最初に検討すべき保険は何ですか？",
+        "discovery": "ヒアリング会話を始める手助けをしてください",
+        "bestProducts": "このプロフィールに最適な商品は何ですか？",
+        "company": "Unicorn Insurance について教えてください",
+        "whyUnicorn": "この見込み顧客はなぜ BigRival ではなく Unicorn を選ぶべきですか？",
+        "qualifyQuestions": "この見込み顧客を見極めるためにどのような質問をすべきですか？"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "音声"
+      },
+      "comparator": {
+        "heading": "比較ツール",
+        "intro": "Unicorn Insurance と競合他社の保険商品を比較します。商品タイプを選択してから、2〜4 つの商品を選んで比較してください。",
+        "typeLabel": "商品タイプ",
+        "typePlaceholder": "商品タイプを選択",
+        "productsLabel": "比較する商品",
+        "productsHelp": "{{min}}〜{{max}} 個の商品を選択してください。",
+        "selectType": "商品タイプを選択すると、比較できる商品が表示されます。",
+        "noProductsForType": "このタイプの商品はありません。",
+        "tierBadge": "{{tier}} 価格帯",
+        "selectedCount": "{{count}} 件選択中",
+        "compareButton": "比較する",
+        "clearButton": "選択をクリア",
+        "comparing": "比較を生成中...",
+        "comparingHint": "アシスタントが各商品のドキュメントを読み込むため、10〜20 秒かかります。",
+        "errorTitle": "比較に失敗しました",
+        "errorRetry": "再試行",
+        "resultSummary": "概要",
+        "carrier": "保険会社",
+        "disclaimer": "AI が生成した比較",
+        "minProducts": "商品を{{min}} 個以上選択してください。",
+        "maxProducts": "比較できるのは最大 {{max}} 個までです。"
+      }
+    },
+    "voice": {
+      "heading": "音声チャット",
+      "selectCustomer": "音声会話を始めるには顧客を選択してください。",
+      "startVoice": "音声チャット開始",
+      "stopVoice": "音声チャット停止",
+      "typePlaceholder": "メッセージを入力...",
+      "connecting": "接続中...",
+      "emptyConnecting": "エージェントに接続中...",
+      "emptyConnected": "下にメッセージを入力するか、音声チャット開始を押して話しかけてください。クリアで会話をリセットします。",
+      "hintText": "アシスタントはテキストのみで応答します。音声チャット開始を押して話しかけると音声で応答します。",
+      "hintVoice": "音声チャットが有効です — アシスタントは音声とテキストで応答します。音声チャット停止でテキストのみに戻ります。",
+      "status": {
+        "connecting": "接続中",
+        "connected": "接続済み",
+        "listening": "リスニング中",
+        "speaking": "応答中"
+      }
+    },
+    "recommendation": {
+      "loading": "補償内容を分析し、不足を確認しています...",
+      "noGaps": "重要な補償ギャップは見つかりませんでした — このプロファイルでは十分にカバーされています。",
+      "error": "推奨を生成できませんでした: {{message}}"
+    }
+  }
+}

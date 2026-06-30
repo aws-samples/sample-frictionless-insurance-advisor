@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-tsbuild/
+*.tsbuildinfo
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# Synced from s3-data/mock-policies/ at build time. Single source of truth
+# is s3-data/; do not edit copies in public/.
+public/mock-policies/

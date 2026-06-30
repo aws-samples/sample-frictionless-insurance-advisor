@@ -1,0 +1,37 @@
+{
+  "common": {
+    "app": {
+      "title": "Asesor de Seguros"
+    },
+    "nav": {
+      "assistant": "Asistente de texto",
+      "voice": "Asistente de texto y voz",
+      "comparator": "Comparador",
+      "signOut": "Cerrar sesión",
+      "language": "Idioma",
+      "pitchDeck": "Abrir presentación"
+    },
+    "actions": {
+      "send": "Enviar",
+      "clear": "Limpiar",
+      "refresh": "Actualizar",
+      "cancel": "Cancelar"
+    },
+    "states": {
+      "loading": "Cargando...",
+      "comingSoon": "Próximamente."
+    },
+    "errors": {
+      "loadFailed": "Error al cargar los datos: {{message}}"
+    },
+    "errorBoundary": {
+      "title": "Algo salió mal",
+      "body": "La aplicación tuvo un error inesperado y no pudo mostrar esta vista. Tus datos están seguros: recargar suele solucionarlo.",
+      "reload": "Recargar"
+    },
+    "brand": {
+      "nameAccent": "Unicorn",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

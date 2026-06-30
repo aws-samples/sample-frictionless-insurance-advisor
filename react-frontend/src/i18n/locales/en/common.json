@@ -1,0 +1,37 @@
+{
+  "common": {
+    "app": {
+      "title": "Insurance Advisor"
+    },
+    "nav": {
+      "assistant": "Text Assistant",
+      "voice": "Text+Voice Assistant",
+      "comparator": "Comparator",
+      "signOut": "Sign out",
+      "language": "Language",
+      "pitchDeck": "Open pitch deck"
+    },
+    "actions": {
+      "send": "Send",
+      "clear": "Clear",
+      "refresh": "Refresh",
+      "cancel": "Cancel"
+    },
+    "states": {
+      "loading": "Loading...",
+      "comingSoon": "Coming soon."
+    },
+    "errors": {
+      "loadFailed": "Failed to load data: {{message}}"
+    },
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "body": "The app hit an unexpected error and couldn't render this view. Your data is safe — reloading usually fixes it.",
+      "reload": "Reload"
+    },
+    "brand": {
+      "nameAccent": "Unicorn",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

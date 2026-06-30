@@ -1,0 +1,193 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "고객",
+      "collapse": "사이드바 접기",
+      "expand": "사이드바 펼치기",
+      "newProspect": "+ 새 잠재고객"
+    },
+    "welcome": {
+      "heading": "환영합니다",
+      "body": "사이드바에서 고객을 선택하면 프로필과 보험 계약을 확인하고 채팅을 시작할 수 있습니다.",
+      "totalCustomers": "전체 고객 수",
+      "activePolicies": "유효 계약 수"
+    },
+    "customer": {
+      "contactSection": "연락처",
+      "accountSection": "계정",
+      "policiesSection": "보험 계약",
+      "thirdPartyPoliciesSection": "타사 보험 계약",
+      "recommendationSection": "보장 공백 분석",
+      "fields": {
+        "email": "이메일",
+        "phone": "전화",
+        "address": "주소",
+        "joinDate": "가입일",
+        "policiesCount": "계약 수",
+        "occupation": "직업",
+        "maritalStatus": "혼인 상태"
+      }
+    },
+    "policies": {
+      "emptyProspect": "아직 계약이 없습니다 — 잠재 고객입니다.",
+      "id": "ID",
+      "insurer": "보험사",
+      "coverage": "보장액",
+      "renews": "갱신일",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "상세 정보",
+        "vehicle": {
+          "title": "차량",
+          "make": "제조사",
+          "model": "모델",
+          "year": "연식",
+          "registration": "등록 번호"
+        },
+        "property": {
+          "title": "부동산",
+          "address": "주소",
+          "type": "유형",
+          "yearBuilt": "건축 연도",
+          "size": "면적",
+          "squareFeet": "{{value}} 평방피트"
+        },
+        "health": {
+          "title": "플랜",
+          "tier": "등급",
+          "network": "네트워크",
+          "dependents": "부양가족 수"
+        },
+        "disability": {
+          "title": "보장",
+          "benefitPeriod": "급여 기간",
+          "benefitYears": "{{count}}년",
+          "waitingPeriod": "대기 기간",
+          "waitingDays": "{{count}}일",
+          "occupationClass": "직업 등급"
+        },
+        "life": {
+          "title": "계약",
+          "lifeType": "생명 보험 종류",
+          "beneficiary": "수익자",
+          "smoker": "흡연 여부",
+          "smokerYes": "예",
+          "smokerNo": "아니오",
+          "termYears": "보험 기간",
+          "termYearsValue": "{{count}}년",
+          "premiumSchedule": "보험료 납입 기간",
+          "dividendOption": "배당금 처리 방식",
+          "deathBenefitOption": "사망 보험금 옵션",
+          "currentCreditedRate": "현재 적용 이율",
+          "guaranteedMinimumRate": "최저 보장 이율",
+          "cashValueEstimate": "해지 환급금(추정)",
+          "subAccountAllocation": "특별 계정 배분"
+        },
+        "subAccounts": {
+          "equity_growth": "주식 — 성장형",
+          "equity_international": "주식 — 해외",
+          "fixed_income": "채권",
+          "money_market": "MMF",
+          "balanced": "혼합형",
+          "equity_value": "주식 — 가치형"
+        }
+      }
+    },
+    "chat": {
+      "headingCustomer": "AI 계약 채팅",
+      "headingProspect": "잠재 고객 코칭",
+      "selectCustomer": "채팅을 시작하려면 고객을 선택하세요.",
+      "emptyPlaceholder": "질문을 입력하거나 아래 제안 중 하나를 선택하세요.",
+      "messageLabel": "메시지",
+      "placeholderCustomer": "보험 계약에 대해 질문해 보세요...",
+      "placeholderProspect": "이 잠재 고객에 대해 질문해 보세요...",
+      "userBubbleLabel": "나",
+      "assistantBubbleLabel": "어시스턴트",
+      "thinking": "생각 중...",
+      "quickQuestions": "빠른 질문",
+      "attachDocument": "보험 증권 문서 첨부 (PDF, 이미지 또는 텍스트)",
+      "removeAttachment": "첨부 파일 제거",
+      "uploadingFilename": "{{filename}} 업로드 중...",
+      "uploadFailed": "업로드 실패",
+      "placeholderWithAttachment": "메모를 추가하거나 그대로 보내 보험 내용을 추출...",
+      "samplePolicies": {
+        "cta": "테스트 파일이 필요하신가요? 샘플 다운로드",
+        "heading": "{{name}} 고객용 샘플 보험 증권",
+        "subtext": "업로드 흐름 테스트용 가상 타사 보험.",
+        "notice": "가상의 회사입니다. 실제 보장 아님."
+      }
+    },
+    "prompts": {
+      "customer": {
+        "policies": "어떤 보험에 가입되어 있나요?",
+        "coverageGap": "어떤 보장 공백이 있으며 어떻게 해결할 수 있나요?",
+        "premiumDelta": "왜 보험료가 경쟁사보다 높거나 낮은가요?",
+        "claimsModel": "병원에서의 무현금 청구를 제공하나요, 아니면 환급 방식만 가능한가요?",
+        "incomeVsLumpSum": "소득 보전 또는 일시금 지급 옵션을 제공하나요?",
+        "mentalHealthMaternity": "정신 건강, 출산, 대체 의료도 보장하나요?",
+        "outpatientDentalOptical": "외래 진료, 치과, 안과 진료도 보장하나요?",
+        "dayOneCover": "다른 회사의 대기 기간과 비교해 가입 첫날부터의 보장은 어떻게 되나요?",
+        "preExistingWaiting": "기존 질환에 대한 대기 기간이 경쟁사와 비교해 어떻게 되나요?"
+      },
+      "prospect": {
+        "firstProducts": "이 잠재 고객이 가장 먼저 고려해야 할 보험은 무엇인가요?",
+        "discovery": "디스커버리 대화를 시작할 수 있도록 도와주세요",
+        "bestProducts": "이 프로필에 가장 적합한 상품은 무엇인가요?",
+        "company": "Unicorn Insurance에 대해 알려주세요",
+        "whyUnicorn": "이 잠재 고객은 왜 BigRival 대신 Unicorn을 선택해야 하나요?",
+        "qualifyQuestions": "이 잠재 고객을 파악하기 위해 어떤 질문을 해야 하나요?"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "음성"
+      },
+      "comparator": {
+        "heading": "비교",
+        "intro": "Unicorn Insurance와 경쟁사의 보험 상품을 비교합니다. 상품 유형을 선택한 후 비교할 상품을 2~4개 선택하세요.",
+        "typeLabel": "상품 유형",
+        "typePlaceholder": "상품 유형 선택",
+        "productsLabel": "비교할 상품",
+        "productsHelp": "{{min}}~{{max}}개의 상품을 선택하세요.",
+        "selectType": "상품 유형을 선택하면 비교 가능한 상품이 표시됩니다.",
+        "noProductsForType": "이 유형의 상품이 없습니다.",
+        "tierBadge": "{{tier}} 등급",
+        "selectedCount": "{{count}}개 선택됨",
+        "compareButton": "비교하기",
+        "clearButton": "선택 해제",
+        "comparing": "비교 생성 중...",
+        "comparingHint": "어시스턴트가 각 상품 문서를 읽는 데 10~20초 정도 걸립니다.",
+        "errorTitle": "비교 실패",
+        "errorRetry": "다시 시도",
+        "resultSummary": "개요",
+        "carrier": "보험사",
+        "disclaimer": "AI가 생성한 비교",
+        "minProducts": "상품을 최소 {{min}}개 선택하세요.",
+        "maxProducts": "최대 {{max}}개까지 비교할 수 있습니다."
+      }
+    },
+    "voice": {
+      "heading": "음성 채팅",
+      "selectCustomer": "음성 대화를 시작하려면 고객을 선택하세요.",
+      "startVoice": "음성 채팅 시작",
+      "stopVoice": "음성 채팅 중지",
+      "typePlaceholder": "메시지를 입력하세요...",
+      "connecting": "연결 중...",
+      "emptyConnecting": "에이전트에 연결 중...",
+      "emptyConnected": "아래에 메시지를 입력하거나 음성 채팅 시작을 눌러 말하세요. 지우기는 대화를 초기화합니다.",
+      "hintText": "어시스턴트는 텍스트로만 응답합니다. 음성 채팅 시작을 누르면 음성으로 응답합니다.",
+      "hintVoice": "음성 채팅이 활성화되었습니다. 어시스턴트는 음성과 텍스트로 응답합니다. 음성 채팅 중지를 누르면 텍스트만 사용됩니다.",
+      "status": {
+        "connecting": "연결 중",
+        "connected": "연결됨",
+        "listening": "듣는 중",
+        "speaking": "말하는 중"
+      }
+    },
+    "recommendation": {
+      "loading": "보장 내역을 분석하고 공백을 확인하는 중...",
+      "noGaps": "주요 보장 공백이 없습니다 — 고객의 프로필에 적합한 보장이 마련되어 있습니다.",
+      "error": "추천을 생성하지 못했습니다: {{message}}"
+    }
+  }
+}

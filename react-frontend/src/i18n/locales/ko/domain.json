@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "유효",
+      "Inactive": "비활성",
+      "Prospect": "잠재 고객"
+    },
+    "policyStatus": {
+      "Active": "유효",
+      "Inactive": "비활성",
+      "Pending": "대기 중",
+      "Lapsed": "실효",
+      "Cancelled": "해지"
+    },
+    "maritalStatus": {
+      "Married": "기혼",
+      "Single": "미혼",
+      "Divorced": "이혼",
+      "Widowed": "사별"
+    },
+    "policyType": {
+      "Auto Insurance": "자동차 보험",
+      "Home Insurance": "주택 보험",
+      "Life Insurance": "생명 보험",
+      "Health Insurance": "건강 보험",
+      "Disability Insurance": "소득 보장 보험",
+      "Travel Insurance": "여행자 보험",
+      "Critical Illness Insurance": "중대 질병 보험"
+    },
+    "premiumFrequency": {
+      "yearly": "연 납",
+      "annually": "연 납",
+      "monthly": "월 납",
+      "quarterly": "분기 납",
+      "weekly": "주 납"
+    },
+    "lifeType": {
+      "Term Life": "정기 생명 보험",
+      "Whole Life": "종신 보험",
+      "Universal Life": "유니버설 보험",
+      "Variable Life": "변액 보험"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "종신 납입",
+      "10-pay": "10년 납입",
+      "20-pay": "20년 납입",
+      "paid-up at 65": "65세 납입 완료"
+    },
+    "dividendOption": {
+      "paid in cash": "현금 수령",
+      "reduce premiums": "보험료 차감",
+      "left on deposit": "예치",
+      "paid-up additions": "납입 완료 추가 보험 매입"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "옵션 A (정액)",
+      "Option B (face + cash value)": "옵션 B (액면 + 해지 환급금)",
+      "Option C (face + return of premium)": "옵션 C (액면 + 보험료 반환)"
+    }
+  }
+}

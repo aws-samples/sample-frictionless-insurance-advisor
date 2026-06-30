@@ -1,0 +1,496 @@
+[
+  {
+    "id": "POL-AUTO-001",
+    "customer_id": "1",
+    "type": "Auto Insurance",
+    "product_name": "FastUnicorn Motor",
+    "premium_amount": 1200,
+    "premium_frequency": "yearly",
+    "coverage_amount": 500000,
+    "status": "Active",
+    "start_date": "2023-12-15",
+    "renewal_date": "2024-12-15",
+    "last_updated": "2023-12-15",
+    "advisor_id": "john.doe@example.com",
+    "vehicle": {
+      "make": "Toyota",
+      "model": "RAV4",
+      "year": 2021,
+      "registration": "SPR-4421"
+    }
+  },
+  {
+    "id": "POL-HOME-002",
+    "customer_id": "1",
+    "type": "Home Insurance",
+    "product_name": "GlitterBarn Home Insurance",
+    "premium_amount": 1800,
+    "premium_frequency": "yearly",
+    "coverage_amount": 750000,
+    "status": "Active",
+    "start_date": "2022-03-15",
+    "renewal_date": "2025-03-15",
+    "last_updated": "2024-03-15",
+    "advisor_id": "john.doe@example.com",
+    "property": {
+      "address": "123 Oak Street, Springfield, IL 62701",
+      "property_type": "Single Family Home",
+      "year_built": 1998,
+      "square_feet": 2200
+    }
+  },
+  {
+    "id": "POL-LIFE-003",
+    "customer_id": "1",
+    "type": "Life Insurance",
+    "product_name": "Rainbow Life",
+    "premium_amount": 3600,
+    "premium_frequency": "yearly",
+    "coverage_amount": 1500000,
+    "status": "Active",
+    "start_date": "2022-03-15",
+    "renewal_date": "2025-03-15",
+    "last_updated": "2024-03-15",
+    "advisor_id": "john.doe@example.com",
+    "life_details": {
+      "term_years": 20,
+      "beneficiary": "Spouse",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-AUTO-004",
+    "customer_id": "2",
+    "type": "Auto Insurance",
+    "product_name": "FastUnicorn Motor",
+    "premium_amount": 950,
+    "premium_frequency": "yearly",
+    "coverage_amount": 300000,
+    "status": "Active",
+    "start_date": "2024-01-10",
+    "renewal_date": "2025-01-10",
+    "last_updated": "2024-01-10",
+    "advisor_id": "john.doe@example.com",
+    "vehicle": {
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2019,
+      "registration": "AUS-8872"
+    }
+  },
+  {
+    "id": "POL-HEALTH-005",
+    "customer_id": "2",
+    "type": "Health Insurance",
+    "product_name": "HealingHorn Health",
+    "premium_amount": 4800,
+    "premium_frequency": "yearly",
+    "coverage_amount": 2000000,
+    "status": "Active",
+    "start_date": "2024-01-10",
+    "renewal_date": "2025-01-10",
+    "last_updated": "2024-01-10",
+    "advisor_id": "john.doe@example.com",
+    "health_details": {
+      "plan_tier": "Premium",
+      "network": "Extended Network",
+      "dependents": 0
+    }
+  },
+  {
+    "id": "POL-AUTO-006",
+    "customer_id": "3",
+    "type": "Auto Insurance",
+    "product_name": "FastUnicorn Motor",
+    "premium_amount": 1400,
+    "premium_frequency": "yearly",
+    "coverage_amount": 600000,
+    "status": "Active",
+    "start_date": "2023-11-05",
+    "renewal_date": "2024-11-05",
+    "last_updated": "2023-11-05",
+    "advisor_id": "john.doe@example.com",
+    "vehicle": {
+      "make": "BMW",
+      "model": "X5",
+      "year": 2022,
+      "registration": "DEN-1155"
+    }
+  },
+  {
+    "id": "POL-HOME-007",
+    "customer_id": "3",
+    "type": "Home Insurance",
+    "product_name": "GlitterBarn Home Insurance",
+    "premium_amount": 2200,
+    "premium_frequency": "yearly",
+    "coverage_amount": 900000,
+    "status": "Active",
+    "start_date": "2021-11-05",
+    "renewal_date": "2024-11-05",
+    "last_updated": "2023-11-05",
+    "advisor_id": "john.doe@example.com",
+    "property": {
+      "address": "321 Cedar Lane, Denver, CO 80202",
+      "property_type": "Townhouse",
+      "year_built": 2010,
+      "square_feet": 1950
+    }
+  },
+  {
+    "id": "POL-LIFE-008",
+    "customer_id": "3",
+    "type": "Life Insurance",
+    "product_name": "Rainbow Life",
+    "premium_amount": 5400,
+    "premium_frequency": "yearly",
+    "coverage_amount": 2500000,
+    "status": "Active",
+    "start_date": "2021-11-05",
+    "renewal_date": "2024-11-05",
+    "last_updated": "2023-11-05",
+    "advisor_id": "john.doe@example.com",
+    "life_details": {
+      "term_years": 30,
+      "beneficiary": "Spouse and Children",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-DISABILITY-009",
+    "customer_id": "3",
+    "type": "Disability Insurance",
+    "product_name": "ShieldUnicorn Disability",
+    "premium_amount": 1800,
+    "premium_frequency": "yearly",
+    "coverage_amount": 120000,
+    "status": "Active",
+    "start_date": "2021-11-05",
+    "renewal_date": "2024-11-05",
+    "last_updated": "2023-11-05",
+    "advisor_id": "john.doe@example.com",
+    "disability_details": {
+      "benefit_period_years": 10,
+      "waiting_period_days": 90,
+      "occupation_class": "Professional"
+    }
+  },
+  {
+    "id": "POL-HEALTH-010",
+    "customer_id": "4",
+    "type": "Health Insurance",
+    "product_name": "HealingHorn Health",
+    "premium_amount": 3600,
+    "premium_frequency": "yearly",
+    "coverage_amount": 1500000,
+    "status": "Active",
+    "start_date": "2023-06-20",
+    "renewal_date": "2025-06-20",
+    "last_updated": "2024-06-20",
+    "advisor_id": "john.doe@example.com",
+    "health_details": {
+      "plan_tier": "Standard",
+      "network": "Standard Network",
+      "dependents": 2
+    }
+  },
+  {
+    "id": "POL-AUTO-011",
+    "customer_id": "5",
+    "type": "Auto Insurance",
+    "product_name": "FastUnicorn Motor",
+    "premium_amount": 1100,
+    "premium_frequency": "yearly",
+    "coverage_amount": 450000,
+    "status": "Active",
+    "start_date": "2024-08-22",
+    "renewal_date": "2025-08-22",
+    "last_updated": "2024-08-22",
+    "advisor_id": "jane.doe@example.com",
+    "vehicle": {
+      "make": "Tesla",
+      "model": "Model 3",
+      "year": 2023,
+      "registration": "CHI-7733"
+    }
+  },
+  {
+    "id": "POL-LIFE-012",
+    "customer_id": "5",
+    "type": "Life Insurance",
+    "product_name": "Rainbow Life",
+    "premium_amount": 2400,
+    "premium_frequency": "yearly",
+    "coverage_amount": 1000000,
+    "status": "Active",
+    "start_date": "2021-08-22",
+    "renewal_date": "2025-08-22",
+    "last_updated": "2024-08-22",
+    "advisor_id": "jane.doe@example.com",
+    "life_details": {
+      "term_years": 20,
+      "beneficiary": "Spouse",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-DISABILITY-013",
+    "customer_id": "5",
+    "type": "Disability Insurance",
+    "product_name": "ShieldUnicorn Disability",
+    "premium_amount": 1500,
+    "premium_frequency": "yearly",
+    "coverage_amount": 100000,
+    "status": "Active",
+    "start_date": "2021-08-22",
+    "renewal_date": "2025-08-22",
+    "last_updated": "2024-08-22",
+    "advisor_id": "jane.doe@example.com",
+    "disability_details": {
+      "benefit_period_years": 5,
+      "waiting_period_days": 60,
+      "occupation_class": "Technology Professional"
+    }
+  },
+  {
+    "id": "POL-AUTO-014",
+    "customer_id": "6",
+    "type": "Auto Insurance",
+    "product_name": "FastUnicorn Motor",
+    "premium_amount": 850,
+    "premium_frequency": "yearly",
+    "coverage_amount": 250000,
+    "status": "Active",
+    "start_date": "2024-12-03",
+    "renewal_date": "2025-12-03",
+    "last_updated": "2024-12-03",
+    "advisor_id": "jane.doe@example.com",
+    "vehicle": {
+      "make": "Mazda",
+      "model": "CX-5",
+      "year": 2020,
+      "registration": "MIA-2288"
+    }
+  },
+  {
+    "id": "POL-HEALTH-015",
+    "customer_id": "6",
+    "type": "Health Insurance",
+    "product_name": "HealingHorn Health",
+    "premium_amount": 4200,
+    "premium_frequency": "yearly",
+    "coverage_amount": 1800000,
+    "status": "Active",
+    "start_date": "2022-12-03",
+    "renewal_date": "2025-12-03",
+    "last_updated": "2024-12-03",
+    "advisor_id": "jane.doe@example.com",
+    "health_details": {
+      "plan_tier": "Premium",
+      "network": "Open Access",
+      "dependents": 1
+    }
+  },
+  {
+    "id": "POL-LIFE-016",
+    "customer_id": "3",
+    "type": "Life Insurance",
+    "product_name": "EverAfter Whole Life",
+    "premium_amount": 8400,
+    "premium_frequency": "yearly",
+    "coverage_amount": 1000000,
+    "status": "Active",
+    "start_date": "2022-06-10",
+    "renewal_date": "2025-06-10",
+    "last_updated": "2024-06-10",
+    "advisor_id": "john.doe@example.com",
+    "life_details": {
+      "life_type": "Whole Life",
+      "premium_schedule": "20-pay",
+      "cash_value_estimate": 24500,
+      "dividend_option": "paid-up additions",
+      "beneficiary": "Spouse and Children",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-LIFE-017",
+    "customer_id": "5",
+    "type": "Life Insurance",
+    "product_name": "HorizonFlex Universal Life",
+    "premium_amount": 6000,
+    "premium_frequency": "yearly",
+    "coverage_amount": 2000000,
+    "status": "Active",
+    "start_date": "2023-02-14",
+    "renewal_date": "2025-02-14",
+    "last_updated": "2024-02-14",
+    "advisor_id": "jane.doe@example.com",
+    "life_details": {
+      "life_type": "Universal Life",
+      "death_benefit_option": "Option B (face + cash value)",
+      "cash_value_estimate": 11200,
+      "current_credited_rate": "4.25%",
+      "guaranteed_minimum_rate": "2.00%",
+      "beneficiary": "Spouse",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-LIFE-018",
+    "customer_id": "1",
+    "type": "Life Insurance",
+    "product_name": "StardustVariable Life",
+    "premium_amount": 7200,
+    "premium_frequency": "yearly",
+    "coverage_amount": 1500000,
+    "status": "Active",
+    "start_date": "2024-04-01",
+    "renewal_date": "2025-04-01",
+    "last_updated": "2024-04-01",
+    "advisor_id": "john.doe@example.com",
+    "life_details": {
+      "life_type": "Variable Life",
+      "death_benefit_option": "Option A (level face)",
+      "sub_account_allocation": {
+        "equity_growth": 55,
+        "equity_international": 20,
+        "fixed_income": 20,
+        "money_market": 5
+      },
+      "cash_value_estimate": 6800,
+      "beneficiary": "Spouse",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-LIFE-019",
+    "customer_id": "8",
+    "type": "Life Insurance",
+    "product_name": "EverAfter Whole Life",
+    "premium_amount": 5200,
+    "premium_frequency": "yearly",
+    "coverage_amount": 500000,
+    "status": "Active",
+    "start_date": "2024-11-02",
+    "renewal_date": "2025-11-02",
+    "last_updated": "2024-11-02",
+    "advisor_id": "jane.doe@example.com",
+    "life_details": {
+      "life_type": "Whole Life",
+      "premium_schedule": "lifetime pay",
+      "cash_value_estimate": 2100,
+      "dividend_option": "left on deposit",
+      "beneficiary": "Spouse",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-3P-AUTO-001",
+    "customer_id": "2",
+    "third_party": true,
+    "insurer": "BigRival Insurance",
+    "type": "Auto Insurance",
+    "product_name": "BigRival AutoPlus",
+    "premium_amount": 1080,
+    "premium_frequency": "yearly",
+    "coverage_amount": 350000,
+    "status": "Active",
+    "start_date": "2023-09-15",
+    "renewal_date": "2025-09-15",
+    "last_updated": "2024-09-15",
+    "advisor_id": "john.doe@example.com",
+    "vehicle": {
+      "make": "Subaru",
+      "model": "Outback",
+      "year": 2022,
+      "registration": "AUS-1207"
+    }
+  },
+  {
+    "id": "POL-3P-LIFE-001",
+    "customer_id": "3",
+    "third_party": true,
+    "insurer": "StarInsure",
+    "type": "Life Insurance",
+    "product_name": "StarTerm 30",
+    "premium_amount": 2200,
+    "premium_frequency": "yearly",
+    "coverage_amount": 750000,
+    "status": "Active",
+    "start_date": "2020-04-12",
+    "renewal_date": "2030-04-12",
+    "last_updated": "2024-04-12",
+    "advisor_id": "john.doe@example.com",
+    "life_details": {
+      "life_type": "Term Life",
+      "term_years": 30,
+      "beneficiary": "Spouse",
+      "smoker": false
+    }
+  },
+  {
+    "id": "POL-3P-HEALTH-001",
+    "customer_id": "5",
+    "third_party": true,
+    "insurer": "QuickSafe",
+    "type": "Health Insurance",
+    "product_name": "QuickSafe FamilyCare",
+    "premium_amount": 5400,
+    "premium_frequency": "yearly",
+    "coverage_amount": 1200000,
+    "status": "Active",
+    "start_date": "2024-02-14",
+    "renewal_date": "2025-02-14",
+    "last_updated": "2024-02-14",
+    "advisor_id": "jane.doe@example.com",
+    "health_details": {
+      "plan_tier": "Family",
+      "network": "Standard Network",
+      "dependents": 2
+    }
+  },
+  {
+    "id": "POL-3P-HOME-001",
+    "customer_id": "6",
+    "third_party": true,
+    "insurer": "BigRival Insurance",
+    "type": "Home Insurance",
+    "product_name": "BigRival HomeShield",
+    "premium_amount": 1650,
+    "premium_frequency": "yearly",
+    "coverage_amount": 600000,
+    "status": "Active",
+    "start_date": "2024-12-03",
+    "renewal_date": "2025-12-03",
+    "last_updated": "2024-12-03",
+    "advisor_id": "jane.doe@example.com",
+    "property": {
+      "address": "789 Coral Way, Miami, FL 33145",
+      "property_type": "Condominium",
+      "year_built": 2010,
+      "square_feet": 1450
+    }
+  },
+  {
+    "id": "POL-3P-DISABILITY-001",
+    "customer_id": "8",
+    "third_party": true,
+    "insurer": "StarInsure",
+    "type": "Disability Insurance",
+    "product_name": "StarShield Income Protect",
+    "premium_amount": 1320,
+    "premium_frequency": "yearly",
+    "coverage_amount": 90000,
+    "status": "Active",
+    "start_date": "2024-11-02",
+    "renewal_date": "2025-11-02",
+    "last_updated": "2024-11-02",
+    "advisor_id": "jane.doe@example.com",
+    "disability_details": {
+      "benefit_period_years": 5,
+      "waiting_period_days": 90,
+      "occupation_class": "Office Professional"
+    }
+  }
+]

@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "有効",
+      "Inactive": "無効",
+      "Prospect": "見込み顧客"
+    },
+    "policyStatus": {
+      "Active": "有効",
+      "Inactive": "無効",
+      "Pending": "保留中",
+      "Lapsed": "失効",
+      "Cancelled": "解約"
+    },
+    "maritalStatus": {
+      "Married": "既婚",
+      "Single": "独身",
+      "Divorced": "離婚",
+      "Widowed": "死別"
+    },
+    "policyType": {
+      "Auto Insurance": "自動車保険",
+      "Home Insurance": "住宅保険",
+      "Life Insurance": "生命保険",
+      "Health Insurance": "医療保険",
+      "Disability Insurance": "就業不能保険",
+      "Travel Insurance": "旅行保険",
+      "Critical Illness Insurance": "重大疾病保険"
+    },
+    "premiumFrequency": {
+      "yearly": "年払い",
+      "annually": "年払い",
+      "monthly": "月払い",
+      "quarterly": "四半期払い",
+      "weekly": "週払い"
+    },
+    "lifeType": {
+      "Term Life": "定期保険",
+      "Whole Life": "終身保険",
+      "Universal Life": "ユニバーサル保険",
+      "Variable Life": "変額保険"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "終身払い",
+      "10-pay": "10年払込",
+      "20-pay": "20年払込",
+      "paid-up at 65": "65歳払済"
+    },
+    "dividendOption": {
+      "paid in cash": "現金受取",
+      "reduce premiums": "保険料充当",
+      "left on deposit": "積立",
+      "paid-up additions": "払済追加保険購入"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "オプションA(定額)",
+      "Option B (face + cash value)": "オプションB(額面+解約返戻金)",
+      "Option C (face + return of premium)": "オプションC(額面+保険料返還)"
+    }
+  }
+}

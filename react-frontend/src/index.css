@@ -1,0 +1,240 @@
+@import 'tailwindcss';
+
+/*
+ * Unicorn Insurance — design system
+ *
+ * Tailwind v4 CSS-first configuration. The `@theme` block exposes design
+ * tokens as both CSS custom properties and Tailwind utility classes. We
+ * keep neon as ACCENT (logo, active state, primary CTA, gradient brand
+ * mark, focus rings) — never as background. Canvas stays calm so the
+ * data is the focal point.
+ *
+ * Light mode: warm off-white canvas, neutral slate text, brand gradient.
+ * Dark mode: deep ink-blue canvas, soft cool whites, brand gradient pops
+ * harder against the darker surface.
+ */
+
+@layer base {
+  :root {
+    /* ----- canvas ----- */
+    --background: 250 250 252;          /* zinc-50 ish, warm */
+    --background-elevated: 255 255 255; /* cards / panels */
+    --background-muted: 244 244 247;    /* subtle hover, list rows */
+    --foreground: 24 24 27;             /* zinc-900 */
+    --foreground-muted: 82 82 91;       /* zinc-600 */
+    --border: 228 228 231;              /* zinc-200 */
+    --border-strong: 212 212 216;       /* zinc-300 */
+    --ring: 99 102 241;                 /* indigo-500 — focus rings */
+
+    /* ----- semantic ----- */
+    --danger: 239 68 68;
+    --warning: 245 158 11;
+    --success: 16 185 129;
+    --info: 14 165 233;
+
+    /* ----- brand neon (accent only) ----- */
+    --brand-1: 244 63 124;   /* fuchsia-pink */
+    --brand-2: 139 92 246;   /* violet */
+    --brand-3: 14 165 233;   /* sky-cyan */
+
+    /* Single-stop accent for solid uses (active tab, badge dot, etc.) */
+    --accent: var(--brand-2);
+
+    /* ----- shadows: layered, soft ----- */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 12px 24px -8px rgb(0 0 0 / 0.10), 0 4px 8px -4px rgb(0 0 0 / 0.04);
+    --shadow-glow: 0 0 0 1px rgb(139 92 246 / 0.15), 0 8px 24px -4px rgb(139 92 246 / 0.20);
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --background: 9 9 14;                  /* ink */
+    --background-elevated: 18 18 27;       /* card */
+    --background-muted: 24 24 35;          /* row hover */
+    --foreground: 244 244 245;             /* zinc-100 */
+    --foreground-muted: 161 161 170;       /* zinc-400 */
+    --border: 39 39 51;                    /* dark cool */
+    --border-strong: 55 55 73;
+    --ring: 167 139 250;                   /* violet-400 */
+    --accent: var(--brand-2);
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.40);
+    --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.40);
+    --shadow-lg: 0 12px 24px -8px rgb(0 0 0 / 0.55), 0 4px 8px -4px rgb(0 0 0 / 0.40);
+    --shadow-glow: 0 0 0 1px rgb(167 139 250 / 0.30), 0 12px 32px -4px rgb(167 139 250 / 0.30);
+
+    color-scheme: dark;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    background: rgb(var(--background));
+    color: rgb(var(--foreground));
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *::selection {
+    background: rgb(var(--brand-2) / 0.25);
+  }
+
+  /* Hairline gradient under the page header to separate from content. */
+  .brand-hairline {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--brand-1)) 0%,
+      rgb(var(--brand-2)) 50%,
+      rgb(var(--brand-3)) 100%
+    );
+    height: 1px;
+    width: 100%;
+    opacity: 0.7;
+  }
+}
+
+/* Tailwind v4 — token mapping. Lets utilities like `bg-background` work. */
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-background-elevated: rgb(var(--background-elevated));
+  --color-background-muted: rgb(var(--background-muted));
+  --color-foreground: rgb(var(--foreground));
+  --color-foreground-muted: rgb(var(--foreground-muted));
+  --color-border: rgb(var(--border));
+  --color-border-strong: rgb(var(--border-strong));
+  --color-ring: rgb(var(--ring));
+
+  --color-danger: rgb(var(--danger));
+  --color-warning: rgb(var(--warning));
+  --color-success: rgb(var(--success));
+  --color-info: rgb(var(--info));
+
+  --color-brand-1: rgb(var(--brand-1));
+  --color-brand-2: rgb(var(--brand-2));
+  --color-brand-3: rgb(var(--brand-3));
+  --color-accent: rgb(var(--accent));
+
+  --shadow-glow: var(--shadow-glow);
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius: 0.5rem;
+}
+
+@layer components {
+  /* Brand wordmark / heading gradient */
+  .text-brand-gradient {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--brand-1)) 0%,
+      rgb(var(--brand-2)) 50%,
+      rgb(var(--brand-3)) 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Active-tab chip with subtle gradient fill + soft glow */
+  .nav-pill-active {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--brand-2) / 0.95) 0%,
+      rgb(var(--brand-1) / 0.95) 100%
+    );
+    color: white;
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Glass surface used for the top nav */
+  .glass {
+    background: rgb(var(--background-elevated) / 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Card hover lift used on interactive cards (customer rows, policy
+     cards, recommendation cards). */
+  .card-hover {
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    border-color: rgb(var(--border-strong));
+  }
+
+  /* Pulse for "listening" voice status */
+  @keyframes neon-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(var(--brand-1) / 0.50); }
+    50%      { box-shadow: 0 0 0 8px rgb(var(--brand-1) / 0); }
+  }
+  .neon-pulse {
+    animation: neon-pulse 1.6s ease-out infinite;
+  }
+}
+
+/*
+ * Amplify Authenticator overrides.
+ *
+ * The sign-in screen uses Amplify's default form. We don't fully restyle
+ * it (that would mean reimplementing forms + validation), but we tint
+ * the brand colors + surface to match our theme so the transition into
+ * the app feels coherent.
+ */
+[data-amplify-authenticator] {
+  --amplify-colors-brand-primary-10: rgb(var(--brand-2) / 0.1);
+  --amplify-colors-brand-primary-60: rgb(var(--brand-2) / 0.6);
+  --amplify-colors-brand-primary-80: rgb(var(--brand-2));
+  --amplify-colors-brand-primary-90: rgb(var(--brand-1));
+  --amplify-colors-brand-primary-100: rgb(var(--brand-1));
+  --amplify-colors-background-primary: rgb(var(--background-elevated));
+  --amplify-colors-background-secondary: rgb(var(--background-muted));
+  --amplify-colors-font-primary: rgb(var(--foreground));
+  --amplify-colors-font-secondary: rgb(var(--foreground-muted));
+  --amplify-colors-font-interactive: rgb(var(--brand-2));
+  --amplify-colors-border-primary: rgb(var(--border));
+  --amplify-colors-border-secondary: rgb(var(--border-strong));
+  --amplify-components-authenticator-router-background-color: rgb(var(--background-elevated));
+  --amplify-components-authenticator-router-border-color: rgb(var(--border));
+  --amplify-components-button-primary-background-color: rgb(var(--brand-2));
+  --amplify-components-button-primary-hover-background-color: rgb(var(--brand-1));
+  --amplify-components-button-primary-color: white;
+  --amplify-components-tabs-item-active-color: rgb(var(--brand-2));
+  --amplify-components-tabs-item-active-border-color: rgb(var(--brand-2));
+  --amplify-components-tabs-item-focus-color: rgb(var(--brand-2));
+  --amplify-components-fieldcontrol-focus-border-color: rgb(var(--brand-2));
+}
+
+/* Make the auth shell sit on our app background, not Amplify's white default. */
+[data-amplify-authenticator] {
+  background: rgb(var(--background));
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scrollbar polish on webkit browsers — subtle, theme-aware */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgb(var(--border-strong));
+  border-radius: 999px;
+  border: 2px solid rgb(var(--background));
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--foreground-muted) / 0.5);
+}

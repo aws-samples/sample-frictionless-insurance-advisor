@@ -1,0 +1,282 @@
+[
+  {
+    "product_id": "unicorn-rainbow-life",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "Rainbow Life",
+    "product_type": "Term Life Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/rainbow-life.md"
+  },
+  {
+    "product_id": "unicorn-everafter-whole-life",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "EverAfter Whole Life",
+    "product_type": "Whole Life Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/everafter-whole-life.md"
+  },
+  {
+    "product_id": "unicorn-horizonflex-universal-life",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "HorizonFlex Universal Life",
+    "product_type": "Universal Life Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/horizonflex-universal-life.md"
+  },
+  {
+    "product_id": "unicorn-stardust-variable-life",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "StardustVariable Life",
+    "product_type": "Variable Life Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/stardust-variable-life.md"
+  },
+  {
+    "product_id": "unicorn-health-critical",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "Unicorn Health Critical",
+    "product_type": "Critical Illness Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/unicorn-health-critical.md"
+  },
+  {
+    "product_id": "unicorn-healinghorn-health",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "HealingHorn Health",
+    "product_type": "Health Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/healinghorn-health.md"
+  },
+  {
+    "product_id": "unicorn-glitterbarn-home",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "GlitterBarn Home Insurance",
+    "product_type": "Home Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/glitterbarn-home.md"
+  },
+  {
+    "product_id": "unicorn-fastunicorn-motor",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "FastUnicorn Motor",
+    "product_type": "Auto Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/fastunicorn-motor.md"
+  },
+  {
+    "product_id": "unicorn-jetset-travel",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "JetSetUnicorn Travel",
+    "product_type": "Travel Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/jetset-unicorn-travel.md"
+  },
+  {
+    "product_id": "unicorn-shield-disability",
+    "carrier_id": "unicorn",
+    "carrier_name": "Unicorn Insurance",
+    "product_name": "ShieldUnicorn Disability",
+    "product_type": "Disability Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "portfolio",
+    "s3_key": "products/shield-unicorn-disability.md"
+  },
+  {
+    "product_id": "bigrival-centuryguard-life-term",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "CenturyGuard Life Term",
+    "product_type": "Term Life Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/centuryguard-life-term.md"
+  },
+  {
+    "product_id": "bigrival-centuryguard-life-whole",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "CenturyGuard Life Whole",
+    "product_type": "Whole Life Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/centuryguard-life-whole.md"
+  },
+  {
+    "product_id": "bigrival-centuryguard-flex",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "CenturyGuard Flex",
+    "product_type": "Universal Life Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/centuryguard-flex.md"
+  },
+  {
+    "product_id": "bigrival-centuryguard-investor",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "CenturyGuard Investor",
+    "product_type": "Variable Life Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/centuryguard-investor.md"
+  },
+  {
+    "product_id": "bigrival-safehaven-motor",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "SafeHaven Motor",
+    "product_type": "Auto Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/safehaven-motor.md"
+  },
+  {
+    "product_id": "bigrival-heritagehome-property",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "HeritageHome Property",
+    "product_type": "Home Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/heritagehome-property.md"
+  },
+  {
+    "product_id": "bigrival-primecare-health",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "PrimeCare Health",
+    "product_type": "Health Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/primecare-health.md"
+  },
+  {
+    "product_id": "bigrival-careershield-disability",
+    "carrier_id": "bigrival",
+    "carrier_name": "BigRival",
+    "product_name": "CareerShield Disability",
+    "product_type": "Disability Insurance",
+    "pricing_tier": "Premium",
+    "s3_bucket": "competitors",
+    "s3_key": "products/bigrival/careershield-disability.md"
+  },
+  {
+    "product_id": "starinsure-starbasic-auto",
+    "carrier_id": "starinsure",
+    "carrier_name": "StarInsure",
+    "product_name": "StarBasic Auto",
+    "product_type": "Auto Insurance",
+    "pricing_tier": "Budget",
+    "s3_bucket": "competitors",
+    "s3_key": "products/starinsure/starbasic-auto.md"
+  },
+  {
+    "product_id": "starinsure-starbasic-renters",
+    "carrier_id": "starinsure",
+    "carrier_name": "StarInsure",
+    "product_name": "StarBasic Renters",
+    "product_type": "Renters Insurance",
+    "pricing_tier": "Budget",
+    "s3_bucket": "competitors",
+    "s3_key": "products/starinsure/starbasic-renters.md"
+  },
+  {
+    "product_id": "starinsure-starbasic-life",
+    "carrier_id": "starinsure",
+    "carrier_name": "StarInsure",
+    "product_name": "StarBasic Life",
+    "product_type": "Term Life Insurance",
+    "pricing_tier": "Budget",
+    "s3_bucket": "competitors",
+    "s3_key": "products/starinsure/starbasic-life.md"
+  },
+  {
+    "product_id": "starinsure-starbasic-forever",
+    "carrier_id": "starinsure",
+    "carrier_name": "StarInsure",
+    "product_name": "StarBasic Forever",
+    "product_type": "Whole Life Insurance",
+    "pricing_tier": "Budget",
+    "s3_bucket": "competitors",
+    "s3_key": "products/starinsure/starbasic-forever.md"
+  },
+  {
+    "product_id": "starinsure-starbasic-travel",
+    "carrier_id": "starinsure",
+    "carrier_name": "StarInsure",
+    "product_name": "StarBasic Travel",
+    "product_type": "Travel Insurance",
+    "pricing_tier": "Budget",
+    "s3_bucket": "competitors",
+    "s3_key": "products/starinsure/starbasic-travel.md"
+  },
+  {
+    "product_id": "starinsure-starbasic-shield",
+    "carrier_id": "starinsure",
+    "carrier_name": "StarInsure",
+    "product_name": "StarBasic Shield",
+    "product_type": "Critical Illness Insurance",
+    "pricing_tier": "Budget",
+    "s3_bucket": "competitors",
+    "s3_key": "products/starinsure/starbasic-shield.md"
+  },
+  {
+    "product_id": "quicksafe-drive",
+    "carrier_id": "quicksafe",
+    "carrier_name": "QuickSafe",
+    "product_name": "QuickSafe Drive",
+    "product_type": "Auto Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "competitors",
+    "s3_key": "products/quicksafe/quicksafe-drive.md"
+  },
+  {
+    "product_id": "quicksafe-nest-home",
+    "carrier_id": "quicksafe",
+    "carrier_name": "QuickSafe",
+    "product_name": "QuickSafe Nest Home",
+    "product_type": "Home Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "competitors",
+    "s3_key": "products/quicksafe/quicksafe-nest-home.md"
+  },
+  {
+    "product_id": "quicksafe-nest-renters",
+    "carrier_id": "quicksafe",
+    "carrier_name": "QuickSafe",
+    "product_name": "QuickSafe Nest Renters",
+    "product_type": "Renters Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "competitors",
+    "s3_key": "products/quicksafe/quicksafe-nest-renters.md"
+  },
+  {
+    "product_id": "quicksafe-go",
+    "carrier_id": "quicksafe",
+    "carrier_name": "QuickSafe",
+    "product_name": "QuickSafe Go",
+    "product_type": "Travel Insurance",
+    "pricing_tier": "Mid-market",
+    "s3_bucket": "competitors",
+    "s3_key": "products/quicksafe/quicksafe-go.md"
+  }
+]

@@ -1,0 +1,37 @@
+{
+  "common": {
+    "app": {
+      "title": "保険アドバイザー"
+    },
+    "nav": {
+      "assistant": "テキストアシスタント",
+      "voice": "テキスト+音声アシスタント",
+      "comparator": "比較ツール",
+      "signOut": "サインアウト",
+      "language": "言語",
+      "pitchDeck": "プレゼンテーションを開く"
+    },
+    "actions": {
+      "send": "送信",
+      "clear": "クリア",
+      "refresh": "更新",
+      "cancel": "キャンセル"
+    },
+    "states": {
+      "loading": "読み込み中...",
+      "comingSoon": "近日公開予定。"
+    },
+    "errors": {
+      "loadFailed": "データの読み込みに失敗しました: {{message}}"
+    },
+    "errorBoundary": {
+      "title": "問題が発生しました",
+      "body": "アプリで予期しないエラーが発生し、この画面を表示できませんでした。データは安全です。再読み込みすると通常は解決します。",
+      "reload": "再読み込み"
+    },
+    "brand": {
+      "nameAccent": "Unicorn",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

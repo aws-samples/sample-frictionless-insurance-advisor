@@ -1,0 +1,193 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "Customers",
+      "collapse": "Collapse sidebar",
+      "expand": "Expand sidebar",
+      "newProspect": "+ New Prospect"
+    },
+    "welcome": {
+      "heading": "Welcome",
+      "body": "Select a customer from the sidebar to view their profile, policies, and start a chat.",
+      "totalCustomers": "Total Customers",
+      "activePolicies": "Active Policies"
+    },
+    "customer": {
+      "contactSection": "Contact",
+      "accountSection": "Account",
+      "policiesSection": "Policies",
+      "thirdPartyPoliciesSection": "Third Party Policies",
+      "recommendationSection": "Coverage Gap Analysis",
+      "fields": {
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "joinDate": "Since",
+        "policiesCount": "Policies",
+        "occupation": "Occupation",
+        "maritalStatus": "Marital status"
+      }
+    },
+    "policies": {
+      "emptyProspect": "No policies yet — this is a prospect.",
+      "id": "ID",
+      "insurer": "Insurer",
+      "coverage": "Coverage",
+      "renews": "Renews",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "Details",
+        "vehicle": {
+          "title": "Vehicle",
+          "make": "Make",
+          "model": "Model",
+          "year": "Year",
+          "registration": "Registration"
+        },
+        "property": {
+          "title": "Property",
+          "address": "Address",
+          "type": "Type",
+          "yearBuilt": "Year built",
+          "size": "Size",
+          "squareFeet": "{{value}} sq ft"
+        },
+        "health": {
+          "title": "Plan",
+          "tier": "Tier",
+          "network": "Network",
+          "dependents": "Dependents"
+        },
+        "disability": {
+          "title": "Coverage",
+          "benefitPeriod": "Benefit period",
+          "benefitYears": "{{count}} years",
+          "waitingPeriod": "Waiting period",
+          "waitingDays": "{{count}} days",
+          "occupationClass": "Occupation class"
+        },
+        "life": {
+          "title": "Policy",
+          "lifeType": "Life type",
+          "beneficiary": "Beneficiary",
+          "smoker": "Smoker",
+          "smokerYes": "Yes",
+          "smokerNo": "No",
+          "termYears": "Term",
+          "termYearsValue": "{{count}} years",
+          "premiumSchedule": "Premium schedule",
+          "dividendOption": "Dividend option",
+          "deathBenefitOption": "Death benefit option",
+          "currentCreditedRate": "Current credited rate",
+          "guaranteedMinimumRate": "Guaranteed minimum",
+          "cashValueEstimate": "Cash value (est.)",
+          "subAccountAllocation": "Sub-account allocation"
+        },
+        "subAccounts": {
+          "equity_growth": "Equity — Growth",
+          "equity_international": "Equity — International",
+          "fixed_income": "Fixed Income",
+          "money_market": "Money Market",
+          "balanced": "Balanced",
+          "equity_value": "Equity — Value"
+        }
+      }
+    },
+    "chat": {
+      "headingCustomer": "AI Policy Chat",
+      "headingProspect": "Prospect Coaching",
+      "selectCustomer": "Select a customer to start a chat.",
+      "emptyPlaceholder": "Ask a question or pick a suggestion below.",
+      "messageLabel": "Message",
+      "placeholderCustomer": "Ask about policies...",
+      "placeholderProspect": "Ask about this prospect...",
+      "userBubbleLabel": "You",
+      "assistantBubbleLabel": "Assistant",
+      "thinking": "Thinking...",
+      "quickQuestions": "Quick questions",
+      "attachDocument": "Attach a policy document (PDF, image, or text)",
+      "removeAttachment": "Remove attachment",
+      "uploadingFilename": "Uploading {{filename}}...",
+      "uploadFailed": "Upload failed",
+      "placeholderWithAttachment": "Add a note or just send to extract the policy...",
+      "samplePolicies": {
+        "cta": "Need a test file? Download a sample",
+        "heading": "Sample policy for {{name}}",
+        "subtext": "Synthetic 3rd-party policies for testing the upload flow.",
+        "notice": "Fictional carriers. Not real coverage."
+      }
+    },
+    "prompts": {
+      "customer": {
+        "policies": "What policies do I have?",
+        "coverageGap": "What coverage gap do I have and how can I address it?",
+        "premiumDelta": "Why is your premium higher/lower than competitors?",
+        "claimsModel": "Do you offer cashless claims at hospitals, or only reimbursement?",
+        "incomeVsLumpSum": "Do you offer income replacement or lump-sum payout options?",
+        "mentalHealthMaternity": "Do you cover mental health, maternity, or alternative treatments?",
+        "outpatientDentalOptical": "Do you cover outpatient treatments, dental, or optical?",
+        "dayOneCover": "What's your day-one cover vs. waiting period compared to others?",
+        "preExistingWaiting": "What pre-existing condition waiting period do you have vs. competitors?"
+      },
+      "prospect": {
+        "firstProducts": "What insurance should this prospect consider first?",
+        "discovery": "Help me start a discovery conversation",
+        "bestProducts": "What are the best products given their profile?",
+        "company": "Tell me about Unicorn Insurance",
+        "whyUnicorn": "Why should they choose Unicorn over BigRival?",
+        "qualifyQuestions": "What questions should I ask to qualify this prospect?"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "Voice"
+      },
+      "comparator": {
+        "heading": "Comparator",
+        "intro": "Compare insurance products across Unicorn Insurance and its competitors. Select a product type, then pick between 2 and 4 products to compare.",
+        "typeLabel": "Product type",
+        "typePlaceholder": "Select a product type",
+        "productsLabel": "Products to compare",
+        "productsHelp": "Select between {{min}} and {{max}} products.",
+        "selectType": "Pick a product type to see the products available for comparison.",
+        "noProductsForType": "No products available for this type.",
+        "tierBadge": "{{tier}} tier",
+        "selectedCount": "{{count}} selected",
+        "compareButton": "Compare",
+        "clearButton": "Clear selection",
+        "comparing": "Generating comparison...",
+        "comparingHint": "This takes 10–20 seconds while the assistant reads each product document.",
+        "errorTitle": "Comparison failed",
+        "errorRetry": "Try again",
+        "resultSummary": "Overview",
+        "carrier": "Carrier",
+        "disclaimer": "AI-generated comparison",
+        "minProducts": "Select at least {{min}} products.",
+        "maxProducts": "You can compare at most {{max}} products."
+      }
+    },
+    "voice": {
+      "heading": "Voice Chat",
+      "selectCustomer": "Select a customer to start a voice conversation.",
+      "startVoice": "Start voice chat",
+      "stopVoice": "Stop voice chat",
+      "typePlaceholder": "Type a message...",
+      "connecting": "Connecting...",
+      "emptyConnecting": "Connecting to agent...",
+      "emptyConnected": "Type a message below, or press Start voice chat to speak. Clear resets the conversation.",
+      "hintText": "The assistant responds in text only. Press Start voice chat to speak and hear responses.",
+      "hintVoice": "Voice chat is active — the assistant will respond with voice and text. Press Stop voice chat to type only.",
+      "status": {
+        "connecting": "Connecting",
+        "connected": "Connected",
+        "listening": "Listening",
+        "speaking": "Speaking"
+      }
+    },
+    "recommendation": {
+      "loading": "Analyzing coverage and looking for gaps...",
+      "noGaps": "No material coverage gaps identified — the customer is well covered for their profile.",
+      "error": "Couldn't generate a recommendation: {{message}}"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "Actif",
+      "Inactive": "Inactif",
+      "Prospect": "Prospect"
+    },
+    "policyStatus": {
+      "Active": "Actif",
+      "Inactive": "Inactif",
+      "Pending": "En attente",
+      "Lapsed": "Expiré",
+      "Cancelled": "Résilié"
+    },
+    "maritalStatus": {
+      "Married": "Marié(e)",
+      "Single": "Célibataire",
+      "Divorced": "Divorcé(e)",
+      "Widowed": "Veuf/Veuve"
+    },
+    "policyType": {
+      "Auto Insurance": "Assurance Auto",
+      "Home Insurance": "Assurance Habitation",
+      "Life Insurance": "Assurance Vie",
+      "Health Insurance": "Assurance Santé",
+      "Disability Insurance": "Assurance Invalidité",
+      "Travel Insurance": "Assurance Voyage",
+      "Critical Illness Insurance": "Assurance Maladies Graves"
+    },
+    "premiumFrequency": {
+      "yearly": "annuel",
+      "annually": "annuel",
+      "monthly": "mensuel",
+      "quarterly": "trimestriel",
+      "weekly": "hebdomadaire"
+    },
+    "lifeType": {
+      "Term Life": "Assurance Vie Temporaire",
+      "Whole Life": "Assurance Vie Entière",
+      "Universal Life": "Assurance Vie Universelle",
+      "Variable Life": "Assurance Vie Variable"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "Paiement à vie",
+      "10-pay": "Paiement sur 10 ans",
+      "20-pay": "Paiement sur 20 ans",
+      "paid-up at 65": "Libérée à 65 ans"
+    },
+    "dividendOption": {
+      "paid in cash": "Versé en espèces",
+      "reduce premiums": "Réduction des primes",
+      "left on deposit": "Laissé en dépôt",
+      "paid-up additions": "Additions libérées"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "Option A (capital fixe)",
+      "Option B (face + cash value)": "Option B (capital + valeur de rachat)",
+      "Option C (face + return of premium)": "Option C (capital + remboursement des primes)"
+    }
+  }
+}

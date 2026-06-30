@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Frictionless Insurance Assistance</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css"
+        integrity="sha384-AJKv9Ui5SfA0VsFksFI9GuA1ztX9Ca3CLP6HGfX4YY/tYSVodC+PUszaQZFIlkuy"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css"
+        integrity="sha384-YgvgKeZJykuztG+iQPoZHNZENTFZvOcOJ/uRzmJTje6GHYN9zAw+y5rx/L8MQKA/"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme"
+        integrity="sha384-/TZMdZeq0ZGi4iePTHhOMXOkyv2f72ZcwmhAtOmSZlPkx+5qCOfyc/U1kjd5Su6S"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    :root {
+      --bg:            #FAFAFC;
+      --bg-elev:       #FFFFFF;
+      --bg-muted:      #F4F4F7;
+      --ink:           #18181B;
+      --ink-soft:      #3F3F46;
+      --muted:         #52525B;
+      --line:          #E4E4E7;
+      --line-strong:   #D4D4D8;
+      --brand-1:       #F43F7C;
+      --brand-2:       #8B5CF6;
+      --brand-3:       #0EA5E9;
+      --grad: linear-gradient(90deg, var(--brand-1) 0%, var(--brand-2) 50%, var(--brand-3) 100%);
+      --shadow-sm: 0 1px 2px 0 rgba(20,20,40,0.04);
+      --shadow-md: 0 4px 16px -4px rgba(20,20,40,0.08), 0 1px 2px rgba(20,20,40,0.04);
+      --shadow-glow: 0 0 0 1px rgba(139,92,246,0.18), 0 12px 32px -8px rgba(139,92,246,0.22);
+    }
+
+    html, body { background: var(--bg); }
+    .reveal {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--ink);
+      font-feature-settings: 'cv11', 'ss01';
+      -webkit-font-smoothing: antialiased;
+    }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { background: var(--bg); }
+
+    .reveal .slides section.has-bar::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--grad); opacity: 0.85;
+    }
+
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      color: var(--ink); text-transform: none; letter-spacing: -0.015em; font-weight: 700; margin: 0 0 0.35em 0;
+    }
+    .reveal h1 { font-size: 2.6rem; line-height: 1.05; }
+    .reveal h2 { font-size: 1.8rem; line-height: 1.15; }
+    .reveal h3 { font-size: 1.05rem; line-height: 1.25; }
+    .reveal p, .reveal li { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.5; }
+    .reveal ul { margin: 0; padding-left: 1.1em; }
+    .reveal ul li { margin: 0.18em 0; }
+    .reveal .muted { color: var(--muted); font-size: 0.78rem; }
+
+    .reveal .grad-text {
+      background: var(--grad); -webkit-background-clip: text; background-clip: text;
+      color: transparent; -webkit-text-fill-color: transparent;
+    }
+    .reveal .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px;
+      background: var(--bg-elev); border: 1px solid var(--line);
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 14px;
+    }
+    .reveal .pill::before {
+      content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--grad);
+    }
+    .reveal .pill-grad { background: var(--grad); color: white; border: none; box-shadow: var(--shadow-glow); }
+    .reveal .pill-grad::before { background: white; }
+
+    .reveal .grid { display: grid; gap: 14px; }
+    .reveal .grid-2 { grid-template-columns: 1fr 1fr; }
+    .reveal .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .reveal .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+    .reveal .card {
+      background: var(--bg-elev); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px; box-shadow: var(--shadow-sm);
+      position: relative; overflow: hidden;
+    }
+    .reveal .card::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--grad); opacity: 0.55;
+    }
+    .reveal .card h3, .reveal .card h4 { margin: 0 0 6px 0; font-size: 0.95rem; color: var(--ink); font-weight: 700; }
+    .reveal .card p, .reveal .card li { font-size: 0.78rem; color: var(--ink-soft); line-height: 1.45; }
+
+    .reveal .stat {
+      background: var(--bg-elev); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px; box-shadow: var(--shadow-sm);
+    }
+    .reveal .stat .num {
+      display: block; font-weight: 800; font-size: 1.8rem; line-height: 1.05; letter-spacing: -0.02em;
+      background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    }
+    .reveal .stat .lbl { color: var(--muted); font-size: 0.72rem; line-height: 1.35; margin-top: 6px; display: block; }
+
+    .reveal section.cover { padding: 0; }
+    .reveal .cover-mark {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
+    }
+    .reveal .cover-mark .dot {
+      width: 28px; height: 28px; border-radius: 999px; background: var(--grad); box-shadow: var(--shadow-glow);
+    }
+    .reveal .cover-title {
+      font-size: 3.2rem; line-height: 1.02; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 18px;
+    }
+    .reveal .cover-tagline {
+      font-size: 1rem; color: var(--ink-soft); max-width: 760px; line-height: 1.5; margin: 0;
+    }
+
+    /* architecture SVG */
+    .arch {
+      width: 100%; height: 460px; background: var(--bg-elev);
+      border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-sm);
+    }
+    .arch text { font-family: 'Inter', sans-serif; }
+    .arch .lane { fill: var(--bg-muted); stroke: var(--line); }
+    .arch .lane-title { font-size: 10px; font-weight: 700; fill: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .arch .box { rx: 10; ry: 10; stroke-width: 1.4; }
+    .arch .box-front { fill: #FFFFFF; stroke: var(--brand-3); }
+    .arch .box-id    { fill: #FFFFFF; stroke: var(--brand-1); }
+    .arch .box-rt    { fill: #FFFFFF; stroke: var(--brand-2); }
+    .arch .box-tool  { fill: #FFFFFF; stroke: var(--line-strong); }
+    .arch .box-data  { fill: #FFFFFF; stroke: var(--line-strong); }
+    .arch .label-bold { font-size: 11px; font-weight: 700; fill: var(--ink); }
+    .arch .label-mute { font-size: 9.5px; fill: var(--muted); }
+    .arch .edge        { stroke: #A1A1AA; stroke-width: 1.2; fill: none; }
+    .arch .edge-grad   { stroke: url(#archGrad); stroke-width: 1.6; fill: none; }
+    .arch .edge-dashed { stroke: #A1A1AA; stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+    .arch .edge-label  { font-size: 9.5px; fill: var(--muted); }
+
+    .reveal .slide-number {
+      font-family: 'Inter', sans-serif; color: var(--muted); background: transparent;
+      right: 24px; bottom: 16px; font-size: 0.7rem;
+    }
+    .reveal .slides section > * { max-width: 100%; }
+    .reveal .slides section { overflow: hidden; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+  <!-- ============== SLIDE 1: THE CHALLENGE ============== -->
+  <section class="has-bar">
+    <span class="pill">The challenge</span>
+    <h2>Why Insurance Advisors Need <span class="grad-text">AI</span></h2>
+    <div class="grid grid-2" style="margin-top:14px;">
+      <div class="card">
+        <h4>Complexity & Information Overload</h4>
+        <ul>
+          <li>Insurance documents are complex, jargon-heavy, and difficult to interpret quickly</li>
+          <li>Advisors manage hundreds of products across multiple providers — impossible to know everything</li>
+          <li>Manual comparison is time-consuming and error-prone</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Lost Momentum & Revenue</h4>
+        <ul>
+          <li>When customers ask questions, advisors often say "let me get back to you" and wait for the insurer — losing momentum and trust</li>
+          <li>Customers expect instant, personalized answers — not callbacks days later</li>
+          <li>Advisors miss cross-sell/upsell opportunities due to lack of holistic coverage visibility</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <h4>Competitive pressure</h4>
+      <p>Digital-first insurers and aggregators are raising the bar — advisors who can't deliver instant, informed answers lose deals to those who can.</p>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 2: THE SOLUTION ============== -->
+  <section class="has-bar">
+    <span class="pill pill-grad">The solution</span>
+    <h2>Frictionless <span class="grad-text">Insurance Assistance</span></h2>
+    <p style="margin-bottom:16px;">An AI-powered advisory tool that transforms how insurance advisors interact with customers — making every conversation informed, instant, and customer-centric.</p>
+    <div class="grid grid-3" style="margin-top:8px;">
+      <div class="card">
+        <h4>Document Intelligence</h4>
+        <p>Upload insurance policies from any insurer — the tool ingests, understands, and makes them queryable instantly</p>
+      </div>
+      <div class="card">
+        <h4>Real-time Q&A</h4>
+        <p>Advisors can answer customer questions on the spot — no more waiting for insurers to come back with clarifications</p>
+      </div>
+      <div class="card">
+        <h4>Product Comparison</h4>
+        <p>Compare products across multiple providers with competitive intelligence</p>
+      </div>
+    </div>
+    <div class="grid grid-3" style="margin-top:14px;">
+      <div class="card">
+        <h4>Coverage Gap Analysis</h4>
+        <p>Automatically identify what is missing in a customer's current coverage</p>
+      </div>
+      <div class="card">
+        <h4>Multi-channel</h4>
+        <p>Works via chat for digital interactions or voice for live customer calls</p>
+      </div>
+      <div class="card">
+        <h4>Works for All Customers</h4>
+        <p>Existing portfolio reviews or new prospect onboarding</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 3: BUSINESS BENEFITS ============== -->
+  <section class="has-bar">
+    <span class="pill">Business benefits</span>
+    <h2>Value for <span class="grad-text">Insurers</span></h2>
+    <div class="grid grid-4" style="margin-top:14px;">
+      <div class="card">
+        <h4>Customer Centricity</h4>
+        <p>Complex insurance documents decoded instantly — advisors focus on the customer, not paperwork</p>
+      </div>
+      <div class="card">
+        <h4>Increased Revenue</h4>
+        <p>Cross-sell/upsell through automated coverage gap identification</p>
+      </div>
+      <div class="card">
+        <h4>Competitive Advantage</h4>
+        <p>Advisors armed with real-time knowledge of competitor products by simply uploading their policy documents</p>
+      </div>
+      <div class="card">
+        <h4>Zero Wait Time</h4>
+        <p>Eliminate the "let me check and get back to you" — answer questions in real-time during the conversation</p>
+      </div>
+    </div>
+    <div class="grid grid-4" style="margin-top:14px;">
+      <div class="card">
+        <h4>Faster Onboarding</h4>
+        <p>Reduce time-to-first-policy for new prospects</p>
+      </div>
+      <div class="card">
+        <h4>Improved Retention</h4>
+        <p>Proactive coverage reviews for existing customers</p>
+      </div>
+      <div class="card">
+        <h4>Advisor Productivity</h4>
+        <p>Reduce research time from hours to seconds</p>
+      </div>
+      <div class="card">
+        <h4>Consistent Experience</h4>
+        <p>Standardized advice quality across all advisors</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SLIDE 4: USE CASES & HOW IT WORKS ============== -->
+  <section class="has-bar">
+    <span class="pill">Use cases</span>
+    <h2>How It <span class="grad-text">Works</span></h2>
+    <div class="grid grid-3" style="margin-top:14px;">
+      <div class="card">
+        <h4>Upload & Understand</h4>
+        <p>Upload any insurer's policy documents → AI extracts key terms, coverage, exclusions, and benefits</p>
+      </div>
+      <div class="card">
+        <h4>Existing Customer Review</h4>
+        <p>Periodic coverage analysis → identify gaps → recommend products → answer questions instantly</p>
+      </div>
+      <div class="card">
+        <h4>New Prospect Onboarding</h4>
+        <p>Needs assessment → competitive comparison → tailored recommendation</p>
+      </div>
+    </div>
+    <div class="grid grid-3" style="margin-top:14px;">
+      <div class="card">
+        <h4>Real-time Advisor Support</h4>
+        <p>During customer calls (chat or voice), AI provides instant answers — no more callbacks</p>
+      </div>
+      <div class="card">
+        <h4>Competitive Positioning</h4>
+        <p>Know what competitors offer and position your products effectively</p>
+      </div>
+      <div class="card">
+        <h4>Simplify Complexity</h4>
+        <p>Turn complicated insurance language into clear, customer-friendly explanations</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== APPENDIX: ARCHITECTURE ============== -->
+  <section class="has-bar">
+    <span class="pill">Appendix</span>
+    <h2>End-to-end on <span class="grad-text">Amazon Bedrock AgentCore</span></h2>
+    <svg class="arch" viewBox="0 0 1280 480" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="archGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#F43F7C" />
+          <stop offset="50%" stop-color="#8B5CF6" />
+          <stop offset="100%" stop-color="#0EA5E9" />
+        </linearGradient>
+      </defs>
+
+      <!-- Lanes -->
+      <rect class="lane" x="14"   y="36" width="220" height="430" rx="12" />
+      <text class="lane-title" x="28" y="56">Frontend</text>
+      <rect class="lane" x="246"  y="36" width="200" height="430" rx="12" />
+      <text class="lane-title" x="260" y="56">Identity</text>
+      <rect class="lane" x="458"  y="36" width="370" height="430" rx="12" />
+      <text class="lane-title" x="472" y="56">AgentCore</text>
+      <rect class="lane" x="840"  y="36" width="426" height="430" rx="12" />
+      <text class="lane-title" x="854" y="56">Tools &amp; data</text>
+
+      <!-- Frontend -->
+      <rect class="box box-front" x="32" y="92"  width="184" height="74" />
+      <text class="label-bold" x="48" y="116">React + Vite</text>
+      <text class="label-mute" x="48" y="134">Local dev — no IAM creds</text>
+      <text class="label-mute" x="48" y="150">Cognito JWT in browser</text>
+
+      <!-- Identity boxes -->
+      <rect class="box box-id" x="262" y="92"  width="170" height="58" />
+      <text class="label-bold" x="278" y="114">Cognito</text>
+      <text class="label-mute" x="278" y="132">User pool · advisors</text>
+
+      <rect class="box box-id" x="262" y="172" width="170" height="58" />
+      <text class="label-bold" x="278" y="194">Cognito</text>
+      <text class="label-mute" x="278" y="212">Gateway pool · M2M</text>
+
+      <rect class="box box-id" x="262" y="252" width="170" height="74" />
+      <text class="label-bold" x="278" y="274">AgentCore Identity</text>
+      <text class="label-mute" x="278" y="292">Token vault</text>
+      <text class="label-mute" x="278" y="308">OAuth2 providers</text>
+
+      <!-- AgentCore stack -->
+      <rect class="box box-rt" x="476" y="80"  width="220" height="74" />
+      <text class="label-bold" x="492" y="102">Runtime — text</text>
+      <text class="label-mute" x="492" y="120">Strands · Claude Haiku 4.5</text>
+      <text class="label-mute" x="492" y="136">Streaming SSE</text>
+
+      <rect class="box box-rt" x="476" y="166" width="220" height="74" />
+      <text class="label-bold" x="492" y="188">Runtime — voice</text>
+      <text class="label-mute" x="492" y="206">Strands BidiAgent · Nova Sonic 2</text>
+      <text class="label-mute" x="492" y="222">WebSocket bidi audio</text>
+
+      <rect class="box box-rt" x="476" y="252" width="220" height="74" />
+      <text class="label-bold" x="492" y="274">AgentCore Gateway</text>
+      <text class="label-mute" x="492" y="292">MCP · 7 tool targets</text>
+      <text class="label-mute" x="492" y="308">JWT authorizer</text>
+
+      <rect class="box box-rt" x="476" y="338" width="220" height="74" />
+      <text class="label-bold" x="492" y="360">AgentCore Memory</text>
+      <text class="label-mute" x="492" y="378">Summaries · preferences</text>
+      <text class="label-mute" x="492" y="394">Facts · per-customer</text>
+
+      <!-- Tools / data -->
+      <rect class="box box-tool" x="858" y="92"  width="170" height="40" />
+      <text class="label-bold" x="874" y="116">API Gateway + WAF</text>
+
+      <rect class="box box-tool" x="858" y="142" width="170" height="36" />
+      <text class="label-bold" x="874" y="164">λ profile</text>
+      <rect class="box box-tool" x="858" y="184" width="170" height="36" />
+      <text class="label-bold" x="874" y="206">λ policies</text>
+      <rect class="box box-tool" x="858" y="226" width="170" height="36" />
+      <text class="label-bold" x="874" y="248">λ portfolio</text>
+      <rect class="box box-tool" x="858" y="268" width="170" height="36" />
+      <text class="label-bold" x="874" y="290">λ promotions</text>
+      <rect class="box box-tool" x="858" y="310" width="170" height="36" />
+      <text class="label-bold" x="874" y="332">λ company</text>
+      <rect class="box box-tool" x="858" y="352" width="170" height="36" />
+      <text class="label-bold" x="874" y="374">λ competitive</text>
+      <rect class="box box-tool" x="858" y="394" width="170" height="36" />
+      <text class="label-bold" x="874" y="416">λ competitors</text>
+
+      <rect class="box box-data" x="1054" y="142" width="190" height="80" />
+      <text class="label-bold" x="1070" y="166">DynamoDB</text>
+      <text class="label-mute" x="1070" y="184">profiles</text>
+      <text class="label-mute" x="1070" y="200">policies</text>
+
+      <rect class="box box-data" x="1054" y="234" width="190" height="194" />
+      <text class="label-bold" x="1070" y="258">S3 buckets</text>
+      <text class="label-mute" x="1070" y="278">portfolio</text>
+      <text class="label-mute" x="1070" y="296">promotion</text>
+      <text class="label-mute" x="1070" y="314">company</text>
+      <text class="label-mute" x="1070" y="332">competitive</text>
+      <text class="label-mute" x="1070" y="350">competitors</text>
+
+      <!-- Edges -->
+      <path class="edge-grad" d="M216,116 C 340,116 380,116 476,116" />
+      <path class="edge-grad" d="M696,275 C 760,200 800,140 858,116" />
+      <text class="edge-label" x="760" y="200">OAuth2</text>
+      <path class="edge" d="M696,275 C 760,260 800,160 858,160" />
+      <path class="edge" d="M696,278 C 760,265 800,200 858,202" />
+      <path class="edge" d="M696,282 C 760,272 800,240 858,244" />
+      <path class="edge" d="M696,285 C 760,285 800,285 858,286" />
+      <path class="edge" d="M696,288 C 760,300 800,320 858,328" />
+      <path class="edge" d="M696,292 C 760,320 800,360 858,370" />
+      <path class="edge" d="M696,296 C 760,340 800,400 858,412" />
+      <text class="edge-label" x="730" y="320">IAM</text>
+      <path class="edge" d="M1028,160 C 1042,160 1048,176 1054,176" />
+      <path class="edge" d="M1028,202 C 1042,202 1048,192 1054,192" />
+      <path class="edge" d="M1028,244 C 1042,244 1048,278 1054,278" />
+      <path class="edge" d="M1028,286 C 1042,286 1048,296 1054,296" />
+      <path class="edge" d="M1028,328 C 1042,328 1048,314 1054,314" />
+      <path class="edge" d="M1028,370 C 1042,370 1048,332 1054,332" />
+      <path class="edge" d="M1028,412 C 1042,412 1048,350 1054,350" />
+    </svg>
+    <p class="muted" style="margin-top:8px;">
+      Models: <strong>Claude Haiku 4.5</strong> (chat) · <strong>Nova Sonic 2</strong> (voice) · <strong>Claude Sonnet 4.5</strong> (comparator &amp; recommendations).
+    </p>
+  </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"
+        integrity="sha384-M/JtqCVlLcK9lwVnBnMXP0V577CBULkjodKsR/PITOe4MSKNbbwqCemEyluOw0+5"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'fade',
+    width: 1366,
+    height: 800,
+    margin: 0.045,
+    minScale: 0.4,
+    maxScale: 1.6,
+  });
+</script>
+</body>
+</html>

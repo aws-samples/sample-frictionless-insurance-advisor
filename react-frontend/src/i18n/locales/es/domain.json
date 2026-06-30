@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "Activo",
+      "Inactive": "Inactivo",
+      "Prospect": "Cliente potencial"
+    },
+    "policyStatus": {
+      "Active": "Activa",
+      "Inactive": "Inactiva",
+      "Pending": "Pendiente",
+      "Lapsed": "Caducada",
+      "Cancelled": "Cancelada"
+    },
+    "maritalStatus": {
+      "Married": "Casado/a",
+      "Single": "Soltero/a",
+      "Divorced": "Divorciado/a",
+      "Widowed": "Viudo/a"
+    },
+    "policyType": {
+      "Auto Insurance": "Seguro de auto",
+      "Home Insurance": "Seguro de hogar",
+      "Life Insurance": "Seguro de vida",
+      "Health Insurance": "Seguro de salud",
+      "Disability Insurance": "Seguro de invalidez",
+      "Travel Insurance": "Seguro de viaje",
+      "Critical Illness Insurance": "Seguro de enfermedades graves"
+    },
+    "premiumFrequency": {
+      "yearly": "anual",
+      "annually": "anual",
+      "monthly": "mensual",
+      "quarterly": "trimestral",
+      "weekly": "semanal"
+    },
+    "lifeType": {
+      "Term Life": "Seguro temporal",
+      "Whole Life": "Seguro de vida entera",
+      "Universal Life": "Seguro universal",
+      "Variable Life": "Seguro variable"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "Pago vitalicio",
+      "10-pay": "10 pagos",
+      "20-pay": "20 pagos",
+      "paid-up at 65": "Pagada a los 65"
+    },
+    "dividendOption": {
+      "paid in cash": "En efectivo",
+      "reduce premiums": "Reducir primas",
+      "left on deposit": "En depósito",
+      "paid-up additions": "Adiciones pagadas"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "Opción A (capital fijo)",
+      "Option B (face + cash value)": "Opción B (capital + valor en efectivo)",
+      "Option C (face + return of premium)": "Opción C (capital + devolución de primas)"
+    }
+  }
+}

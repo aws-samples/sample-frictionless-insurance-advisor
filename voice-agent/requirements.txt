@@ -1,0 +1,7 @@
+bedrock-agentcore
+strands-agents[bidi-all]
+aws_sdk_bedrock_runtime
+mcp
+PyJWT
+boto3
+pyaudio

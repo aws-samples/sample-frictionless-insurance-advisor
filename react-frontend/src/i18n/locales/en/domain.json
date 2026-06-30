@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "Active",
+      "Inactive": "Inactive",
+      "Prospect": "Prospect"
+    },
+    "policyStatus": {
+      "Active": "Active",
+      "Inactive": "Inactive",
+      "Pending": "Pending",
+      "Lapsed": "Lapsed",
+      "Cancelled": "Cancelled"
+    },
+    "maritalStatus": {
+      "Married": "Married",
+      "Single": "Single",
+      "Divorced": "Divorced",
+      "Widowed": "Widowed"
+    },
+    "policyType": {
+      "Auto Insurance": "Auto Insurance",
+      "Home Insurance": "Home Insurance",
+      "Life Insurance": "Life Insurance",
+      "Health Insurance": "Health Insurance",
+      "Disability Insurance": "Disability Insurance",
+      "Travel Insurance": "Travel Insurance",
+      "Critical Illness Insurance": "Critical Illness Insurance"
+    },
+    "premiumFrequency": {
+      "yearly": "yearly",
+      "annually": "annually",
+      "monthly": "monthly",
+      "quarterly": "quarterly",
+      "weekly": "weekly"
+    },
+    "lifeType": {
+      "Term Life": "Term Life",
+      "Whole Life": "Whole Life",
+      "Universal Life": "Universal Life",
+      "Variable Life": "Variable Life"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "Lifetime pay",
+      "10-pay": "10-pay",
+      "20-pay": "20-pay",
+      "paid-up at 65": "Paid-up at 65"
+    },
+    "dividendOption": {
+      "paid in cash": "Paid in cash",
+      "reduce premiums": "Reduce premiums",
+      "left on deposit": "Left on deposit",
+      "paid-up additions": "Paid-up additions"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "Option A (level face)",
+      "Option B (face + cash value)": "Option B (face + cash value)",
+      "Option C (face + return of premium)": "Option C (face + return of premium)"
+    }
+  }
+}

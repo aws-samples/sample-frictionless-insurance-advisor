@@ -1,0 +1,76 @@
+# ─── OS ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+
+# ─── Editors / IDEs ──────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+.kiro/
+
+# ─── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+htmlcov/
+
+# ─── Node / Frontend ─────────────────────────────────────
+node_modules/
+react-frontend/node_modules/
+react-frontend/dist/
+react-frontend/dist-tsbuild/
+react-frontend/.vite/
+react-frontend/tsconfig.tsbuildinfo
+react-frontend/.env.local
+react-frontend/.env.*.local
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+.pnpm-debug.log*
+
+# ─── Environment / secrets ───────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+credentials.json
+secrets.yaml
+secrets.yml
+
+# ─── AWS / CDK ───────────────────────────────────────────
+cdk.out/
+.cdk.staging/
+cdk.context.json
+.aws-sam/
+samconfig.toml
+
+# ─── Build artefacts ─────────────────────────────────────
+*.bkp
+build/
+dist/
+*.log
+
+# ─── Security scan outputs (keep .gitkeep, ignore content)
+security-scans/**/results.txt
+security-scans/**/results.json
+security-scans/**/results/
+
+# ─── Project-specific ────────────────────────────────────
+BusinessRequirements.md
+UnicornGymPlan.md
+.scratch_*
+*.tmp

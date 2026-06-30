@@ -1,0 +1,175 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "Clients",
+      "collapse": "Réduire la barre latérale",
+      "expand": "Développer la barre latérale",
+      "newProspect": "+ Nouveau prospect"
+    },
+    "welcome": {
+      "heading": "Bienvenue",
+      "body": "Sélectionnez un client dans la barre latérale pour consulter son profil, ses contrats et démarrer une conversation.",
+      "totalCustomers": "Total des clients",
+      "activePolicies": "Contrats actifs"
+    },
+    "customer": {
+      "contactSection": "Contact",
+      "accountSection": "Compte",
+      "policiesSection": "Contrats",
+      "thirdPartyPoliciesSection": "Contrats tiers",
+      "recommendationSection": "Analyse de couverture",
+      "fields": {
+        "email": "E-mail",
+        "phone": "Téléphone",
+        "address": "Adresse",
+        "joinDate": "Client depuis",
+        "policiesCount": "Contrats",
+        "occupation": "Profession",
+        "maritalStatus": "État civil"
+      }
+    },
+    "policies": {
+      "emptyProspect": "Aucun contrat pour l'instant — il s'agit d'un prospect.",
+      "id": "ID",
+      "insurer": "Assureur",
+      "coverage": "Couverture",
+      "renews": "Renouvellement",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "Détails",
+        "vehicle": {
+          "title": "Véhicule",
+          "make": "Marque",
+          "model": "Modèle",
+          "year": "Année",
+          "registration": "Immatriculation"
+        },
+        "property": {
+          "title": "Bien",
+          "address": "Adresse",
+          "type": "Type",
+          "yearBuilt": "Année de construction",
+          "size": "Superficie",
+          "squareFeet": "{{value}} pieds carrés"
+        },
+        "health": {
+          "title": "Plan",
+          "tier": "Niveau",
+          "network": "Réseau",
+          "dependents": "Personnes à charge"
+        },
+        "disability": {
+          "title": "Couverture",
+          "benefitPeriod": "Période de prestation",
+          "benefitYears": "{{count}} ans",
+          "waitingPeriod": "Délai de carence",
+          "waitingDays": "{{count}} jours",
+          "occupationClass": "Classe professionnelle"
+        },
+        "life": {
+          "title": "Contrat",
+          "lifeType": "Type d'assurance vie",
+          "beneficiary": "Bénéficiaire",
+          "smoker": "Fumeur",
+          "smokerYes": "Oui",
+          "smokerNo": "Non",
+          "termYears": "Durée",
+          "termYearsValue": "{{count}} ans",
+          "premiumSchedule": "Échéancier des primes",
+          "dividendOption": "Option de participation",
+          "deathBenefitOption": "Option de capital décès",
+          "currentCreditedRate": "Taux crédité actuel",
+          "guaranteedMinimumRate": "Minimum garanti",
+          "cashValueEstimate": "Valeur de rachat (est.)",
+          "subAccountAllocation": "Répartition des comptes"
+        },
+        "subAccounts": {
+          "equity_growth": "Actions — Croissance",
+          "equity_international": "Actions — International",
+          "fixed_income": "Revenu fixe",
+          "money_market": "Marché monétaire",
+          "balanced": "Équilibré",
+          "equity_value": "Actions — Valeur"
+        }
+      }
+    },
+    "chat": {
+      "headingCustomer": "Chat contrats IA",
+      "headingProspect": "Coaching prospect",
+      "selectCustomer": "Sélectionnez un client pour démarrer une conversation.",
+      "emptyPlaceholder": "Posez une question ou choisissez une suggestion ci-dessous.",
+      "messageLabel": "Message",
+      "placeholderCustomer": "Posez une question sur les contrats...",
+      "placeholderProspect": "Posez une question sur ce prospect...",
+      "userBubbleLabel": "Vous",
+      "assistantBubbleLabel": "Assistant",
+      "thinking": "Réflexion en cours...",
+      "quickQuestions": "Questions rapides",
+      "attachDocument": "Joindre un document de police (PDF, image ou texte)",
+      "removeAttachment": "Retirer la pièce jointe",
+      "uploadingFilename": "Envoi de {{filename}}...",
+      "uploadFailed": "Échec de l'envoi",
+      "placeholderWithAttachment": "Ajoutez une note ou envoyez directement pour extraire la police...",
+      "samplePolicies": {
+        "cta": "Besoin d'un fichier test ? Télécharger un exemple",
+        "heading": "Police d'exemple pour {{name}}",
+        "subtext": "Polices tierces fictives pour tester le flux d'envoi.",
+        "notice": "Compagnies fictives. Aucune couverture réelle."
+      }
+    },
+    "prompts": {
+      "customer": {
+        "policies": "Quels contrats ai-je ?",
+        "coverageGap": "Quelle lacune de couverture ai-je et comment y remédier ?",
+        "premiumDelta": "Pourquoi votre prime est-elle plus élevée / plus basse que celle de la concurrence ?",
+        "claimsModel": "Proposez-vous le tiers payant à l'hôpital, ou uniquement le remboursement ?",
+        "incomeVsLumpSum": "Proposez-vous des options de remplacement de revenu ou de versement forfaitaire ?",
+        "mentalHealthMaternity": "Couvrez-vous la santé mentale, la maternité ou les médecines alternatives ?",
+        "outpatientDentalOptical": "Couvrez-vous les soins ambulatoires, dentaires et optiques ?",
+        "dayOneCover": "Quelle est votre couverture dès le premier jour par rapport au délai de carence des autres ?",
+        "preExistingWaiting": "Quel est votre délai de carence pour les affections préexistantes par rapport à la concurrence ?"
+      },
+      "prospect": {
+        "firstProducts": "Quelle assurance ce prospect devrait-il considérer en premier ?",
+        "discovery": "Aidez-moi à démarrer une conversation de découverte",
+        "bestProducts": "Quels sont les meilleurs produits compte tenu de son profil ?",
+        "company": "Parlez-moi de Unicorn Insurance",
+        "whyUnicorn": "Pourquoi devrait-il choisir Unicorn plutôt que BigRival ?",
+        "qualifyQuestions": "Quelles questions dois-je poser pour qualifier ce prospect ?"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "Voix"
+      },
+      "comparator": {
+        "heading": "Comparateur",
+        "intro": "Comparez les produits d'assurance entre Unicorn Insurance et ses concurrents. Sélectionnez un type de produit, puis choisissez entre 2 et 4 produits à comparer.",
+        "typeLabel": "Type de produit",
+        "typePlaceholder": "Sélectionnez un type de produit",
+        "productsLabel": "Produits à comparer",
+        "productsHelp": "Sélectionnez entre {{min}} et {{max}} produits.",
+        "selectType": "Choisissez un type de produit pour voir les produits disponibles.",
+        "noProductsForType": "Aucun produit disponible pour ce type.",
+        "tierBadge": "Niveau {{tier}}",
+        "selectedCount": "{{count}} sélectionné(s)",
+        "compareButton": "Comparer",
+        "clearButton": "Effacer la sélection",
+        "comparing": "Génération de la comparaison...",
+        "comparingHint": "Cela prend 10 à 20 secondes pendant que l'assistant lit la documentation de chaque produit.",
+        "errorTitle": "Échec de la comparaison",
+        "errorRetry": "Réessayer",
+        "resultSummary": "Aperçu",
+        "carrier": "Assureur",
+        "disclaimer": "Comparaison générée par IA",
+        "minProducts": "Sélectionnez au moins {{min}} produits.",
+        "maxProducts": "Vous pouvez comparer au maximum {{max}} produits."
+      }
+    },
+    "recommendation": {
+      "loading": "Analyse de la couverture et recherche de lacunes...",
+      "noGaps": "Aucune lacune de couverture significative — le client est bien couvert pour son profil.",
+      "error": "Impossible de générer une recommandation: {{message}}"
+    }
+  }
+}
