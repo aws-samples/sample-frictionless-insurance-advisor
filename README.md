@@ -23,7 +23,7 @@ Advisors sign in to a React app and either chat with the agent or talk to it in 
 
 ## Architecture
 
-![Insurance Advisor — AWS architecture](architecture.png)
+![Frictionless Insurance Advisor — AWS architecture](architecture.png)
 
 > Rendered from the `architecture.drawio` source.
 
@@ -156,7 +156,7 @@ Password must be 12+ chars with upper, lower, digit, and symbol. Sign-up goes th
 
 ### Sales pitch deck
 
-In the running app, click the slideshow icon top-right of the nav. The Insurance Advisor pitch deck opens at `/presentation/index.html` — speaker notes embedded (press `S` for the speaker view). Source files live in `react-frontend/public/presentation/`.
+In the running app, click the slideshow icon top-right of the nav. The Frictionless Insurance Advisor pitch deck opens at `/presentation/index.html` — speaker notes embedded (press `S` for the speaker view). Source files live in `react-frontend/public/presentation/`.
 
 ## Authentication and identity
 
