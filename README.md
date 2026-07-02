@@ -1,6 +1,6 @@
-# Insurance Advisor
+# Frictionless Insurance Advisor
 
-**Insurance Advisor** is an AI co-pilot for insurance advisors at the fictional Unicorn Insurance, built end-to-end on Amazon Bedrock AgentCore.
+**Frictionless Insurance Advisor** is an AI co-pilot for insurance advisors at the fictional Unicorn Insurance, built end-to-end on Amazon Bedrock AgentCore.
 
 > An AI co-pilot that gives every advisor instant, coverage-aware insight into each customer's portfolio, products, and competitors — so they walk into every conversation already prepared.
 
