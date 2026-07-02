@@ -1,4 +1,4 @@
-# Insurance Advisor — React Frontend
+# Frictionless Insurance Advisor — React Frontend
 
 Single-page React app that talks to the AgentCore Runtime (text + voice) and API Gateway backend. Runs locally for development; deployed to S3 + CloudFront with Origin Access Control by `insadv-05-frontend` for production.
 
