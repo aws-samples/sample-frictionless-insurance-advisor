@@ -11,5 +11,5 @@ dependencies = [
     "cdk-nag>=2.37.55",
     "constructs>=10.4.4",
     "requests>=2.33.0",
-    "urllib3>=2.6.2",
+    "urllib3>=2.7.0",
 ]
