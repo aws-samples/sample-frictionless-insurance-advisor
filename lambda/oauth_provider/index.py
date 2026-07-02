@@ -63,7 +63,6 @@ def lambda_handler(event, context):
 
             provider_arn = response['credentialProviderArn']
             secret_arn = response['clientSecretArn']['secretArn']
-            logger.info(f"Created provider ARN: {provider_arn}, secret ARN: {secret_arn}")
 
             send_response(event, context, 'SUCCESS', {
                 'ProviderArn': provider_arn,
