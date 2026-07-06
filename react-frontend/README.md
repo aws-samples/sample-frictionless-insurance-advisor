@@ -39,7 +39,7 @@ The script will:
 
 ## Auth flow
 
-The Cognito user pool is provisioned with `self_sign_up_enabled=True`, but the AWS account's org policy blocks Cognito self-service signup. The React app posts to a backend `/signup` endpoint (`lambda/signup/`) which creates and confirms the user via Cognito admin APIs — guarded by a hard-coded allowlist (currently `john.doe@example.com`, `jane.doe@example.com`) and WAF rate-limited at 100 req / 5min / source IP.
+The Cognito user pool is provisioned with `self_sign_up_enabled=True`. The React app posts to a backend `/signup` endpoint (`lambda/signup/`) which creates and confirms the user via Cognito admin APIs — guarded by a hard-coded allowlist (currently `john.doe@example.com`, `jane.doe@example.com`) and WAF rate-limited at 100 req / 5min / source IP.
 
 Sign in with any allowlisted email + 12+ char password (upper/lower/digit/symbol). The browser only ever holds a Cognito JWT; no AWS IAM credentials are present in the SPA.
 

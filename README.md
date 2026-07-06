@@ -108,7 +108,7 @@ Security was a first-class design constraint. A number of hardening items are de
 
 Highlights of what's enforced today:
 
-- **Advisor identity is JWT-only.** The runtime resolves the calling advisor exclusively from the verified Cognito JWT (forwarded via `requestHeaderConfiguration`); the request payload `advisorId` field has been removed and the runtime returns 401-equivalent if extraction fails. Voice WebSocket closes with 1008 if no validated identity is available.
+- **Advisor identity is JWT-only.** The runtime resolves the calling advisor exclusively from the verified Cognito JWT (forwarded via `requestHeaderConfiguration`). Voice WebSocket closes with 1008 if no validated identity is available.
 - **Cross-tenant isolation** at the Lambda layer: `advisor-id-index` GSI is a key condition (not a filter) on every read, plus an explicit `advisor_id == calling_user` check on every mutation.
 - **Sign-up is closed.** Cognito self-signup is org-blocked; the public `/signup` Lambda enforces a hard-coded allowlist (john.doe + jane.doe). WAF rate-limits the route at 100 req / 5 min / source IP.
 - **Cost-bomb defense.** AWS Budget on Bedrock + Lambda spend with 50/80/100% SNS notifications. API Gateway throttling on `/comparator/compare` and `/recommend` (5 rps steady, 10 burst).
@@ -152,11 +152,11 @@ Use one of the demo advisors to see seeded customers:
 - `john.doe@example.com` → Sarah, Emily, Robert, Lisa, Daniel
 - `jane.doe@example.com` → Michael, Amanda, Jessica
 
-Password must be 12+ chars with upper, lower, digit, and symbol. Sign-up goes through a backend `/signup` Lambda that calls Cognito `admin_create_user` + `admin_set_user_password` — needed because the AWS account's org policy blocks Cognito self-service signup. The Lambda enforces a hard-coded allowlist of the two demo emails.
+Password must be 12+ chars with upper, lower, digit, and symbol. Sign-up goes through a backend `/signup` Lambda that calls Cognito `admin_create_user` + `admin_set_user_password`. The Lambda enforces a hard-coded allowlist of the two demo emails.
 
 ### Sales pitch deck
 
-In the running app, click the slideshow icon top-right of the nav. The Frictionless Insurance Advisor pitch deck opens at `/presentation/index.html` — speaker notes embedded (press `S` for the speaker view). Source files live in `react-frontend/public/presentation/`.
+In the running app, click the slideshow icon top-right of the nav. The Frictionless Insurance Advisor pitch deck opens at `/presentation/index.html`. Source files live in `react-frontend/public/presentation/`.
 
 ## Authentication and identity
 
