@@ -144,3 +144,86 @@
   margin-right: 0.3em;
   accent-color: rgb(var(--brand-2));
 }
+
+/* ---------------------------------------------------------------------------
+ * Document variant — `<MarkdownMessage variant="doc" />`
+ *
+ * The base styles above are deliberately compressed for narrow chat bubbles
+ * (h1 is only 1.15em, paragraphs 0.4em apart). Applied to a full standalone
+ * document that reads as a flat wall of text with no visible hierarchy.
+ * This variant restores a normal document scale and rhythm for the Data
+ * explorer's reading pane, without touching chat rendering.
+ * ------------------------------------------------------------------------- */
+
+.markdown-message.markdown-doc {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  /* `anywhere` is right for unbreakable tokens in a narrow bubble, but it
+     breaks ordinary words mid-line in a prose column. */
+  overflow-wrap: break-word;
+}
+
+.markdown-message.markdown-doc p {
+  margin: 0.85em 0;
+}
+
+.markdown-message.markdown-doc h1,
+.markdown-message.markdown-doc h2,
+.markdown-message.markdown-doc h3,
+.markdown-message.markdown-doc h4,
+.markdown-message.markdown-doc h5,
+.markdown-message.markdown-doc h6 {
+  margin: 1.6em 0 0.6em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.markdown-message.markdown-doc h1 {
+  font-size: 1.75em;
+  margin-top: 0;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.markdown-message.markdown-doc h2 {
+  font-size: 1.35em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.markdown-message.markdown-doc h3 { font-size: 1.15em; }
+.markdown-message.markdown-doc h4 { font-size: 1.02em; }
+.markdown-message.markdown-doc h5,
+.markdown-message.markdown-doc h6 {
+  font-size: 0.95em;
+  color: rgb(var(--foreground-muted));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.markdown-message.markdown-doc ul,
+.markdown-message.markdown-doc ol {
+  margin: 0.85em 0;
+  padding-left: 1.6em;
+}
+
+.markdown-message.markdown-doc li {
+  margin: 0.35em 0;
+}
+
+.markdown-message.markdown-doc blockquote {
+  margin: 1.1em 0;
+  padding: 0.7em 1.1em;
+}
+
+.markdown-message.markdown-doc table {
+  margin: 1.1em 0;
+}
+
+.markdown-message.markdown-doc pre {
+  margin: 1.1em 0;
+}
+
+.markdown-message.markdown-doc hr {
+  margin: 1.8em 0;
+}

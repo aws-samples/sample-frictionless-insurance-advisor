@@ -1,0 +1,38 @@
+{
+  "common": {
+    "app": {
+      "title": "Penasihat Asuransi"
+    },
+    "nav": {
+      "assistant": "Asisten Teks",
+      "voice": "Asisten Teks+Suara",
+      "comparator": "Pembanding",
+      "data": "Data",
+      "signOut": "Keluar",
+      "language": "Bahasa",
+      "pitchDeck": "Buka pitch deck"
+    },
+    "actions": {
+      "send": "Kirim",
+      "clear": "Bersihkan",
+      "refresh": "Muat ulang",
+      "cancel": "Batal"
+    },
+    "states": {
+      "loading": "Memuat...",
+      "comingSoon": "Segera hadir."
+    },
+    "errors": {
+      "loadFailed": "Gagal memuat data: {{message}}"
+    },
+    "errorBoundary": {
+      "title": "Terjadi kesalahan",
+      "body": "Aplikasi mengalami kesalahan tak terduga dan tidak dapat menampilkan tampilan ini. Data Anda aman — memuat ulang biasanya menyelesaikan masalah ini.",
+      "reload": "Muat ulang"
+    },
+    "brand": {
+      "nameAccent": "Unicorn",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

@@ -4,6 +4,8 @@ import type {
   CatalogProduct,
   ComparisonResponse,
   Customer,
+  DataFileContent,
+  DataFileListResponse,
   Policy,
   RecommendationResponse,
 } from '../types';
@@ -100,6 +102,31 @@ export async function compareProducts(
 }
 
 /**
+ * List every browsable reference document, grouped by folder and returned in
+ * the backend's display order. Cheap (S3 listings only, no document bodies),
+ * so the Data page loads this once on mount.
+ */
+export async function listDataFiles(): Promise<DataFileListResponse> {
+  return getJson<DataFileListResponse>('data/files');
+}
+
+/**
+ * Fetch one reference document's content. Markdown front-matter is split off
+ * server-side into `metadata`; JSON is returned pretty-printed.
+ *
+ * `folder` and `key` are validated against an allowlist server-side, so an
+ * unknown or malformed key comes back as a 404 rather than reading an
+ * arbitrary object.
+ */
+export async function loadDataFile(
+  folder: string,
+  key: string
+): Promise<DataFileContent> {
+  const qs = new URLSearchParams({ folder, key }).toString();
+  return getJson<DataFileContent>(`data/file?${qs}`);
+}
+
+/**
  * Generate an LLM-backed coverage-gap analysis + Unicorn product
  * recommendation for the selected customer. Pulls the customer's full
  * context server-side (profile + policies + catalog + promotions). Returns
@@ -121,7 +148,7 @@ export async function loadRecommendation(
 /**
  * Public sign-up. Calls the unauthenticated POST /signup Lambda which uses
  * Cognito admin APIs to create + confirm the user, working around the
- * org-policy that forces AllowAdminCreateUserOnly back to True on the pool.
+ * user pool's AllowAdminCreateUserOnly setting.
  *
  * Throws an Error with the server-supplied message on failure (e.g. user
  * already exists, weak password). On success, the caller can sign in with

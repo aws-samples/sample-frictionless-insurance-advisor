@@ -103,7 +103,7 @@ NagSuppressions.add_resource_suppressions_by_path(
     "/insadv-02-tools/InsuranceAdvisorApi/Default/signup/POST/Resource",
     [
         {"id": "AwsSolutions-APIG4",
-         "reason": "Public sign-up endpoint is unauthenticated by design. The Cognito user pool is configured with AllowAdminCreateUserOnly via an org policy, so we cannot use Cognito self-service signup. Backend Lambda creates the user via admin APIs after validating the request. WAFv2 protects the endpoint."},
+         "reason": "Public sign-up endpoint is unauthenticated by design. The Cognito user pool is configured with AllowAdminCreateUserOnly, so self-service signup is not available. Backend Lambda creates the user via admin APIs after validating the request. WAFv2 protects the endpoint."},
         {"id": "AwsSolutions-COG4",
          "reason": "Public sign-up endpoint is unauthenticated by design - the user does not yet exist in the Cognito pool when calling /signup."},
     ],
@@ -118,7 +118,7 @@ NagSuppressions.add_stack_suppressions(agentcore_stack, [
     {"id": "AwsSolutions-IAM5", "reason": "Log group wildcard needed to cover log streams within the specific log group prefix",
      "applies_to": [
          "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/gateways/insurance-advisor-gateway*",
-         "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/runtimes/insurance_advisor_runtime*",
+         "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/runtimes/insurance_advisor_agent*",
      ]},
     {"id": "AwsSolutions-IAM5", "reason": "Workload identity wildcard required to access any workload identity in the default directory",
      "applies_to": ["Resource::arn:aws:bedrock-agentcore:<AWS::Region>:<AWS::AccountId>:workload-identity-directory/default/workload-identity/*"]},
@@ -131,7 +131,7 @@ NagSuppressions.add_stack_suppressions(agentcore_stack, [
      "applies_to": ["Resource::arn:aws:secretsmanager:<AWS::Region>:<AWS::AccountId>:secret:bedrock-agentcore-identity!default/oauth2/*"]},
     {"id": "AwsSolutions-IAM5", "reason": "Gateway sub-resource wildcard required to access gateway targets",
      "applies_to": ["Resource::arn:aws:bedrock-agentcore:<AWS::Region>:<AWS::AccountId>:gateway/<InsuranceAdvisorGateway066E037D.GatewayIdentifier>/*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "CDK alpha module adds :* suffix to Lambda ARNs for invoke grants",
+    {"id": "AwsSolutions-IAM5", "reason": "grant_invoke covers both the function ARN and its :* qualified form, so the gateway can invoke published versions/aliases of each tool Lambda",
      "applies_to": ["Resource::<PortfolioLambda015C4EC4.Arn>:*", "Resource::<PromotionsLambda491A7234.Arn>:*"]},
     {"id": "AwsSolutions-IAM5", "reason": "Log group ARN :* suffix required by CloudWatch Logs for log stream access",
      "applies_to": ["Resource::<ApiGatewayOAuthProviderOAuth2ProviderLogGroupDBF77067.Arn>:*"]},
@@ -158,7 +158,7 @@ NagSuppressions.add_stack_suppressions(voice_stack, [
      "applies_to": ["Action::bedrock-agentcore:*"]},
     {"id": "AwsSolutions-IAM5", "reason": "Log group wildcard needed for log streams in the voice runtime log group",
      "applies_to": [
-         "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/runtimes/insurance_voice_runtime*",
+         "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/runtimes/insurance_voice_agent*",
      ]},
     {"id": "AwsSolutions-IAM5", "reason": "Service-linked role ARN uses account wildcard as required by AWS",
      "applies_to": ["Resource::arn:aws:iam::*:role/aws-service-role/runtime-identity.bedrock-agentcore.amazonaws.com/AWSServiceRoleForBedrockAgentCoreRuntimeIdentity"]},

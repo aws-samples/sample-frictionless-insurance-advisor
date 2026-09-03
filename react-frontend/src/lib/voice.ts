@@ -12,14 +12,28 @@
  */
 import { fetchAuthSession } from 'aws-amplify/auth';
 
+import type { FormFillEvent, FormSchema } from '../types';
+
 export type TranscriptRole = 'user' | 'assistant';
 
 export interface ConnectOptions {
   customerId: string | null;
   customerName: string | null;
+  /**
+   * Form field paths already populated from the customer's record. Sent to the
+   * agent so it knows not to ask the advisor for details already on screen.
+   */
+  formPrefill?: Record<string, string>;
   onAudioChunk: (audioBase64: string, format: string, sampleRate: number) => void;
   onTranscript: (text: string, isFinal: boolean, role: TranscriptRole) => void;
   onInterruption?: () => void;
+  /**
+   * The agent opened an application form. Emitted by the voice runtime's
+   * local `open_application_form` tool once it has a schema in hand.
+   */
+  onFormOpen?: (productType: string, schema: FormSchema) => void;
+  /** The agent established one field value. */
+  onFormFill?: (event: FormFillEvent) => void;
   onConnected?: () => void;
   onDisconnected?: (closeCode?: number) => void;
   onError?: (msg: string) => void;
@@ -27,7 +41,11 @@ export interface ConnectOptions {
 
 export interface VoiceConnection {
   send: (message: unknown) => void;
-  setCustomer: (customerId: string | null, customerName: string | null) => void;
+  setCustomer: (
+    customerId: string | null,
+    customerName: string | null,
+    formPrefill?: Record<string, string>
+  ) => void;
   close: () => void;
   isOpen: () => boolean;
 }
@@ -77,8 +95,17 @@ export async function connectVoice(options: ConnectOptions): Promise<VoiceConnec
       }
     };
 
-    const setCustomer = (customerId: string | null, customerName: string | null) => {
-      send({ type: 'voice_set_customer', customerId, customerName });
+    const setCustomer = (
+      customerId: string | null,
+      customerName: string | null,
+      formPrefill?: Record<string, string>
+    ) => {
+      send({
+        type: 'voice_set_customer',
+        customerId,
+        customerName,
+        prefill: formPrefill ?? {},
+      });
     };
 
     ws.onopen = () => {
@@ -87,6 +114,7 @@ export async function connectVoice(options: ConnectOptions): Promise<VoiceConnec
         type: 'voice_init',
         customerId: options.customerId,
         customerName: options.customerName,
+        prefill: options.formPrefill ?? {},
       });
       options.onConnected?.();
       if (!settled) {
@@ -127,6 +155,15 @@ export async function connectVoice(options: ConnectOptions): Promise<VoiceConnec
           options.onTranscript(data.text, true, 'assistant');
         } else if (data.type === 'bidi_interruption') {
           options.onInterruption?.();
+        } else if (data.type === 'form_open' && data.schema) {
+          options.onFormOpen?.(String(data.productType ?? ''), data.schema as FormSchema);
+        } else if (data.type === 'form_fill' && typeof data.path === 'string') {
+          options.onFormFill?.({
+            path: data.path,
+            value: String(data.value ?? ''),
+            confidence: typeof data.confidence === 'number' ? data.confidence : 0.6,
+            source: typeof data.source === 'string' ? data.source : undefined,
+          });
         }
       } catch (err) {
         console.error('[voice-ws] parse error', err);

@@ -1,0 +1,22 @@
+# Build / vendor / generated artifacts
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+.aws-sam/
+cdk.out/
+.cdk.staging/
+react-frontend/node_modules/
+react-frontend/dist/
+react-frontend/dist-tsbuild/
+react-frontend/.vite/
+
+# Locale JSON files — translation strings, not source code
+react-frontend/src/i18n/locales/
+
+# Static asset documents (slide deck reveal.js, etc.)
+react-frontend/public/
+
+# Security scan outputs themselves
+security-scans/

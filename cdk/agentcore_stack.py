@@ -4,7 +4,6 @@ from aws_cdk import (
     aws_iam as iam,
     aws_bedrock as bedrock,
     aws_bedrockagentcore as agentcore,
-    aws_bedrock_agentcore_alpha as agentcore_alpha,
     aws_ecr_assets as ecr_assets,
     aws_ssm as ssm,
     RemovalPolicy,
@@ -13,11 +12,6 @@ from aws_cdk import (
 from constructs import Construct
 from .auth_stack import AuthStack
 from .tools_stack import ToolsStack
-from .agentcore_runtime_custom import (
-    AgentCoreRuntimeCustom,
-    AgentCoreRuntimeCustomProps,
-    create_authorizer_configuration
-)
 from .agentcore_oauth_provider import AgentCoreOAuth2Provider, AgentCoreOAuth2ProviderProps
 
 
@@ -48,6 +42,7 @@ class AgentCoreStack(Stack):
                                 tools_stack.competitive_lambda.function_arn,
                                 tools_stack.competitors_lambda.function_arn,
                                 tools_stack.extract_policy_lambda.function_arn,
+                                tools_stack.formschema_lambda.function_arn,
                             ]
                         )
                     ]
@@ -115,21 +110,67 @@ class AgentCoreStack(Stack):
             }
         )
 
-        # Create AgentCore Gateway using alpha module with enhanced logging and debugging
+        # AgentCore Gateway — stable L1 (AWS::BedrockAgentCore::Gateway).
+        #
+        # Previously the `Gateway` L2 from aws_bedrock_agentcore_alpha. The
+        # stable module ships L1 only, so this is a deliberate L2 -> L1
+        # downgrade: we hand-write the CloudFormation the L2 used to generate
+        # in exchange for dropping a pre-release dependency that had to stay
+        # version-locked to an exact aws-cdk-lib release and is slated for
+        # removal in CDK v3.
+        #
+        # The construct tree is shaped to match what the L2 produced: a
+        # wrapper scope named `InsuranceAdvisorGateway` whose resource child
+        # is `Resource`, and one child scope per target. CDK derives logical
+        # IDs from the construct path, not the construct class, so this keeps
+        # every logical ID byte-identical (InsuranceAdvisorGateway066E037D and
+        # friends) and the migration synthesises to an empty diff.
+        #
+        # That preservation is load-bearing, not cosmetic: the auto-generated
+        # cross-stack exports consumed by insadv-04-voice embed the gateway's
+        # logical ID, and a replacement would mint a new gateway URL that
+        # cascades into both runtimes' environment variables.
+        gateway_scope = Construct(self, "InsuranceAdvisorGateway")
+
         # Gateway Pool is used for machine-to-machine authentication (Runtime → Gateway)
-        self.agentcore_gateway = agentcore_alpha.Gateway(
-            self, "InsuranceAdvisorGateway",
-            gateway_name="insurance-advisor-gateway",
+        self.agentcore_gateway = agentcore.CfnGateway(
+            gateway_scope, "Resource",
+            name="insurance-advisor-gateway",
             description="AgentCore Gateway for Insurance Advisor services with enhanced logging",
-            # Use Cognito JWT authorization with Gateway Pool for machine-to-machine auth
-            authorizer_configuration=agentcore_alpha.GatewayAuthorizer.using_cognito(
-                user_pool=auth_stack.gateway_pool,
-                allowed_clients=[auth_stack.runtime_client]
+            role_arn=self.gateway_role.role_arn,
+            protocol_type="MCP",
+            # Cognito JWT authorization against the Gateway Pool (M2M).
+            authorizer_type="CUSTOM_JWT",
+            authorizer_configuration=agentcore.CfnGateway.AuthorizerConfigurationProperty(
+                custom_jwt_authorizer=agentcore.CfnGateway.CustomJWTAuthorizerConfigurationProperty(
+                    discovery_url=(
+                        f"https://cognito-idp.{self.region}.amazonaws.com/"
+                        f"{auth_stack.gateway_pool.user_pool_id}"
+                        "/.well-known/openid-configuration"
+                    ),
+                    allowed_clients=[auth_stack.runtime_client.user_pool_client_id],
+                )
             ),
-            role=self.gateway_role,
-            # Enable debug-level exception messages for detailed troubleshooting
-            exception_level=agentcore_alpha.GatewayExceptionLevel.DEBUG
+            # The alpha L2 injected these MCP defaults whenever no protocol
+            # configuration was supplied, and the deployed gateway is running
+            # with them. Pinned explicitly so this migration is a no-op rather
+            # than silently handing the service a different configuration.
+            protocol_configuration=agentcore.CfnGateway.GatewayProtocolConfigurationProperty(
+                mcp=agentcore.CfnGateway.MCPGatewayConfigurationProperty(
+                    instructions="Default gateway to connect to external MCP tools",
+                    search_type="SEMANTIC",
+                    supported_versions=["2025-03-26"],
+                )
+            ),
+            # Debug-level exception messages for detailed troubleshooting.
+            exception_level="DEBUG",
         )
+
+        # Stack-level handles for the gateway's identity. Downstream code (and
+        # the voice stack) reads these rather than reaching into the construct,
+        # so the L1 attribute names stay an implementation detail here.
+        self.gateway_url = self.agentcore_gateway.attr_gateway_url
+        self.gateway_id = self.agentcore_gateway.attr_gateway_identifier
 
         # Create OpenAPI specification for the Insurance Advisor API
         openapi_spec = {
@@ -550,141 +591,199 @@ class AgentCoreStack(Stack):
             )
         )
 
-        # Create Gateway Targets using alpha module
+        # --- Gateway Targets — stable L1 (AWS::BedrockAgentCore::GatewayTarget)
+        #
+        # The alpha L2 exposed `add_open_api_target` / `add_lambda_target`
+        # helpers that also wired up the gateway role's IAM grants. On L1 the
+        # resources and the grants are both explicit; the grants are added in
+        # the same order the L2 added them so the role's inline policy
+        # serialises identically (statement order is significant in a
+        # CloudFormation policy document).
+        def _target_scope(target_id: str) -> Construct:
+            """Child scope per target, matching the alpha L2's construct tree."""
+            return Construct(gateway_scope, target_id)
+
         # API Gateway Target with AgentCore OAuth credentials
-        self.api_gateway_target = self.agentcore_gateway.add_open_api_target(
-            "ApiGatewayTarget",
-            gateway_target_name="InsuranceAdvisorApiService",
+        self.api_gateway_target = agentcore.CfnGatewayTarget(
+            _target_scope("ApiGatewayTarget"), "Resource",
+            name="InsuranceAdvisorApiService",
             description="Insurance Advisor API Gateway service providing profile and policy management",
-            api_schema=agentcore_alpha.InlineApiSchema(json.dumps(openapi_spec)),
-            credential_provider_configurations=[
-                agentcore_alpha.GatewayCredentialProvider.from_oauth_identity_arn(
-                    provider_arn=self.oauth_provider.provider_arn,
-                    scopes=["insurance-advisor-api/api.access"],
-                    secret_arn=self.oauth_provider.secret_arn
+            gateway_identifier=self.gateway_id,
+            target_configuration=agentcore.CfnGatewayTarget.TargetConfigurationProperty(
+                mcp=agentcore.CfnGatewayTarget.McpTargetConfigurationProperty(
+                    open_api_schema=agentcore.CfnGatewayTarget.ApiSchemaConfigurationProperty(
+                        inline_payload=json.dumps(openapi_spec)
+                    )
                 )
-            ]
+            ),
+            credential_provider_configurations=[
+                agentcore.CfnGatewayTarget.CredentialProviderConfigurationProperty(
+                    credential_provider_type="OAUTH",
+                    credential_provider=agentcore.CfnGatewayTarget.CredentialProviderProperty(
+                        oauth_credential_provider=agentcore.CfnGatewayTarget.OAuthCredentialProviderProperty(
+                            provider_arn=self.oauth_provider.provider_arn,
+                            scopes=["insurance-advisor-api/api.access"],
+                        )
+                    ),
+                )
+            ],
         )
+
+        # The gateway assumes its role to fetch the OAuth token (and the
+        # client secret behind it) before calling API Gateway. The alpha L2
+        # granted this implicitly when given an OAuth credential provider.
+        # Note the secret ARN is only needed here — it is deliberately not
+        # part of the target's credential provider configuration.
+        self.gateway_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock-agentcore:GetResourceOauth2Token",
+                    "bedrock-agentcore:GetWorkloadAccessToken",
+                    "secretsmanager:DescribeSecret",
+                    "secretsmanager:GetSecretValue",
+                ],
+                resources=[
+                    self.oauth_provider.provider_arn,
+                    self.oauth_provider.secret_arn,
+                ],
+            )
+        )
+
+        # The OpenAPI target cannot be created until the role can actually
+        # fetch that token, so it waits on the role's inline policy. The alpha
+        # L2 emitted this dependency on the OpenAPI target only — the Lambda
+        # targets have none — and that asymmetry is preserved here.
+        self.api_gateway_target.node.add_dependency(
+            self.gateway_role.node.find_child("DefaultPolicy")
+        )
+
+        def _lambda_target(
+            target_id: str,
+            *,
+            name: str,
+            description: str,
+            lambda_function,
+            tools: list,
+        ) -> agentcore.CfnGatewayTarget:
+            """A Lambda-backed MCP target invoked with the gateway's own role.
+
+            Also grants the gateway role permission to invoke that Lambda,
+            which is what the alpha L2's add_lambda_target did implicitly.
+            CDK's grant_invoke covers both the function ARN and its `:*`
+            qualified form; all seven grants merge into a single sorted
+            statement on the role's inline policy.
+            """
+            target = agentcore.CfnGatewayTarget(
+                _target_scope(target_id), "Resource",
+                name=name,
+                description=description,
+                gateway_identifier=self.gateway_id,
+                target_configuration=agentcore.CfnGatewayTarget.TargetConfigurationProperty(
+                    mcp=agentcore.CfnGatewayTarget.McpTargetConfigurationProperty(
+                        lambda_=agentcore.CfnGatewayTarget.McpLambdaTargetConfigurationProperty(
+                            lambda_arn=lambda_function.function_arn,
+                            tool_schema=agentcore.CfnGatewayTarget.ToolSchemaProperty(
+                                inline_payload=tools
+                            ),
+                        )
+                    )
+                ),
+                credential_provider_configurations=[
+                    agentcore.CfnGatewayTarget.CredentialProviderConfigurationProperty(
+                        credential_provider_type="GATEWAY_IAM_ROLE"
+                    )
+                ],
+            )
+            lambda_function.grant_invoke(self.gateway_role)
+            return target
+
+        def _no_arg_tool(name: str, description: str) -> agentcore.CfnGatewayTarget.ToolDefinitionProperty:
+            """Tool that takes no arguments — the Lambda returns its whole dataset."""
+            return agentcore.CfnGatewayTarget.ToolDefinitionProperty(
+                name=name,
+                description=description,
+                input_schema=agentcore.CfnGatewayTarget.SchemaDefinitionProperty(
+                    type="object",
+                    properties={},
+                ),
+            )
+
+        def _string_field(description: str) -> agentcore.CfnGatewayTarget.SchemaDefinitionProperty:
+            """A single string property inside a tool's input schema."""
+            return agentcore.CfnGatewayTarget.SchemaDefinitionProperty(
+                type="string",
+                description=description,
+            )
 
         # Portfolio Target with IAM credentials
-        self.portfolio_target = self.agentcore_gateway.add_lambda_target(
-            "PortfolioTarget", 
-            gateway_target_name="PortfolioService",
+        self.portfolio_target = _lambda_target(
+            "PortfolioTarget",
+            name="PortfolioService",
             description="Customer portfolio information service - returns all portfolio data from S3",
             lambda_function=tools_stack.portfolio_lambda,
-            tool_schema=agentcore_alpha.InlineToolSchema([
-                agentcore_alpha.ToolDefinition(
-                    name="get_portfolio",
-                    description="Get all customer portfolio information and insurance products data",
-                    input_schema=agentcore_alpha.SchemaDefinition(
-                        type=agentcore_alpha.SchemaDefinitionType.OBJECT,
-                        properties={}
-                    )
-                )
-            ]),
-            credential_provider_configurations=[
-                agentcore_alpha.GatewayCredentialProvider.from_iam_role()
-            ]
+            tools=[_no_arg_tool(
+                "get_portfolio",
+                "Get all customer portfolio information and insurance products data",
+            )],
         )
 
-        # Promotions Target with IAM credentials  
-        self.promotions_target = self.agentcore_gateway.add_lambda_target(
+        # Promotions Target with IAM credentials
+        self.promotions_target = _lambda_target(
             "PromotionsTarget",
-            gateway_target_name="PromotionsService", 
+            name="PromotionsService",
             description="Insurance promotions and offers service - returns all promotion data from S3",
             lambda_function=tools_stack.promotions_lambda,
-            tool_schema=agentcore_alpha.InlineToolSchema([
-                agentcore_alpha.ToolDefinition(
-                    name="get_promotions",
-                    description="Get all available insurance promotions and special offers",
-                    input_schema=agentcore_alpha.SchemaDefinition(
-                        type=agentcore_alpha.SchemaDefinitionType.OBJECT,
-                        properties={}
-                    )
-                )
-            ]),
-            credential_provider_configurations=[
-                agentcore_alpha.GatewayCredentialProvider.from_iam_role()
-            ]
+            tools=[_no_arg_tool(
+                "get_promotions",
+                "Get all available insurance promotions and special offers",
+            )],
         )
 
         # Company Info Target with IAM credentials
-        self.company_target = self.agentcore_gateway.add_lambda_target(
+        self.company_target = _lambda_target(
             "CompanyTarget",
-            gateway_target_name="CompanyInfoService",
+            name="CompanyInfoService",
             description="Information about Unicorn Insurance — history, ratings, claims process, customer service",
             lambda_function=tools_stack.company_lambda,
-            tool_schema=agentcore_alpha.InlineToolSchema([
-                agentcore_alpha.ToolDefinition(
-                    name="get_company_info",
-                    description=(
-                        "Retrieve factual information about Unicorn Insurance: company overview, " +
-                        "regulatory credentials and financial ratings, customer service channels, " +
-                        "claims process, and digital platform capabilities. Use when the customer " +
-                        "or prospect asks about the company itself rather than specific products."
-                    ),
-                    input_schema=agentcore_alpha.SchemaDefinition(
-                        type=agentcore_alpha.SchemaDefinitionType.OBJECT,
-                        properties={}
-                    )
-                )
-            ]),
-            credential_provider_configurations=[
-                agentcore_alpha.GatewayCredentialProvider.from_iam_role()
-            ]
+            tools=[_no_arg_tool(
+                "get_company_info",
+                "Retrieve factual information about Unicorn Insurance: company overview, "
+                "regulatory credentials and financial ratings, customer service channels, "
+                "claims process, and digital platform capabilities. Use when the customer "
+                "or prospect asks about the company itself rather than specific products.",
+            )],
         )
 
         # Competitive Info Target with IAM credentials
-        self.competitive_target = self.agentcore_gateway.add_lambda_target(
+        self.competitive_target = _lambda_target(
             "CompetitiveTarget",
-            gateway_target_name="CompetitiveInfoService",
+            name="CompetitiveInfoService",
             description="Unicorn Insurance's competitive positioning and advantages",
             lambda_function=tools_stack.competitive_lambda,
-            tool_schema=agentcore_alpha.InlineToolSchema([
-                agentcore_alpha.ToolDefinition(
-                    name="get_competitive_info",
-                    description=(
-                        "Retrieve talking points about why Unicorn Insurance is a better choice than " +
-                        "competitors — value propositions, advantages by product line, service standards, " +
-                        "and multi-policy bundle benefits. Use when the advisor needs to position " +
-                        "Unicorn Insurance against alternatives during a sales conversation."
-                    ),
-                    input_schema=agentcore_alpha.SchemaDefinition(
-                        type=agentcore_alpha.SchemaDefinitionType.OBJECT,
-                        properties={}
-                    )
-                )
-            ]),
-            credential_provider_configurations=[
-                agentcore_alpha.GatewayCredentialProvider.from_iam_role()
-            ]
+            tools=[_no_arg_tool(
+                "get_competitive_info",
+                "Retrieve talking points about why Unicorn Insurance is a better choice than "
+                "competitors — value propositions, advantages by product line, service standards, "
+                "and multi-policy bundle benefits. Use when the advisor needs to position "
+                "Unicorn Insurance against alternatives during a sales conversation.",
+            )],
         )
 
         # Competitor Products Target with IAM credentials
-        self.competitors_target = self.agentcore_gateway.add_lambda_target(
+        self.competitors_target = _lambda_target(
             "CompetitorsTarget",
-            gateway_target_name="CompetitorProductsService",
+            name="CompetitorProductsService",
             description="Reference information about competitor insurance products for comparison",
             lambda_function=tools_stack.competitors_lambda,
-            tool_schema=agentcore_alpha.InlineToolSchema([
-                agentcore_alpha.ToolDefinition(
-                    name="get_competitor_products",
-                    description=(
-                        "Retrieve reference information about competitor insurance products " +
-                        "(BigRival, StarInsure, QuickSafe) including their coverage, strengths, " +
-                        "weaknesses, and pricing tier. Use when the customer mentions a specific " +
-                        "competitor by name or asks how Unicorn products compare to alternatives. " +
-                        "Always pair with get_competitive_info to frame the comparison favorably."
-                    ),
-                    input_schema=agentcore_alpha.SchemaDefinition(
-                        type=agentcore_alpha.SchemaDefinitionType.OBJECT,
-                        properties={}
-                    )
-                )
-            ]),
-            credential_provider_configurations=[
-                agentcore_alpha.GatewayCredentialProvider.from_iam_role()
-            ]
+            tools=[_no_arg_tool(
+                "get_competitor_products",
+                "Retrieve reference information about competitor insurance products "
+                "(BigRival, StarInsure, QuickSafe) including their coverage, strengths, "
+                "weaknesses, and pricing tier. Use when the customer mentions a specific "
+                "competitor by name or asks how Unicorn products compare to alternatives. "
+                "Always pair with get_competitive_info to frame the comparison favorably.",
+            )],
         )
 
         # Document Extraction Target — invoked when the advisor uploads an
@@ -693,50 +792,80 @@ class AgentCoreStack(Stack):
         # extraction. Agent then confirms with the user and calls
         # create_third_party_policy (and create_profile if no customer is
         # selected yet).
-        self.extract_policy_target = self.agentcore_gateway.add_lambda_target(
+        self.extract_policy_target = _lambda_target(
             "ExtractPolicyTarget",
-            gateway_target_name="DocumentExtractionService",
+            name="DocumentExtractionService",
             description="Extract structured insurance-policy fields from an uploaded document",
             lambda_function=tools_stack.extract_policy_lambda,
-            tool_schema=agentcore_alpha.InlineToolSchema([
-                agentcore_alpha.ToolDefinition(
-                    name="extract_policy_from_document",
-                    description=(
-                        "Extract structured insurance-policy fields (carrier, " +
-                        "type, coverage amount, premium, dates, beneficiary) " +
-                        "from a document the advisor uploaded via the SPA. " +
-                        "Use this tool when the user references an attached " +
-                        "document by document_id (e.g. 'create a third-party " +
-                        "policy from the PDF I just attached'). After extraction, " +
-                        "show the extracted fields to the user, ask for " +
-                        "confirmation, and ONLY THEN call " +
-                        "create_third_party_policy. If the user is in '+ New " +
-                        "Prospect' mode (no customer_id selected), call " +
-                        "create_profile FIRST using suggested_profile_fields, " +
-                        "capture the new customer_id, then create the policy."
-                    ),
-                    input_schema=agentcore_alpha.SchemaDefinition(
-                        type=agentcore_alpha.SchemaDefinitionType.OBJECT,
-                        properties={
-                            "document_id": agentcore_alpha.SchemaDefinition(
-                                type=agentcore_alpha.SchemaDefinitionType.STRING,
-                                description="The document_id returned by /documents/initiate when the file was uploaded.",
-                            ),
-                            "customer_id": agentcore_alpha.SchemaDefinition(
-                                type=agentcore_alpha.SchemaDefinitionType.STRING,
-                                description="Customer ID the document is being attached to. Pass null/omit for '+ New Prospect' mode.",
-                            ),
-                            "advisor_id": agentcore_alpha.SchemaDefinition(
-                                type=agentcore_alpha.SchemaDefinitionType.STRING,
-                                description="Advisor email (the calling user). Required for S3 namespace scoping.",
-                            ),
-                        },
-                    ),
-                )
-            ]),
-            credential_provider_configurations=[
-                agentcore_alpha.GatewayCredentialProvider.from_iam_role()
-            ]
+            tools=[agentcore.CfnGatewayTarget.ToolDefinitionProperty(
+                name="extract_policy_from_document",
+                description=(
+                    "Extract structured insurance-policy fields (carrier, "
+                    "type, coverage amount, premium, dates, beneficiary) "
+                    "from a document the advisor uploaded via the SPA. "
+                    "Use this tool when the user references an attached "
+                    "document by document_id (e.g. 'create a third-party "
+                    "policy from the PDF I just attached'). After extraction, "
+                    "show the extracted fields to the user, ask for "
+                    "confirmation, and ONLY THEN call "
+                    "create_third_party_policy. If the user is in '+ New "
+                    "Prospect' mode (no customer_id selected), call "
+                    "create_profile FIRST using suggested_profile_fields, "
+                    "capture the new customer_id, then create the policy."
+                ),
+                input_schema=agentcore.CfnGatewayTarget.SchemaDefinitionProperty(
+                    type="object",
+                    properties={
+                        "document_id": _string_field(
+                            "The document_id returned by /documents/initiate when the file was uploaded."
+                        ),
+                        "customer_id": _string_field(
+                            "Customer ID the document is being attached to. Pass null/omit for '+ New Prospect' mode."
+                        ),
+                        "advisor_id": _string_field(
+                            "Advisor email (the calling user). Required for S3 namespace scoping."
+                        ),
+                    },
+                ),
+            )],
+        )
+
+        # Form Schema Target with IAM credentials.
+        #
+        # Deliberately on the shared gateway rather than local to the voice
+        # runtime: it is a read-only data lookup that both agents can use. The
+        # voice agent fetches a schema when an application starts so it knows
+        # which fields to fill; the text agent uses it to answer "what does
+        # this application ask for?" — useful even though the Assistant page
+        # has no form to render.
+        self.form_schema_target = _lambda_target(
+            "FormSchemaTarget",
+            name="FormSchemaService",
+            description="Application-form schemas for Unicorn Insurance products",
+            lambda_function=tools_stack.formschema_lambda,
+            tools=[agentcore.CfnGatewayTarget.ToolDefinitionProperty(
+                name="get_form_schema",
+                description=(
+                    "Retrieve the application form for an insurance product: "
+                    "its sections, every field, each field's type, and which "
+                    "fields are mandatory. Use this when starting an "
+                    "application for a product, or when the advisor asks what "
+                    "information an application requires or what is still "
+                    "outstanding before it can be submitted. If the product "
+                    "type is not published the response lists the ones that "
+                    "are — pick from those rather than guessing."
+                ),
+                input_schema=agentcore.CfnGatewayTarget.SchemaDefinitionProperty(
+                    type="object",
+                    properties={
+                        "product_type": _string_field(
+                            "Product identifier, snake_case. Currently "
+                            "published: 'term_life', 'whole_life', "
+                            "'universal_life', 'variable_life'."
+                        ),
+                    },
+                ),
+            )],
         )
 
         # Amazon Bedrock Guardrail — defined in tools_stack so the Lambdas
@@ -750,6 +879,12 @@ class AgentCoreStack(Stack):
         # deadlock that broke every guardrail-policy change.
         self.guardrail_version_param = tools_stack.guardrail_version_param
         self.guardrail_version_param_name = tools_stack.guardrail_version_param_name
+
+        # Re-exported for the voice stack. The voice runtime reads form
+        # schemas directly from S3 rather than routing them back through the
+        # model as tool arguments — see open_application_form in
+        # voice-agent/app.py.
+        self.forms_bucket = tools_stack.forms_bucket
 
         # Docker Image Asset - CDK will build and push automatically
         self.agent_image = ecr_assets.DockerImageAsset(
@@ -842,7 +977,7 @@ class AgentCoreStack(Stack):
                                 "logs:DescribeLogStreams"
                             ],
                             resources=[
-                                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/bedrock-agentcore/runtimes/insurance_advisor_runtime*"
+                                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/bedrock-agentcore/runtimes/insurance_advisor_agent*"
                             ]
                         ),
                         iam.PolicyStatement(
@@ -959,42 +1094,69 @@ class AgentCoreStack(Stack):
             )
         )
 
-        # AgentCore Runtime using Custom Resource with Cognito JWT authentication for runtime access
-        # Runtime will use OAuth client credentials to authenticate to Gateway
-        self.agentcore_runtime = AgentCoreRuntimeCustom(
-            self, "InsuranceAdvisorRuntime",
-            AgentCoreRuntimeCustomProps(
-                execution_role=self.runtime_role,
-                runtime_name="insurance_advisor_runtime",
-                container_uri=self.agent_image.image_uri,
-                server_protocol="HTTP",
-                description="AgentCore Runtime for Insurance Advisor Agent with gateway integration and OAuth JWT authentication",
-                # Enable Authorization header forwarding for JWT tokens
-                allowed_headers=["Authorization"],
-                # Cognito JWT authentication configuration for runtime access (React SPA users)
-                authorizer_configuration=create_authorizer_configuration(
-                    discovery_url=f"https://cognito-idp.{self.region}.amazonaws.com/{auth_stack.user_pool.user_pool_id}/.well-known/openid-configuration",
-                    allowed_clients=[auth_stack.app_client.user_pool_client_id]
-                ),
-                environment_variables={
-                    "AWS_REGION": self.region,
-                    "AGENTCORE_GATEWAY_URL": self.agentcore_gateway.gateway_url,
-                    # AgentCore Identity provider name for runtime-to-gateway M2M auth
-                    # The SDK's @requires_access_token decorator resolves this name via the Token Vault
-                    "GATEWAY_CREDENTIAL_PROVIDER_NAME": "insurance-advisor-runtime-gateway-auth",
-                    "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
-                    # Memory ID for AgentCore Memory integration
-                    "BEDROCK_AGENTCORE_MEMORY_ID": self.ltm_memory.attr_memory_id,
-                    # Bedrock Guardrail. The runtime resolves the
-                    # current version at cold start by reading the SSM
-                    # parameter named in BEDROCK_GUARDRAIL_VERSION_PARAM_NAME
-                    # so guardrail policy updates don't require a runtime
-                    # redeploy.
-                    "BEDROCK_GUARDRAIL_ID": self.guardrail.attr_guardrail_id,
-                    "BEDROCK_GUARDRAIL_VERSION_PARAM_NAME": self.guardrail_version_param_name,
-                },
+        # AgentCore Runtime — stable L1 (AWS::BedrockAgentCore::Runtime).
+        #
+        # Previously an AwsCustomResource wrapper (cdk/agentcore_runtime_custom.py)
+        # because requestHeaderConfiguration was not exposed by CloudFormation.
+        # It is now a first-class property, so the runtime is plain CloudFormation:
+        # no provider Lambda, no npm-installed SDK whose version determined whether
+        # the Authorization allowlist silently vanished, and therefore no
+        # post-deploy assertion script.
+        #
+        # Note on MMDSv2: AgentCore requires requireMMDSV2 on every runtime as of
+        # 2026-06-30, but metadataConfiguration is Update-only in the API and is not
+        # a CloudFormation property. The service defaults it to true for
+        # newly-created runtimes (verified against a throwaway runtime), so there is
+        # nothing to set here.
+        self.agentcore_runtime = agentcore.CfnRuntime(
+            self, "InsuranceAdvisorRuntimeL1",
+            # Renamed from `insurance_advisor_runtime`. AgentRuntimeName is unique
+            # per account/region and CloudFormation creates the replacement before
+            # deleting the custom resource, so reusing the old name would fail with
+            # ConflictException. The ARN changes on replacement regardless.
+            agent_runtime_name="insurance_advisor_agent",
+            description="AgentCore Runtime for Insurance Advisor Agent with gateway integration and OAuth JWT authentication",
+            role_arn=self.runtime_role.role_arn,
+            agent_runtime_artifact=agentcore.CfnRuntime.AgentRuntimeArtifactProperty(
+                container_configuration=agentcore.CfnRuntime.ContainerConfigurationProperty(
+                    container_uri=self.agent_image.image_uri
+                )
+            ),
+            network_configuration=agentcore.CfnRuntime.NetworkConfigurationProperty(
                 network_mode="PUBLIC"
-            )
+            ),
+            # Plain string in CloudFormation (MCP | HTTP | A2A | AGUI), not a struct.
+            protocol_configuration="HTTP",
+            # Forward the caller's JWT into the container so the agent derives the
+            # advisor identity from a verified token instead of a client-supplied
+            # advisor_id (which would let one advisor impersonate another).
+            request_header_configuration=agentcore.CfnRuntime.RequestHeaderConfigurationProperty(
+                request_header_allowlist=["Authorization"]
+            ),
+            # Cognito JWT authentication for runtime access (React SPA users)
+            authorizer_configuration=agentcore.CfnRuntime.AuthorizerConfigurationProperty(
+                custom_jwt_authorizer=agentcore.CfnRuntime.CustomJWTAuthorizerConfigurationProperty(
+                    discovery_url=f"https://cognito-idp.{self.region}.amazonaws.com/{auth_stack.user_pool.user_pool_id}/.well-known/openid-configuration",
+                    allowed_clients=[auth_stack.app_client.user_pool_client_id],
+                )
+            ),
+            environment_variables={
+                "AWS_REGION": self.region,
+                "AGENTCORE_GATEWAY_URL": self.gateway_url,
+                # AgentCore Identity provider name for runtime-to-gateway M2M auth
+                # The SDK's @requires_access_token decorator resolves this name via the Token Vault
+                "GATEWAY_CREDENTIAL_PROVIDER_NAME": "insurance-advisor-runtime-gateway-auth",
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                # Memory ID for AgentCore Memory integration
+                "BEDROCK_AGENTCORE_MEMORY_ID": self.ltm_memory.attr_memory_id,
+                # Bedrock Guardrail. The runtime resolves the
+                # current version at cold start by reading the SSM
+                # parameter named in BEDROCK_GUARDRAIL_VERSION_PARAM_NAME
+                # so guardrail policy updates don't require a runtime
+                # redeploy.
+                "BEDROCK_GUARDRAIL_ID": self.guardrail.attr_guardrail_id,
+                "BEDROCK_GUARDRAIL_VERSION_PARAM_NAME": self.guardrail_version_param_name,
+            },
         )
 
         # Grant runtime role explicit permission to invoke the gateway
@@ -1007,8 +1169,8 @@ class AgentCoreStack(Stack):
                     "bedrock-agentcore:ListGatewayTargets"
                 ],
                 resources=[
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{self.agentcore_gateway.gateway_id}",
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{self.agentcore_gateway.gateway_id}/*"
+                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{self.gateway_id}",
+                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{self.gateway_id}/*"
                 ]
             )
         )
@@ -1079,28 +1241,28 @@ class AgentCoreStack(Stack):
         ssm.StringParameter(
             self, "AgentCoreRuntimeArnParam",
             parameter_name="/insurance-advisor/agentcore/runtime-arn",
-            string_value=self.agentcore_runtime.agent_runtime_arn,
+            string_value=self.agentcore_runtime.attr_agent_runtime_arn,
             description="AgentCore Runtime ARN for Insurance Advisor agent"
         )
 
         ssm.StringParameter(
             self, "AgentCoreRuntimeIdParam",
             parameter_name="/insurance-advisor/agentcore/runtime-id",
-            string_value=self.agentcore_runtime.agent_runtime_id,
+            string_value=self.agentcore_runtime.attr_agent_runtime_id,
             description="AgentCore Runtime ID"
         )
 
         ssm.StringParameter(
             self, "AgentCoreGatewayUrlParam",
             parameter_name="/insurance-advisor/agentcore/gateway-url",
-            string_value=self.agentcore_gateway.gateway_url,
+            string_value=self.gateway_url,
             description="AgentCore Gateway MCP URL"
         )
 
         ssm.StringParameter(
             self, "AgentCoreGatewayIdParam",
             parameter_name="/insurance-advisor/agentcore/gateway-id",
-            string_value=self.agentcore_gateway.gateway_id,
+            string_value=self.gateway_id,
             description="AgentCore Gateway ID"
         )
 
@@ -1130,13 +1292,13 @@ class AgentCoreStack(Stack):
         # Outputs (keep for backwards compatibility)
         CfnOutput(
             self, "AgentCoreGatewayId",
-            value=self.agentcore_gateway.gateway_id,
+            value=self.gateway_id,
             description="AgentCore Gateway ID"
         )
 
         CfnOutput(
             self, "AgentCoreGatewayUrl",
-            value=self.agentcore_gateway.gateway_url,
+            value=self.gateway_url,
             description="AgentCore Gateway MCP URL"
         )
 
@@ -1154,13 +1316,13 @@ class AgentCoreStack(Stack):
 
         CfnOutput(
             self, "AgentCoreRuntimeArn",
-            value=self.agentcore_runtime.agent_runtime_arn,
+            value=self.agentcore_runtime.attr_agent_runtime_arn,
             description="AgentCore Runtime ARN for Insurance Advisor agent"
         )
 
         CfnOutput(
             self, "AgentCoreRuntimeId",
-            value=self.agentcore_runtime.agent_runtime_id,
+            value=self.agentcore_runtime.attr_agent_runtime_id,
             description="AgentCore Runtime ID"
         )
     

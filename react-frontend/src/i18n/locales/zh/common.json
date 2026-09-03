@@ -1,0 +1,38 @@
+{
+  "common": {
+    "app": {
+      "title": "保险顾问"
+    },
+    "nav": {
+      "assistant": "文本助手",
+      "voice": "文本+语音助手",
+      "comparator": "产品对比",
+      "data": "数据",
+      "signOut": "退出登录",
+      "language": "语言",
+      "pitchDeck": "打开演示文稿"
+    },
+    "actions": {
+      "send": "发送",
+      "clear": "清除",
+      "refresh": "刷新",
+      "cancel": "取消"
+    },
+    "states": {
+      "loading": "加载中...",
+      "comingSoon": "敬请期待。"
+    },
+    "errors": {
+      "loadFailed": "加载数据失败：{{message}}"
+    },
+    "errorBoundary": {
+      "title": "出错了",
+      "body": "应用遇到意外错误，无法渲染此视图。您的数据是安全的——重新加载通常即可解决。",
+      "reload": "重新加载"
+    },
+    "brand": {
+      "nameAccent": "Unicorn",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

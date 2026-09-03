@@ -3,7 +3,7 @@ Policy Document Extraction Lambda
 
 MCP tool target invoked by the AgentCore Gateway. Reads an uploaded
 insurance-policy document (PDF / Markdown / plain text / JPEG / PNG / WEBP)
-from S3, calls Bedrock Converse with Claude Sonnet 4.5 + a tool-forced JSON
+from S3, calls Bedrock Converse with Claude Sonnet 5 + a tool-forced JSON
 schema + the shared guardrail, and returns structured fields the agent can
 then feed into create_third_party_policy and (optionally) create_profile.
 
@@ -65,9 +65,9 @@ import boto3
 from botocore.config import Config
 
 
-# Bedrock Sonnet 4.5 cross-region inference profile.
+# Bedrock Sonnet 5 cross-region inference profile.
 BEDROCK_MODEL_ID = os.environ.get(
-    "BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    "BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-5"
 )
 
 GUARDRAIL_ID = os.environ.get("BEDROCK_GUARDRAIL_ID")

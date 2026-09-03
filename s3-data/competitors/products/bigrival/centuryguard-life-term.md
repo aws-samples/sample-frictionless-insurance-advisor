@@ -1,3 +1,7 @@
+---
+last_updated: 2025-10-15
+---
+
 # CenturyGuard Life Term (BigRival)
 ### Type: Term Life Insurance
 

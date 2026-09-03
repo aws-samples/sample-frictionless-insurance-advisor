@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "Aktif",
+      "Inactive": "Tidak aktif",
+      "Prospect": "Prospek"
+    },
+    "policyStatus": {
+      "Active": "Aktif",
+      "Inactive": "Tidak aktif",
+      "Pending": "Menunggu",
+      "Lapsed": "Kedaluwarsa",
+      "Cancelled": "Dibatalkan"
+    },
+    "maritalStatus": {
+      "Married": "Menikah",
+      "Single": "Lajang",
+      "Divorced": "Bercerai",
+      "Widowed": "Janda/Duda"
+    },
+    "policyType": {
+      "Auto Insurance": "Asuransi Kendaraan",
+      "Home Insurance": "Asuransi Rumah",
+      "Life Insurance": "Asuransi Jiwa",
+      "Health Insurance": "Asuransi Kesehatan",
+      "Disability Insurance": "Asuransi Kecacatan",
+      "Travel Insurance": "Asuransi Perjalanan",
+      "Critical Illness Insurance": "Asuransi Penyakit Kritis"
+    },
+    "premiumFrequency": {
+      "yearly": "per tahun",
+      "annually": "tahunan",
+      "monthly": "bulanan",
+      "quarterly": "triwulanan",
+      "weekly": "mingguan"
+    },
+    "lifeType": {
+      "Term Life": "Jiwa Berjangka",
+      "Whole Life": "Jiwa Seumur Hidup",
+      "Universal Life": "Universal Life",
+      "Variable Life": "Variable Life"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "Pembayaran seumur hidup",
+      "10-pay": "Pembayaran 10 tahun",
+      "20-pay": "Pembayaran 20 tahun",
+      "paid-up at 65": "Lunas pada usia 65"
+    },
+    "dividendOption": {
+      "paid in cash": "Dibayar tunai",
+      "reduce premiums": "Mengurangi premi",
+      "left on deposit": "Disimpan sebagai deposito",
+      "paid-up additions": "Tambahan lunas"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "Opsi A (nilai pertanggungan tetap)",
+      "Option B (face + cash value)": "Opsi B (nilai pertanggungan + nilai tunai)",
+      "Option C (face + return of premium)": "Opsi C (nilai pertanggungan + pengembalian premi)"
+    }
+  }
+}

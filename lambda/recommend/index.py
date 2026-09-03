@@ -2,20 +2,20 @@
 Insurance Recommendation Lambda
 
 Pulls a single customer's full context (profile + Unicorn policies + third-party
-policies + catalog + promotions) and asks Bedrock Claude Sonnet 4.5 (via the
+policies + catalog + promotions) and asks Bedrock Claude Sonnet 5 (via the
 Converse API) to identify coverage gaps and recommend Unicorn products that
 close them. Returns a structured JSON envelope so the React frontend can
 render the result without prose-parsing.
 
 Route:
-  POST /recommend  with body { "customer_id": "...", "locale": "en|ja|ko|es" }
+  POST /recommend  with body { "customer_id": "...", "locale": <see SUPPORTED_LOCALES> }
 
 Design notes mirroring the comparator lambda:
 - Direct Bedrock Converse call, no AgentCore runtime — this is a one-shot
   structured generation; no tools, no streaming, no memory.
 - `toolConfig` with `toolChoice` = a specific tool forces a JSON payload that
   matches the schema. Output goes straight to React.
-- Cross-region inference profile: us.anthropic.claude-sonnet-4-5-...
+- Cross-region inference profile: us.anthropic.claude-sonnet-5
 - We reuse the existing DynamoDB tables and Promotion S3 bucket directly
   rather than calling the sibling lambdas, so we keep the call to a single
   hop and minimize cold-start cost. (HTTP-out from a Lambda costs ~50-100ms
@@ -33,10 +33,10 @@ from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 
 
-SUPPORTED_LOCALES = {"en", "ja", "ko", "es", "fr"}
+SUPPORTED_LOCALES = {"en", "ja", "ko", "es", "fr", "zh", "ms", "th", "id"}
 
 BEDROCK_MODEL_ID = os.environ.get(
-    "BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    "BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-5"
 )
 
 # Bedrock Guardrail wired by the agentcore stack at deploy time. The
@@ -300,7 +300,17 @@ def _fetch_promotions_text() -> str:
 
 
 # --- Bedrock Converse builder ---------------------------------------------
-_LANG_NAMES = {"en": "English", "ja": "Japanese", "ko": "Korean", "es": "Spanish", "fr": "French"}
+_LANG_NAMES = {
+    "en": "English",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "es": "Spanish",
+    "fr": "French",
+    "zh": "Simplified Chinese",
+    "ms": "Malay (Bahasa Melayu)",
+    "th": "Thai",
+    "id": "Indonesian (Bahasa Indonesia)",
+}
 
 
 def _summarize_policies(policies: list[dict]) -> str:

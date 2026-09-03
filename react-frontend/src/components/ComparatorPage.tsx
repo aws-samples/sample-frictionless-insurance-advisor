@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { Check, Scale } from 'lucide-react';
+import { AlertTriangle, Check, Scale } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -9,11 +9,16 @@ import {
   loadProductTypes,
 } from '../lib/api';
 import { cn } from '../lib/cn';
+import { fmtDate } from '../lib/format';
 import { Alert, Badge, Button, Card, Select, Spinner } from '../ui';
 import type { CatalogProduct, ComparisonResponse } from '../types';
 
 const MIN_PRODUCTS = 2;
 const MAX_PRODUCTS = 4;
+// BR-COMP-003: keep in sync with STALE_AFTER_DAYS in lambda/comparator. Only
+// used here for the staleness label copy; the stale/fresh decision is made
+// server-side.
+const STALE_AFTER_DAYS = 90;
 
 export function ComparatorPage() {
   const { t, i18n } = useTranslation();
@@ -403,12 +408,31 @@ function toCellText(value: unknown): string {
 }
 
 function ComparisonView({ data }: { data: ComparisonResponse }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language;
+  const anyStale = data.products.some((p) => p.stale);
 
   return (
-    <Card feature className="overflow-hidden">
+    <Card feature className="relative overflow-hidden">
+      {/* BR-COMP-002: diagonal watermark that only renders when the page is
+          printed / exported to PDF, so a shared hard copy is clearly marked
+          as internal. Hidden on screen (the header badge covers that). */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-50 hidden items-center justify-center print:flex"
+      >
+        <span className="rotate-45 select-none text-6xl font-black uppercase tracking-widest text-black/10">
+          {t('assistant.pages.comparator.internalUseOnly')}
+        </span>
+      </div>
+
       <div className="border-b border-border bg-gradient-to-r from-brand-2/10 via-brand-1/5 to-transparent p-5 sm:p-6">
-        <h3 className="text-lg font-semibold">{toCellText(data.title)}</h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-lg font-semibold">{toCellText(data.title)}</h3>
+          <Badge variant="warning" className="shrink-0 uppercase tracking-wide">
+            {t('assistant.pages.comparator.internalUseOnly')}
+          </Badge>
+        </div>
         {data.summary ? (
           <div className="mt-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">
@@ -422,6 +446,12 @@ function ComparisonView({ data }: { data: ComparisonResponse }) {
       </div>
 
       <div className="space-y-6 p-5 sm:p-6">
+        {anyStale ? (
+          <Alert variant="warning">
+            {t('assistant.pages.comparator.staleNotice')}
+          </Alert>
+        ) : null}
+
         {(Array.isArray(data.sections) ? data.sections : []).map((section) => (
           <section key={section.title}>
             <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide">
@@ -442,6 +472,25 @@ function ComparisonView({ data }: { data: ComparisonResponse }) {
                           {toCellText(product.carrier)}
                           {product.pricing_tier ? ` · ${toCellText(product.pricing_tier)}` : ''}
                         </div>
+                        {product.last_updated ? (
+                          <div
+                            className={cn(
+                              'mt-1 inline-flex items-center gap-1 text-[11px] font-normal',
+                              product.stale ? 'text-warning' : 'text-foreground-muted'
+                            )}
+                          >
+                            {product.stale ? (
+                              <AlertTriangle className="h-3 w-3" />
+                            ) : null}
+                            {product.stale
+                              ? t('assistant.pages.comparator.productStale', {
+                                  days: STALE_AFTER_DAYS,
+                                })
+                              : t('assistant.pages.comparator.productUpdated', {
+                                  date: fmtDate(product.last_updated, locale),
+                                })}
+                          </div>
+                        ) : null}
                       </th>
                     ))}
                   </tr>

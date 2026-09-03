@@ -1,0 +1,111 @@
+{
+  "form_id": "term_life",
+  "product_type": "term_life",
+  "product_name": "Rainbow Life",
+  "title": "Term Life Application",
+  "sections": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "fields": [
+        { "path": "applicant.full_name", "label": "Full name", "type": "text", "required": true },
+        { "path": "applicant.date_of_birth", "label": "Date of birth", "type": "date", "required": true },
+        {
+          "path": "applicant.gender",
+          "label": "Gender",
+          "type": "select",
+          "required": true,
+          "options": [
+            { "value": "male", "label": "Male" },
+            { "value": "female", "label": "Female" }
+          ]
+        },
+        { "path": "applicant.occupation", "label": "Occupation", "type": "text", "required": true },
+        { "path": "applicant.annual_income", "label": "Annual income", "type": "currency", "required": true },
+        { "path": "applicant.email", "label": "Email", "type": "text", "required": false },
+        { "path": "applicant.phone", "label": "Phone", "type": "text", "required": false },
+        { "path": "applicant.address", "label": "Address", "type": "text", "required": false }
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Coverage",
+      "fields": [
+        {
+          "path": "coverage.sum_assured",
+          "label": "Death benefit",
+          "type": "currency",
+          "required": true,
+          "hint": "250k / 500k / 1M / 1.5M / up to 2M"
+        },
+        {
+          "path": "coverage.term_years",
+          "label": "Term length (years)",
+          "type": "select",
+          "required": true,
+          "options": [
+            { "value": "10", "label": "10 years" },
+            { "value": "15", "label": "15 years" },
+            { "value": "20", "label": "20 years" },
+            { "value": "25", "label": "25 years" },
+            { "value": "30", "label": "30 years" }
+          ]
+        },
+        {
+          "path": "coverage.premium_frequency",
+          "label": "Premium frequency",
+          "type": "select",
+          "required": true,
+          "options": [
+            { "value": "monthly", "label": "Monthly" },
+            { "value": "quarterly", "label": "Quarterly" },
+            { "value": "semi_annual", "label": "Semi-annual" },
+            { "value": "annual", "label": "Annual" }
+          ]
+        },
+        {
+          "path": "coverage.premium_structure",
+          "label": "Premium structure",
+          "type": "select",
+          "required": false,
+          "options": [
+            { "value": "level", "label": "Level premiums" },
+            { "value": "return_of_premium", "label": "Return of premium" }
+          ]
+        },
+        {
+          "path": "coverage.riders",
+          "label": "Optional riders",
+          "type": "text",
+          "required": false,
+          "hint": "e.g. accelerated death benefit, waiver of premium"
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "title": "Health",
+      "fields": [
+        { "path": "health.smoker", "label": "Smoker", "type": "boolean", "required": true },
+        { "path": "health.height_cm", "label": "Height (cm)", "type": "number", "required": false },
+        { "path": "health.weight_kg", "label": "Weight (kg)", "type": "number", "required": false },
+        {
+          "path": "health.existing_conditions",
+          "label": "Existing conditions",
+          "type": "text",
+          "required": false,
+          "hint": "Comma-separated, or 'none'"
+        }
+      ]
+    },
+    {
+      "id": "beneficiary",
+      "title": "Beneficiary",
+      "fields": [
+        { "path": "beneficiary.name", "label": "Full name", "type": "text", "required": true },
+        { "path": "beneficiary.relationship", "label": "Relationship", "type": "text", "required": true },
+        { "path": "beneficiary.percentage", "label": "Allocation (%)", "type": "number", "required": true }
+      ]
+    }
+  ]
+}

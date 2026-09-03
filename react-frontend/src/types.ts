@@ -17,6 +17,10 @@ export interface Customer {
   smoking?: boolean;
   medical_conditions?: string;
   join_date: string;
+  // When the advisor last confirmed this profile is current (ISO date).
+  // Drives the BR-GAP-006 "verify current info" staleness badge. Distinct
+  // from join_date (enrollment). May be absent on legacy records.
+  last_reviewed?: string;
   status: string; // "Active" | "Inactive" — used for the badge UNLESS the customer has no Unicorn-issued policies (every policy has third_party=true), in which case the UI labels them "Prospect".
   advisor_id: string;
   // Attached client-side after fetching policies:
@@ -116,7 +120,61 @@ export interface ChatMessage {
   error?: string;
 }
 
-export type Page = 'assistant' | 'voice' | 'comparator';
+export type Page = 'assistant' | 'voice' | 'comparator' | 'data';
+
+// ---------------------------------------------------------------------------
+// Data explorer — read-only browser over the reference documents that ground
+// the assistant's answers. Served by GET /data/files and GET /data/file,
+// which read the six knowledge buckets (see lambda/data/index.py).
+// ---------------------------------------------------------------------------
+
+/** Folder aliases the backend will serve. Mirrors FOLDER_ORDER in the Lambda. */
+export type DataFolder =
+  | 'portfolio'
+  | 'company'
+  | 'competitive'
+  | 'competitors'
+  | 'promotion'
+  | 'forms';
+
+export type DataContentType = 'markdown' | 'json' | 'text';
+
+/** One browsable document, as returned by the listing endpoint. */
+export interface DataFile {
+  folder: DataFolder;
+  /** S3 key within the folder's bucket, e.g. "products/rainbow-life.md". */
+  key: string;
+  /** Filename only, no directories. */
+  name: string;
+  /** Directory portion of the key ('' for root-level files). */
+  path: string;
+  content_type: DataContentType;
+  size_bytes: number;
+  last_modified?: string;
+}
+
+/** A folder and the documents it contains. */
+export interface DataFolderGroup {
+  folder: DataFolder;
+  files: DataFile[];
+}
+
+export interface DataFileListResponse {
+  folders: DataFolderGroup[];
+  total: number;
+}
+
+/** A single document's content, with front-matter split out as metadata. */
+export interface DataFileContent {
+  folder: DataFolder;
+  key: string;
+  name: string;
+  content_type: DataContentType;
+  content: string;
+  /** Parsed front-matter (e.g. `last_updated`). Empty when the doc has none. */
+  metadata: Record<string, string>;
+  size_bytes: number;
+}
 
 export type VoiceMessageRole = 'user' | 'assistant';
 
@@ -185,6 +243,11 @@ export interface ComparisonProduct {
   name: string;
   carrier: string;
   pricing_tier?: string;
+  // BR-COMP-003: source-document freshness, populated server-side from the
+  // product doc's `last_updated` front-matter. Absent when the source has no
+  // date. `stale` is true when the source is older than the 90-day window.
+  last_updated?: string;
+  stale?: boolean;
 }
 
 export interface ComparisonRow {
@@ -203,4 +266,76 @@ export interface ComparisonResponse {
   products: ComparisonProduct[];
   sections: ComparisonSection[];
   disclaimer: string;
+}
+
+// ---------------------------------------------------------------------------
+// Application form auto-fill (voice-driven)
+//
+// The schema is data, not code: it describes which fields exist, how to render
+// them, and which are required. It lives in S3 (s3-data/forms/<product>.json)
+// and is served by the `get_form_schema` gateway tool. The voice agent fetches
+// it when an application starts and relays it to the browser, so the frontend
+// holds no schema of its own and new products need no frontend change.
+// ---------------------------------------------------------------------------
+
+export type FormFieldType = 'text' | 'date' | 'number' | 'currency' | 'select' | 'boolean';
+
+export interface FormFieldOption {
+  value: string;
+  label: string;
+}
+
+export interface FormFieldDef {
+  /** Dot path, e.g. "applicant.full_name". Also the key used by fill events. */
+  path: string;
+  label: string;
+  type: FormFieldType;
+  required: boolean;
+  hint?: string;
+  options?: FormFieldOption[];
+}
+
+export interface FormSectionDef {
+  id: string;
+  title: string;
+  fields: FormFieldDef[];
+}
+
+export interface FormSchema {
+  form_id: string;
+  product_type: string;
+  product_name: string;
+  title: string;
+  sections: FormSectionDef[];
+}
+
+/**
+ * Confidence tiers:
+ * - high   (>= 0.85) taken as-is, green
+ * - review (< 0.85)  filled but flagged for the advisor to confirm, amber
+ *
+ * Everything extracted gets written into the form — a weak guess the advisor
+ * can see and correct beats a suggestion they have to go hunting for.
+ */
+export type FieldConfidence = 'high' | 'review';
+
+/** Where a field's current value came from. Drives the indicator styling. */
+export type FieldOrigin = 'profile' | 'voice' | 'manual';
+
+export interface FormFieldState {
+  value: string;
+  /** Raw model confidence, retained so the UI can show the exact number. */
+  confidence: number;
+  tier: FieldConfidence;
+  /** The utterance the value was extracted from — shown on hover. */
+  source?: string;
+  origin: FieldOrigin;
+}
+
+/** One extraction result. Shape mirrors the planned `fill_form_field` tool. */
+export interface FormFillEvent {
+  path: string;
+  value: string;
+  confidence: number;
+  source?: string;
 }

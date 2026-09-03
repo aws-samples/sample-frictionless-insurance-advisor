@@ -1,3 +1,7 @@
+---
+last_updated: 2026-06-30
+---
+
 # StarBasic Life (StarInsure)
 ### Type: Simplified Term Life Insurance
 

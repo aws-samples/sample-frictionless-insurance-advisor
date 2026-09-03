@@ -96,6 +96,24 @@ class ToolsStack(Stack):
             retain_on_delete=False
         )
 
+        # Application-form schemas, one JSON object per product type. These are
+        # structured (not prose) because the frontend renders them directly.
+        self.forms_bucket = s3.Bucket(
+            self, "FormsBucket",
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            server_access_logs_bucket=self.access_log_bucket,
+            server_access_logs_prefix="forms-logs/",
+            enforce_ssl=True,
+        )
+
+        self.forms_deployment = s3deploy.BucketDeployment(
+            self, "FormsDataDeployment",
+            sources=[s3deploy.Source.asset("s3-data/forms")],
+            destination_bucket=self.forms_bucket,
+            retain_on_delete=False
+        )
+
         # S3 Buckets for company, competitive, and competitors knowledge bases
         self.company_bucket = s3.Bucket(
             self, "CompanyBucket",
@@ -203,6 +221,13 @@ class ToolsStack(Stack):
             point_in_time_recovery_specification=dynamodb.PointInTimeRecoverySpecification(
                 point_in_time_recovery_enabled=True
             ),
+            # Demo hygiene: agent-created prospect profiles (via the
+            # create_profile POST flow) set an `expires_at` epoch attribute so
+            # DynamoDB TTL auto-deletes them ~2h later. Seed/mock customers do
+            # NOT set this attribute, so TTL leaves them untouched — only
+            # ephemeral demo prospects expire. TTL deletion is best-effort and
+            # can lag up to ~48h past the timestamp.
+            time_to_live_attribute="expires_at",
             removal_policy=RemovalPolicy.DESTROY
         )
 
@@ -230,7 +255,7 @@ class ToolsStack(Stack):
             ),
             # Demo hygiene: agent-created third-party policies (from the
             # PDF/markdown upload flow) set an `expires_at` epoch attribute so
-            # DynamoDB TTL auto-deletes them ~24h later. Seed/mock rows and
+            # DynamoDB TTL auto-deletes them ~2h later. Seed/mock rows and
             # Unicorn-issued policies do NOT set this attribute, so TTL leaves
             # them untouched — only ephemeral demo uploads expire. TTL deletion
             # is best-effort and can lag up to ~48h past the timestamp.
@@ -343,6 +368,18 @@ class ToolsStack(Stack):
             log_group=_log_group("PromotionsLambda"),
         )
 
+        self.formschema_lambda = _lambda.Function(
+            self, "FormSchemaLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/formschema"),
+            environment={
+                "FORMS_BUCKET": self.forms_bucket.bucket_name
+            },
+            timeout=Duration.seconds(30),
+            log_group=_log_group("FormSchemaLambda"),
+        )
+
         self.company_lambda = _lambda.Function(
             self, "CompanyLambda",
             runtime=_lambda.Runtime.PYTHON_3_13,
@@ -393,6 +430,29 @@ class ToolsStack(Stack):
             },
             timeout=Duration.seconds(30),
             log_group=_log_group("CatalogLambda"),
+        )
+
+        # Data Explorer Lambda — read-only browser over the reference
+        # documents that ground the assistant's answers. Backs the React
+        # frontend's "Data" tab. Needs read access to every knowledge bucket
+        # because the corpus is split one-bucket-per-s3-data-subfolder; the
+        # Lambda resolves a caller-supplied folder ALIAS to the bucket name
+        # so bucket names never leave the backend.
+        self.data_lambda = _lambda.Function(
+            self, "DataLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/data"),
+            environment={
+                "PORTFOLIO_BUCKET": self.portfolio_bucket.bucket_name,
+                "COMPANY_BUCKET": self.company_bucket.bucket_name,
+                "COMPETITIVE_BUCKET": self.competitive_bucket.bucket_name,
+                "COMPETITORS_BUCKET": self.competitors_bucket.bucket_name,
+                "PROMOTION_BUCKET": self.promotion_bucket.bucket_name,
+                "FORMS_BUCKET": self.forms_bucket.bucket_name,
+            },
+            timeout=Duration.seconds(30),
+            log_group=_log_group("DataLambda"),
         )
 
         # Bedrock Guardrail — single content/PII/word-policy resource shared
@@ -740,7 +800,7 @@ class ToolsStack(Stack):
         )
 
         # Comparator Lambda — fetches the selected products' markdown from
-        # S3 and calls Bedrock (Claude Sonnet 4.5) via the Converse API with
+        # S3 and calls Bedrock (Claude Sonnet 5) via the Converse API with
         # a tool-forced JSON schema, returning a structured comparison.
         # Longer timeout (60s) accounts for LLM generation time.
         self.comparator_lambda = _lambda.Function(
@@ -808,7 +868,7 @@ class ToolsStack(Stack):
 
         # Extract Policy Lambda — invoked by the AgentCore Gateway as an
         # MCP tool target. Reads the uploaded document from S3 and runs a
-        # Sonnet 4.5 Converse call with tool-forced JSON output to extract
+        # Sonnet 5 Converse call with tool-forced JSON output to extract
         # structured policy fields the agent can hand straight to
         # create_third_party_policy. Longer timeout for vision / PDF parsing.
         self.extract_policy_lambda = _lambda.Function(
@@ -860,10 +920,10 @@ class ToolsStack(Stack):
 
         # Sign-up Lambda — public endpoint that creates new Cognito users
         # via admin_create_user + admin_set_user_password. Required because
-        # this account enforces AllowAdminCreateUserOnly=True via an
-        # organisation policy, which blocks the SPA's self-service SignUp
-        # call. The admin_create_user + admin_set_user_password pattern is
-        # the supported workaround.
+        # the user pool below is configured with AllowAdminCreateUserOnly,
+        # which blocks the SPA's self-service SignUp call. The
+        # admin_create_user + admin_set_user_password pattern is the
+        # supported workaround.
         self.signup_lambda = _lambda.Function(
             self, "SignupLambda",
             runtime=_lambda.Runtime.PYTHON_3_13,
@@ -918,11 +978,22 @@ class ToolsStack(Stack):
         )
 
         # Grant read-only S3 permissions to Lambda functions
+        self.forms_bucket.grant_read(self.formschema_lambda)
         self.portfolio_bucket.grant_read(self.portfolio_lambda)
         self.promotion_bucket.grant_read(self.promotions_lambda)
         self.company_bucket.grant_read(self.company_lambda)
         self.competitive_bucket.grant_read(self.competitive_lambda)
         self.competitors_bucket.grant_read(self.competitors_lambda)
+
+        # Data Explorer Lambda: read-only access to every knowledge bucket it
+        # can browse. Read-only by construction — there is no write path in
+        # the handler, and grant_read only adds Get/List.
+        self.portfolio_bucket.grant_read(self.data_lambda)
+        self.company_bucket.grant_read(self.data_lambda)
+        self.competitive_bucket.grant_read(self.data_lambda)
+        self.competitors_bucket.grant_read(self.data_lambda)
+        self.promotion_bucket.grant_read(self.data_lambda)
+        self.forms_bucket.grant_read(self.data_lambda)
 
         # Catalog Lambda: read-only DynamoDB access (table + GSI).
         self.catalog_table.grant_read_data(self.catalog_lambda)
@@ -942,22 +1013,22 @@ class ToolsStack(Stack):
                     "bedrock:InvokeModelWithResponseStream",
                 ],
                 # Cross-region inference profiles for Claude Haiku 4.5.
-                # Comparator was on Sonnet 4.5 originally but moved to
-                # Haiku to keep total Lambda time under API Gateway's 29s
+                # Comparator was on Sonnet originally but moved to Haiku
+                # to keep total Lambda time under API Gateway's 29s
                 # integration timeout. The us.anthropic.* profile fans
                 # out to us-east-1, us-east-2, and us-west-2 foundation
-                # models, so we authorise all three. Sonnet 4.5 stays
-                # in the allowlist as a fallback in case BEDROCK_MODEL_ID
+                # models, so we authorise all three. Sonnet 5 stays in
+                # the allowlist as a fallback in case BEDROCK_MODEL_ID
                 # is overridden.
                 resources=[
                     f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-haiku-4-5-*",
                     "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-*",
                     "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-*",
                     "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-haiku-4-5-*",
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-4-5-*",
+                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5",
                 ]
             )
         )
@@ -987,17 +1058,17 @@ class ToolsStack(Stack):
                     "bedrock:InvokeModelWithResponseStream",
                 ],
                 # Same shape as the comparator policy above. Recommend now
-                # runs on Haiku 4.5 too; Sonnet 4.5 stays in as a fallback
+                # runs on Haiku 4.5 too; Sonnet 5 stays in as a fallback
                 # via the BEDROCK_MODEL_ID env override.
                 resources=[
                     f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-haiku-4-5-*",
                     "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-*",
                     "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-*",
                     "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-haiku-4-5-*",
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-4-5-*",
+                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5",
                 ],
             )
         )
@@ -1029,10 +1100,10 @@ class ToolsStack(Stack):
                     "bedrock:InvokeModelWithResponseStream",
                 ],
                 resources=[
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-4-5-*",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-4-5-*",
+                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5",
+                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5",
                 ],
             )
         )
@@ -1261,8 +1332,24 @@ class ToolsStack(Stack):
         catalog_product_item_resource = catalog_products_resource.add_resource("{product_id}")
         catalog_product_item_resource.add_method("GET", catalog_integration, **catalog_auth_kwargs)
 
+        # Data Explorer routes (backs the frontend's "Data" tab):
+        #   GET /data/files                       -> grouped listing of all docs
+        #   GET /data/file?folder=<f>&key=<k>     -> one document's content
+        # Cognito-authenticated like the catalog routes: this corpus includes
+        # competitive battlecards and competitor analysis, which should not be
+        # world-readable. Query params (not a {proxy+} path) so nested keys
+        # such as products/bigrival/primecare-health.md need no encoding.
+        data_integration = apigateway.LambdaIntegration(self.data_lambda)
+        data_resource = self.api.root.add_resource("data")
+        data_files_resource = data_resource.add_resource("files")
+        data_files_resource.add_method("GET", data_integration, **catalog_auth_kwargs)
+        data_file_resource = data_resource.add_resource("file")
+        data_file_resource.add_method("GET", data_integration, **catalog_auth_kwargs)
+
         # Comparator route:
-        #   POST /comparator/compare  with body { product_ids: [], locale: "en|ja|ko|es" }
+        #   POST /comparator/compare  with body { product_ids: [], locale }
+        # `locale` is validated against SUPPORTED_LOCALES in the Lambda, which
+        # is the single source of truth — don't re-enumerate locales here.
         comparator_integration = apigateway.LambdaIntegration(self.comparator_lambda)
         comparator_resource = self.api.root.add_resource("comparator")
         comparator_compare_resource = comparator_resource.add_resource("compare")

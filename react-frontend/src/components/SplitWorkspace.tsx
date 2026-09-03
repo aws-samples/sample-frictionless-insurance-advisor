@@ -12,6 +12,22 @@ interface SplitWorkspaceProps {
   storageId: string;
   left: ReactNode;
   right: ReactNode;
+  /**
+   * Initial width of the left panel as a percentage. Defaults to an even
+   * 50/50 split, which suits the Assistant/Voice pages where both sides
+   * carry equal weight. A list/detail layout (the Data explorer) passes a
+   * smaller value so the reading pane gets the space.
+   *
+   * The right panel's constraints are DERIVED from these three values so the
+   * two panels' defaultSize always sums to 100. react-resizable-panels
+   * renormalizes when it doesn't, and the far panel's maxSize then pushes the
+   * leftover into the near panel — which silently inverts the intended ratio.
+   */
+  defaultLeftSize?: number;
+  /** Lower bound for the left panel, in percent. */
+  minLeftSize?: number;
+  /** Upper bound for the left panel, in percent. */
+  maxLeftSize?: number;
 }
 
 /**
@@ -22,14 +38,27 @@ interface SplitWorkspaceProps {
  * - The handle is a thin vertical bar that widens on hover/drag and
  *   surfaces a subtle gradient grip mark.
  */
-export function SplitWorkspace({ storageId, left, right }: SplitWorkspaceProps) {
+export function SplitWorkspace({
+  storageId,
+  left,
+  right,
+  defaultLeftSize = 50,
+  minLeftSize = 25,
+  maxLeftSize = 75,
+}: SplitWorkspaceProps) {
+  // Mirror the left panel's constraints so both panels always describe the
+  // same 100% budget. With the defaults this is exactly 50/25/75 on each side.
+  const defaultRightSize = 100 - defaultLeftSize;
+  const minRightSize = 100 - maxLeftSize;
+  const maxRightSize = 100 - minLeftSize;
+
   return (
     <PanelGroup
       direction="horizontal"
       autoSaveId={storageId}
       className="h-full w-full"
     >
-      <Panel defaultSize={50} minSize={25} maxSize={75}>
+      <Panel defaultSize={defaultLeftSize} minSize={minLeftSize} maxSize={maxLeftSize}>
         <div className="h-full overflow-y-auto min-w-0">{left}</div>
       </Panel>
       <PanelResizeHandle className="group/handle relative flex w-1 shrink-0 cursor-col-resize items-stretch transition-[width,background] duration-150 hover:w-1.5 data-[resize-handle-active]:w-1.5">
@@ -44,7 +73,7 @@ export function SplitWorkspace({ storageId, left, right }: SplitWorkspaceProps) 
           }}
         />
       </PanelResizeHandle>
-      <Panel defaultSize={50} minSize={25} maxSize={75}>
+      <Panel defaultSize={defaultRightSize} minSize={minRightSize} maxSize={maxRightSize}>
         <div className="h-full overflow-y-auto min-w-0">{right}</div>
       </Panel>
     </PanelGroup>

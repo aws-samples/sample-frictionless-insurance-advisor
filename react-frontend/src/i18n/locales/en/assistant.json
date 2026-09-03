@@ -26,6 +26,10 @@
         "policiesCount": "Policies",
         "occupation": "Occupation",
         "maritalStatus": "Marital status"
+      },
+      "dataFreshness": {
+        "badge": "Verify current info",
+        "tooltip": "This profile hasn't been reviewed in over {{days}} days. Confirm the client's details are still current before relying on the coverage analysis."
       }
     },
     "policies": {
@@ -136,6 +140,9 @@
         "company": "Tell me about Unicorn Insurance",
         "whyUnicorn": "Why should they choose Unicorn over BigRival?",
         "qualifyQuestions": "What questions should I ask to qualify this prospect?"
+      },
+      "voice": {
+        "startTermLifeApplication": "Start an application for term life"
       }
     },
     "pages": {
@@ -163,7 +170,46 @@
         "carrier": "Carrier",
         "disclaimer": "AI-generated comparison",
         "minProducts": "Select at least {{min}} products.",
-        "maxProducts": "You can compare at most {{max}} products."
+        "maxProducts": "You can compare at most {{max}} products.",
+        "internalUseOnly": "Internal Use Only",
+        "staleNotice": "Some source data may be out of date — verify before sharing with a customer.",
+        "productStale": "Data over {{days}} days old",
+        "productUpdated": "Source updated {{date}}"
+      },
+      "data": {
+        "heading": "Data",
+        "intro": "Browse the reference documents that ground the assistant's answers — product portfolio, company information, competitive positioning, competitor products, promotions, and application form schemas.",
+        "searchPlaceholder": "Search files...",
+        "clearSearch": "Clear search",
+        "fileCount": "{{count}} files",
+        "matchCount": "{{count}} of {{total}} files",
+        "noMatches": "No files match \"{{query}}\".",
+        "selectFile": "Select a document from the list to view its contents.",
+        "loadingList": "Loading documents...",
+        "loadingFile": "Loading document...",
+        "emptyList": "No documents available.",
+        "viewRendered": "Rendered",
+        "viewRaw": "Raw",
+        "lastUpdated": "Last updated {{date}}",
+        "internalUseOnly": "Internal Use Only",
+        "form": {
+          "sectionCount": "{{count}} sections",
+          "fieldCount": "{{count}} fields",
+          "requiredCount": "{{count}} required",
+          "required": "Required",
+          "optional": "Optional",
+          "options": "Options",
+          "product": "Product",
+          "formId": "Form ID"
+        },
+        "folders": {
+          "portfolio": "Product Portfolio",
+          "company": "Company Info",
+          "competitive": "Competitive Positioning",
+          "competitors": "Competitor Products",
+          "promotion": "Promotions",
+          "forms": "Application Forms"
+        }
       }
     },
     "voice": {
@@ -182,12 +228,32 @@
         "connected": "Connected",
         "listening": "Listening",
         "speaking": "Speaking"
-      }
+      },
+      "mute": "Mute voice",
+      "unmute": "Unmute voice"
     },
     "recommendation": {
       "loading": "Analyzing coverage and looking for gaps...",
       "noGaps": "No material coverage gaps identified — the customer is well covered for their profile.",
       "error": "Couldn't generate a recommendation: {{message}}"
+    },
+    "form": {
+      "backToProfile": "Profile",
+      "progress": "{{filled}} of {{total}} required fields",
+      "progressLabel": "Form completion",
+      "pendingReview": "{{count}} to review",
+      "looksRight": "Looks right",
+      "stillNeeded": "Still needed",
+      "carriedOver": "{{count}} carried over",
+      "sendForSignature": "Send for Signature",
+      "sent": "Sent for signature",
+      "sentHint": "Demo only — nothing was actually sent.",
+      "sendReadyHint": "All required fields complete.",
+      "sendBlocked": "{{count}} required field(s) still needed.",
+      "legendProfile": "From profile",
+      "legendHeard": "Heard in conversation",
+      "legendConfirm": "Please confirm",
+      "legendManual": "Entered by you"
     }
   }
 }

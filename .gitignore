@@ -74,3 +74,4 @@ BusinessRequirements.md
 UnicornGymPlan.md
 .scratch_*
 *.tmp
+/docs/

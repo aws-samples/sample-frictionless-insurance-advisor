@@ -5,6 +5,8 @@ import {
   MessageCircle,
   Mic,
   MicOff,
+  Volume2,
+  VolumeX,
   Send,
   Sparkles,
   Sprout,
@@ -12,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { useVoiceChat } from '../hooks/useVoiceChat';
+import { useVoiceChat, type VoiceFormHandlers } from '../hooks/useVoiceChat';
 import { uploadDocument } from '../lib/api';
 import { cn } from '../lib/cn';
 import { Alert, Button, IconButton } from '../ui';
@@ -23,6 +25,13 @@ import { SamplePoliciesMenu } from './SamplePoliciesMenu';
 
 interface VoicePanelProps {
   customer: Customer | null;
+  /**
+   * Forwarded to the voice connection so the agent's application-form tool
+   * calls reach the form panel, which lives in a sibling component.
+   */
+  formHandlers?: VoiceFormHandlers;
+  /** Field paths already filled from the customer record; relayed to the agent. */
+  formPrefill?: Record<string, string>;
 }
 
 const CUSTOMER_PROMPT_KEYS = [
@@ -31,6 +40,11 @@ const CUSTOMER_PROMPT_KEYS = [
   'assistant.prompts.customer.premiumDelta',
   'assistant.prompts.customer.claimsModel',
   'assistant.prompts.customer.incomeVsLumpSum',
+  // Voice-only: triggers open_application_form so a tester can exercise the
+  // form-filler without first uploading a document or talking the agent
+  // into starting an application. Not offered on the text Assistant page —
+  // application forms only render in the voice panel's left form pane.
+  'assistant.prompts.voice.startTermLifeApplication',
 ] as const;
 
 const PROSPECT_PROMPT_KEYS = [
@@ -40,9 +54,11 @@ const PROSPECT_PROMPT_KEYS = [
   'assistant.prompts.prospect.company',
   'assistant.prompts.prospect.whyUnicorn',
   'assistant.prompts.prospect.qualifyQuestions',
+  // Voice-only, see note above.
+  'assistant.prompts.voice.startTermLifeApplication',
 ] as const;
 
-export function VoicePanel({ customer }: VoicePanelProps) {
+export function VoicePanel({ customer, formHandlers, formPrefill }: VoicePanelProps) {
   const { t } = useTranslation();
   const {
     connected,
@@ -57,7 +73,9 @@ export function VoicePanel({ customer }: VoicePanelProps) {
     sendText,
     clearHistory,
     clearError,
-  } = useVoiceChat(customer);
+    muted,
+    toggleMute,
+  } = useVoiceChat(customer, formHandlers, formPrefill);
 
   const [input, setInput] = useState<string>('');
   const [attachment, setAttachment] = useState<UploadedDocument | null>(null);
@@ -199,6 +217,31 @@ export function VoicePanel({ customer }: VoicePanelProps) {
             />
             {statusLabel}
           </span>
+          <Button
+            variant={recording ? 'destructive' : 'primary'}
+            size="sm"
+            onClick={toggleVoice}
+            disabled={!connected}
+          >
+            {recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {recording
+              ? t('assistant.voice.stopVoice')
+              : t('assistant.voice.startVoice')}
+          </Button>
+          <IconButton
+            aria-label={muted ? t('assistant.voice.unmute') : t('assistant.voice.mute')}
+            title={muted ? t('assistant.voice.unmute') : t('assistant.voice.mute')}
+            variant="ghost"
+            size="sm"
+            onClick={toggleMute}
+            aria-pressed={muted}
+          >
+            {muted ? (
+              <VolumeX className="h-4 w-4 text-warning" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </IconButton>
           {messagesPresent ? (
             <IconButton
               aria-label={t('common.actions.clear')}
@@ -220,21 +263,6 @@ export function VoicePanel({ customer }: VoicePanelProps) {
           </Alert>
         </div>
       ) : null}
-
-      {/* Voice control bar */}
-      <div className="border-b border-border px-6 py-3">
-        <Button
-          variant={recording ? 'destructive' : 'primary'}
-          size="md"
-          onClick={toggleVoice}
-          disabled={!connected}
-        >
-          {recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-          {recording
-            ? t('assistant.voice.stopVoice')
-            : t('assistant.voice.startVoice')}
-        </Button>
-      </div>
 
       {/* Transcript */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4">

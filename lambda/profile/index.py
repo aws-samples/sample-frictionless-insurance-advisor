@@ -10,6 +10,7 @@ Supported operations:
 import json
 import boto3
 import os
+import time
 import uuid
 from datetime import date
 from boto3.dynamodb.conditions import Key
@@ -17,6 +18,12 @@ from boto3.dynamodb.conditions import Key
 # Initialize DynamoDB connection
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['PROFILES_TABLE'])
+
+# Demo hygiene: prospect profiles created through this Lambda are ephemeral.
+# We stamp an `expires_at` epoch-seconds attribute so DynamoDB TTL (configured
+# on the table in tools_stack.py) auto-deletes them ~2h later. Seed/mock
+# customers loaded elsewhere do NOT set this attribute, so they persist.
+PROSPECT_TTL_SECONDS = 2 * 60 * 60
 
 # Fields that the agent is allowed to write
 WRITABLE_FIELDS = {
@@ -149,6 +156,13 @@ def handle_create(event):
         'advisor_id': advisor_id,
         'status': 'Active',
         'join_date': date.today().isoformat(),
+        # Data-freshness signal for BR-GAP-006. Distinct from join_date
+        # (enrollment): last_reviewed tracks when the advisor last confirmed
+        # the profile is current, so the UI can nudge to re-verify stale data.
+        'last_reviewed': date.today().isoformat(),
+        # Ephemeral demo prospect — auto-expire ~2h from now (epoch seconds).
+        # DynamoDB TTL on the table deletes the row once this time passes.
+        'expires_at': int(time.time()) + PROSPECT_TTL_SECONDS,
     }
 
     # Add any additional writable fields provided in the request
@@ -195,6 +209,13 @@ def handle_update(event):
         expr_parts.append(f"{placeholder_name} = {placeholder_value}")
         expr_names[placeholder_name] = field
         expr_values[placeholder_value] = value
+
+    # Any advisor edit counts as a review, so always bump last_reviewed to
+    # today (BR-GAP-006 data-freshness signal). System-managed — not part of
+    # WRITABLE_FIELDS, so a client cannot spoof it.
+    expr_parts.append("#last_reviewed = :last_reviewed")
+    expr_names["#last_reviewed"] = "last_reviewed"
+    expr_values[":last_reviewed"] = date.today().isoformat()
 
     update_expression = "SET " + ", ".join(expr_parts)
 

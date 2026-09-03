@@ -1,0 +1,259 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "Pelanggan",
+      "collapse": "Ciutkan bilah sisi",
+      "expand": "Bentangkan bilah sisi",
+      "newProspect": "+ Prospek Baru"
+    },
+    "welcome": {
+      "heading": "Selamat datang",
+      "body": "Pilih pelanggan dari bilah sisi untuk melihat profil, polis, dan memulai obrolan.",
+      "totalCustomers": "Total Pelanggan",
+      "activePolicies": "Polis Aktif"
+    },
+    "customer": {
+      "contactSection": "Kontak",
+      "accountSection": "Akun",
+      "policiesSection": "Polis",
+      "thirdPartyPoliciesSection": "Polis Pihak Ketiga",
+      "recommendationSection": "Analisis Kesenjangan Perlindungan",
+      "fields": {
+        "email": "Email",
+        "phone": "Telepon",
+        "address": "Alamat",
+        "joinDate": "Sejak",
+        "policiesCount": "Polis",
+        "occupation": "Pekerjaan",
+        "maritalStatus": "Status pernikahan"
+      },
+      "dataFreshness": {
+        "badge": "Verifikasi info terkini",
+        "tooltip": "Profil ini belum ditinjau selama lebih dari {{days}} hari. Pastikan detail klien masih terkini sebelum mengandalkan analisis perlindungan."
+      }
+    },
+    "policies": {
+      "emptyProspect": "Belum ada polis — ini adalah prospek.",
+      "id": "ID",
+      "insurer": "Penanggung",
+      "coverage": "Perlindungan",
+      "renews": "Perpanjangan",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "Detail",
+        "vehicle": {
+          "title": "Kendaraan",
+          "make": "Merek",
+          "model": "Model",
+          "year": "Tahun",
+          "registration": "Registrasi"
+        },
+        "property": {
+          "title": "Properti",
+          "address": "Alamat",
+          "type": "Jenis",
+          "yearBuilt": "Tahun dibangun",
+          "size": "Ukuran",
+          "squareFeet": "{{value}} kaki persegi"
+        },
+        "health": {
+          "title": "Rencana",
+          "tier": "Tingkat",
+          "network": "Jaringan",
+          "dependents": "Tanggungan"
+        },
+        "disability": {
+          "title": "Perlindungan",
+          "benefitPeriod": "Periode manfaat",
+          "benefitYears": "{{count}} tahun",
+          "waitingPeriod": "Masa tunggu",
+          "waitingDays": "{{count}} hari",
+          "occupationClass": "Kelas pekerjaan"
+        },
+        "life": {
+          "title": "Polis",
+          "lifeType": "Jenis jiwa",
+          "beneficiary": "Ahli waris",
+          "smoker": "Perokok",
+          "smokerYes": "Ya",
+          "smokerNo": "Tidak",
+          "termYears": "Jangka waktu",
+          "termYearsValue": "{{count}} tahun",
+          "premiumSchedule": "Jadwal premi",
+          "dividendOption": "Opsi dividen",
+          "deathBenefitOption": "Opsi manfaat kematian",
+          "currentCreditedRate": "Tingkat kredit saat ini",
+          "guaranteedMinimumRate": "Minimum terjamin",
+          "cashValueEstimate": "Nilai tunai (perk.)",
+          "subAccountAllocation": "Alokasi sub-akun"
+        },
+        "subAccounts": {
+          "equity_growth": "Ekuitas — Pertumbuhan",
+          "equity_international": "Ekuitas — Internasional",
+          "fixed_income": "Pendapatan Tetap",
+          "money_market": "Pasar Uang",
+          "balanced": "Seimbang",
+          "equity_value": "Ekuitas — Nilai"
+        }
+      }
+    },
+    "chat": {
+      "headingCustomer": "Obrolan Polis AI",
+      "headingProspect": "Pendampingan Prospek",
+      "selectCustomer": "Pilih pelanggan untuk memulai obrolan.",
+      "emptyPlaceholder": "Ajukan pertanyaan atau pilih saran di bawah ini.",
+      "messageLabel": "Pesan",
+      "placeholderCustomer": "Tanyakan tentang polis...",
+      "placeholderProspect": "Tanyakan tentang prospek ini...",
+      "userBubbleLabel": "Anda",
+      "assistantBubbleLabel": "Asisten",
+      "thinking": "Sedang berpikir...",
+      "quickQuestions": "Pertanyaan cepat",
+      "attachDocument": "Lampirkan dokumen polis (PDF, gambar, atau teks)",
+      "removeAttachment": "Hapus lampiran",
+      "uploadingFilename": "Mengunggah {{filename}}...",
+      "uploadFailed": "Unggahan gagal",
+      "placeholderWithAttachment": "Tambahkan catatan atau langsung kirim untuk mengekstrak polis...",
+      "samplePolicies": {
+        "cta": "Butuh berkas uji? Unduh contoh",
+        "heading": "Contoh polis untuk {{name}}",
+        "subtext": "Polis pihak ketiga sintetis untuk menguji alur unggahan.",
+        "notice": "Penanggung fiktif. Bukan perlindungan nyata."
+      }
+    },
+    "prompts": {
+      "customer": {
+        "policies": "Polis apa saja yang saya miliki?",
+        "coverageGap": "Kesenjangan perlindungan apa yang saya miliki dan bagaimana cara mengatasinya?",
+        "premiumDelta": "Mengapa premi Anda lebih tinggi/lebih rendah dibanding pesaing?",
+        "claimsModel": "Apakah Anda menawarkan klaim tanpa uang tunai di rumah sakit, atau hanya penggantian?",
+        "incomeVsLumpSum": "Apakah Anda menawarkan opsi penggantian penghasilan atau pembayaran sekaligus?",
+        "mentalHealthMaternity": "Apakah Anda menanggung kesehatan mental, persalinan, atau pengobatan alternatif?",
+        "outpatientDentalOptical": "Apakah Anda menanggung rawat jalan, gigi, atau optik?",
+        "dayOneCover": "Bagaimana perlindungan hari pertama Anda dibanding masa tunggu pesaing lain?",
+        "preExistingWaiting": "Berapa masa tunggu kondisi yang sudah ada sebelumnya dibanding pesaing?"
+      },
+      "prospect": {
+        "firstProducts": "Asuransi apa yang sebaiknya dipertimbangkan prospek ini terlebih dahulu?",
+        "discovery": "Bantu saya memulai percakapan penggalian kebutuhan",
+        "bestProducts": "Apa produk terbaik berdasarkan profil mereka?",
+        "company": "Ceritakan tentang Unicorn Insurance",
+        "whyUnicorn": "Mengapa mereka harus memilih Unicorn dibanding BigRival?",
+        "qualifyQuestions": "Pertanyaan apa yang harus saya ajukan untuk memenuhi syarat prospek ini?"
+      },
+      "voice": {
+        "startTermLifeApplication": "Mulai pengajuan asuransi jiwa berjangka"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "Suara"
+      },
+      "comparator": {
+        "heading": "Pembanding",
+        "intro": "Bandingkan produk asuransi antara Unicorn Insurance dan para pesaingnya. Pilih jenis produk, lalu pilih antara 2 hingga 4 produk untuk dibandingkan.",
+        "typeLabel": "Jenis produk",
+        "typePlaceholder": "Pilih jenis produk",
+        "productsLabel": "Produk untuk dibandingkan",
+        "productsHelp": "Pilih antara {{min}} dan {{max}} produk.",
+        "selectType": "Pilih jenis produk untuk melihat produk yang tersedia untuk dibandingkan.",
+        "noProductsForType": "Tidak ada produk yang tersedia untuk jenis ini.",
+        "tierBadge": "Tingkat {{tier}}",
+        "selectedCount": "{{count}} dipilih",
+        "compareButton": "Bandingkan",
+        "clearButton": "Hapus pilihan",
+        "comparing": "Menghasilkan perbandingan...",
+        "comparingHint": "Ini memakan waktu 10–20 detik saat asisten membaca setiap dokumen produk.",
+        "errorTitle": "Perbandingan gagal",
+        "errorRetry": "Coba lagi",
+        "resultSummary": "Ikhtisar",
+        "carrier": "Penanggung",
+        "disclaimer": "Perbandingan dihasilkan oleh AI",
+        "minProducts": "Pilih setidaknya {{min}} produk.",
+        "maxProducts": "Anda dapat membandingkan maksimal {{max}} produk.",
+        "internalUseOnly": "Hanya untuk Penggunaan Internal",
+        "staleNotice": "Sebagian data sumber mungkin sudah usang — verifikasi sebelum dibagikan kepada pelanggan.",
+        "productStale": "Data lebih dari {{days}} hari",
+        "productUpdated": "Sumber diperbarui {{date}}"
+      },
+      "data": {
+        "heading": "Data",
+        "intro": "Telusuri dokumen referensi yang menjadi dasar jawaban asisten — portofolio produk, informasi perusahaan, posisi kompetitif, produk pesaing, promosi, dan skema formulir pengajuan.",
+        "searchPlaceholder": "Cari berkas...",
+        "clearSearch": "Hapus pencarian",
+        "fileCount": "{{count}} berkas",
+        "matchCount": "{{count}} dari {{total}} berkas",
+        "noMatches": "Tidak ada berkas yang cocok dengan \"{{query}}\".",
+        "selectFile": "Pilih dokumen dari daftar untuk melihat isinya.",
+        "loadingList": "Memuat dokumen...",
+        "loadingFile": "Memuat dokumen...",
+        "emptyList": "Tidak ada dokumen yang tersedia.",
+        "viewRendered": "Tampilan Terformat",
+        "viewRaw": "Mentah",
+        "lastUpdated": "Terakhir diperbarui {{date}}",
+        "internalUseOnly": "Hanya untuk Penggunaan Internal",
+        "form": {
+          "sectionCount": "{{count}} bagian",
+          "fieldCount": "{{count}} bidang",
+          "requiredCount": "{{count}} wajib",
+          "required": "Wajib",
+          "optional": "Opsional",
+          "options": "Pilihan",
+          "product": "Produk",
+          "formId": "ID Formulir"
+        },
+        "folders": {
+          "portfolio": "Portofolio Produk",
+          "company": "Informasi Perusahaan",
+          "competitive": "Posisi Kompetitif",
+          "competitors": "Produk Pesaing",
+          "promotion": "Promosi",
+          "forms": "Formulir Pengajuan"
+        }
+      }
+    },
+    "voice": {
+      "heading": "Obrolan Suara",
+      "selectCustomer": "Pilih pelanggan untuk memulai percakapan suara.",
+      "startVoice": "Mulai obrolan suara",
+      "stopVoice": "Hentikan obrolan suara",
+      "typePlaceholder": "Ketik pesan...",
+      "connecting": "Menghubungkan...",
+      "emptyConnecting": "Menghubungkan ke agen...",
+      "emptyConnected": "Ketik pesan di bawah, atau tekan Mulai obrolan suara untuk berbicara. Bersihkan akan mengatur ulang percakapan.",
+      "hintText": "Asisten hanya merespons dalam teks. Tekan Mulai obrolan suara untuk berbicara dan mendengar respons.",
+      "hintVoice": "Obrolan suara aktif — asisten akan merespons dengan suara dan teks. Tekan Hentikan obrolan suara untuk mengetik saja.",
+      "status": {
+        "connecting": "Menghubungkan",
+        "connected": "Terhubung",
+        "listening": "Mendengarkan",
+        "speaking": "Berbicara"
+      },
+      "mute": "Bisukan suara",
+      "unmute": "Aktifkan suara"
+    },
+    "recommendation": {
+      "loading": "Menganalisis perlindungan dan mencari kesenjangan...",
+      "noGaps": "Tidak ditemukan kesenjangan perlindungan yang material — pelanggan sudah terlindungi dengan baik sesuai profilnya.",
+      "error": "Tidak dapat menghasilkan rekomendasi: {{message}}"
+    },
+    "form": {
+      "backToProfile": "Profil",
+      "progress": "{{filled}} dari {{total}} bidang wajib",
+      "progressLabel": "Kelengkapan formulir",
+      "pendingReview": "{{count}} untuk ditinjau",
+      "looksRight": "Terlihat benar",
+      "stillNeeded": "Masih diperlukan",
+      "carriedOver": "{{count}} dibawa dari sebelumnya",
+      "sendForSignature": "Kirim untuk Tanda Tangan",
+      "sent": "Terkirim untuk tanda tangan",
+      "sentHint": "Hanya demo — tidak ada yang benar-benar dikirim.",
+      "sendReadyHint": "Semua bidang wajib telah lengkap.",
+      "sendBlocked": "{{count}} bidang wajib masih diperlukan.",
+      "legendProfile": "Dari profil",
+      "legendHeard": "Terdengar dalam percakapan",
+      "legendConfirm": "Mohon konfirmasi",
+      "legendManual": "Dimasukkan oleh Anda"
+    }
+  }
+}

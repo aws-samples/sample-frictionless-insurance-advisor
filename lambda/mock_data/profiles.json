@@ -15,6 +15,7 @@
     "smoking": false,
     "medical_conditions": "None",
     "join_date": "2022-03-15",
+    "last_reviewed": "2026-07-30",
     "status": "Active",
     "advisor_id": "john.doe@example.com"
   },
@@ -34,6 +35,7 @@
     "smoking": false,
     "medical_conditions": "Seasonal allergies",
     "join_date": "2023-01-10",
+    "last_reviewed": "2026-02-11",
     "status": "Active",
     "advisor_id": "john.doe@example.com"
   },
@@ -53,6 +55,7 @@
     "smoking": false,
     "medical_conditions": "High blood pressure (managed)",
     "join_date": "2021-11-05",
+    "last_reviewed": "2025-09-15",
     "status": "Active",
     "advisor_id": "john.doe@example.com"
   },
@@ -72,6 +75,7 @@
     "smoking": false,
     "medical_conditions": "None",
     "join_date": "2023-06-20",
+    "last_reviewed": "2026-08-01",
     "status": "Active",
     "advisor_id": "john.doe@example.com"
   },
@@ -91,6 +95,7 @@
     "smoking": false,
     "medical_conditions": "None",
     "join_date": "2021-08-22",
+    "last_reviewed": "2026-01-20",
     "status": "Active",
     "advisor_id": "jane.doe@example.com"
   },
@@ -110,6 +115,7 @@
     "smoking": false,
     "medical_conditions": "Asthma (controlled)",
     "join_date": "2022-12-03",
+    "last_reviewed": "2025-12-03",
     "status": "Active",
     "advisor_id": "jane.doe@example.com"
   },
@@ -129,6 +135,7 @@
     "smoking": false,
     "medical_conditions": "None",
     "join_date": "2024-09-18",
+    "last_reviewed": "2026-06-15",
     "status": "Active",
     "advisor_id": "john.doe@example.com"
   },
@@ -148,6 +155,7 @@
     "smoking": false,
     "medical_conditions": "None",
     "join_date": "2024-11-02",
+    "last_reviewed": "2026-03-10",
     "status": "Active",
     "advisor_id": "jane.doe@example.com"
   }
