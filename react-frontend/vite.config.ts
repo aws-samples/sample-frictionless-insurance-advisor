@@ -16,15 +16,27 @@ export default defineConfig({
         // be listed here, otherwise it ends up preloaded eagerly via
         // <link rel="modulepreload"> even though the page-chunk
         // dynamic import is what should trigger it.
-        manualChunks: {
-          // Auth + AWS SDK pieces — referenced from AuthGate (eager
-          // first paint) and from every API call (api.ts + agentcore.ts).
-          // Has to be first-paint, but caching it separately means the
-          // 250+ KB chunk doesn't bust on every app code change.
-          'aws-amplify': ['aws-amplify'],
-          // i18n bundle — strings + react bindings. Loaded eagerly but
-          // kept separate so it can be cached independently across deploys.
-          i18n: ['i18next', 'i18next-browser-languagedetector', 'react-i18next'],
+        //
+        // Vite 8 uses Rolldown, where the old object-form `manualChunks`
+        // is replaced by `codeSplitting.groups` with regex `test`
+        // matchers on module ids.
+        codeSplitting: {
+          groups: [
+            // Auth + AWS SDK pieces — referenced from AuthGate (eager
+            // first paint) and from every API call (api.ts + agentcore.ts).
+            // Has to be first-paint, but caching it separately means the
+            // 250+ KB chunk doesn't bust on every app code change.
+            {
+              name: 'aws-amplify',
+              test: /[\\/]node_modules[\\/](aws-amplify|@aws-amplify|@aws-sdk|@smithy)[\\/]/,
+            },
+            // i18n bundle — strings + react bindings. Loaded eagerly but
+            // kept separate so it can be cached independently across deploys.
+            {
+              name: 'i18n',
+              test: /[\\/]node_modules[\\/](i18next|i18next-browser-languagedetector|react-i18next)[\\/]/,
+            },
+          ],
         },
       },
     },

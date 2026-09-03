@@ -1,0 +1,259 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "客户",
+      "collapse": "收起侧边栏",
+      "expand": "展开侧边栏",
+      "newProspect": "+ 新增潜在客户"
+    },
+    "welcome": {
+      "heading": "欢迎",
+      "body": "从侧边栏选择一位客户，查看其档案、保单并开始对话。",
+      "totalCustomers": "客户总数",
+      "activePolicies": "生效保单"
+    },
+    "customer": {
+      "contactSection": "联系方式",
+      "accountSection": "账户",
+      "policiesSection": "保单",
+      "thirdPartyPoliciesSection": "第三方保单",
+      "recommendationSection": "保障缺口分析",
+      "fields": {
+        "email": "电子邮箱",
+        "phone": "电话",
+        "address": "地址",
+        "joinDate": "起始于",
+        "policiesCount": "保单",
+        "occupation": "职业",
+        "maritalStatus": "婚姻状况"
+      },
+      "dataFreshness": {
+        "badge": "核实最新信息",
+        "tooltip": "此档案已超过 {{days}} 天未进行审核。在依据保障分析结果前，请确认客户信息仍为最新。"
+      }
+    },
+    "policies": {
+      "emptyProspect": "暂无保单——这是一位潜在客户。",
+      "id": "编号",
+      "insurer": "承保公司",
+      "coverage": "保障额度",
+      "renews": "续保日期",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "详情",
+        "vehicle": {
+          "title": "车辆",
+          "make": "品牌",
+          "model": "型号",
+          "year": "年份",
+          "registration": "车牌号"
+        },
+        "property": {
+          "title": "房产",
+          "address": "地址",
+          "type": "类型",
+          "yearBuilt": "建造年份",
+          "size": "面积",
+          "squareFeet": "{{value}} 平方英尺"
+        },
+        "health": {
+          "title": "计划",
+          "tier": "等级",
+          "network": "医疗网络",
+          "dependents": "受抚养人"
+        },
+        "disability": {
+          "title": "保障",
+          "benefitPeriod": "给付期限",
+          "benefitYears": "{{count}} 年",
+          "waitingPeriod": "等待期",
+          "waitingDays": "{{count}} 天",
+          "occupationClass": "职业类别"
+        },
+        "life": {
+          "title": "保单",
+          "lifeType": "寿险类型",
+          "beneficiary": "受益人",
+          "smoker": "吸烟者",
+          "smokerYes": "是",
+          "smokerNo": "否",
+          "termYears": "保障期限",
+          "termYearsValue": "{{count}} 年",
+          "premiumSchedule": "缴费方式",
+          "dividendOption": "分红方式",
+          "deathBenefitOption": "身故给付方案",
+          "currentCreditedRate": "当前结算利率",
+          "guaranteedMinimumRate": "保证最低利率",
+          "cashValueEstimate": "现金价值（估算）",
+          "subAccountAllocation": "子账户配置"
+        },
+        "subAccounts": {
+          "equity_growth": "股票——成长型",
+          "equity_international": "股票——国际型",
+          "fixed_income": "固定收益",
+          "money_market": "货币市场",
+          "balanced": "平衡型",
+          "equity_value": "股票——价值型"
+        }
+      }
+    },
+    "chat": {
+      "headingCustomer": "AI 保单对话",
+      "headingProspect": "潜在客户辅导",
+      "selectCustomer": "选择一位客户开始对话。",
+      "emptyPlaceholder": "提出问题或从下方选择一个建议。",
+      "messageLabel": "消息",
+      "placeholderCustomer": "咨询保单相关问题...",
+      "placeholderProspect": "咨询此潜在客户相关问题...",
+      "userBubbleLabel": "您",
+      "assistantBubbleLabel": "助手",
+      "thinking": "思考中...",
+      "quickQuestions": "快捷问题",
+      "attachDocument": "附上保单文件（PDF、图片或文本）",
+      "removeAttachment": "移除附件",
+      "uploadingFilename": "正在上传 {{filename}}...",
+      "uploadFailed": "上传失败",
+      "placeholderWithAttachment": "添加备注，或直接发送以提取保单信息...",
+      "samplePolicies": {
+        "cta": "需要测试文件？下载示例",
+        "heading": "{{name}} 的示例保单",
+        "subtext": "用于测试上传流程的合成第三方保单。",
+        "notice": "虚构的承保公司，并非真实保障。"
+      }
+    },
+    "prompts": {
+      "customer": {
+        "policies": "我拥有哪些保单？",
+        "coverageGap": "我存在哪些保障缺口，应如何弥补？",
+        "premiumDelta": "为什么你们的保费比竞争对手更高/更低？",
+        "claimsModel": "你们在医院提供直付理赔，还是仅支持事后报销？",
+        "incomeVsLumpSum": "你们提供收入补偿还是一次性赔付方案？",
+        "mentalHealthMaternity": "你们是否覆盖心理健康、生育或替代疗法？",
+        "outpatientDentalOptical": "你们是否覆盖门诊、牙科或视力治疗？",
+        "dayOneCover": "与其他公司相比，你们的即时保障与等待期如何？",
+        "preExistingWaiting": "与竞争对手相比，你们对既往病症的等待期是多久？"
+      },
+      "prospect": {
+        "firstProducts": "这位潜在客户应首先考虑哪些保险？",
+        "discovery": "帮我开启一次需求探询对话",
+        "bestProducts": "根据其情况，哪些产品最合适？",
+        "company": "介绍一下 Unicorn Insurance",
+        "whyUnicorn": "他们为什么应该选择 Unicorn 而非 BigRival？",
+        "qualifyQuestions": "我应该提哪些问题来评估这位潜在客户？"
+      },
+      "voice": {
+        "startTermLifeApplication": "开始办理定期寿险申请"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "语音"
+      },
+      "comparator": {
+        "heading": "产品对比",
+        "intro": "对比 Unicorn Insurance 及其竞争对手的保险产品。请先选择产品类型，然后选择 2 到 4 款产品进行对比。",
+        "typeLabel": "产品类型",
+        "typePlaceholder": "选择产品类型",
+        "productsLabel": "待对比产品",
+        "productsHelp": "请选择 {{min}} 到 {{max}} 款产品。",
+        "selectType": "选择一个产品类型，查看可供对比的产品。",
+        "noProductsForType": "此类型暂无可用产品。",
+        "tierBadge": "{{tier}} 等级",
+        "selectedCount": "已选择 {{count}} 款",
+        "compareButton": "对比",
+        "clearButton": "清除选择",
+        "comparing": "正在生成对比...",
+        "comparingHint": "助手将阅读每份产品文件，需 10–20 秒。",
+        "errorTitle": "对比失败",
+        "errorRetry": "重试",
+        "resultSummary": "概览",
+        "carrier": "承保公司",
+        "disclaimer": "AI 生成的对比",
+        "minProducts": "请至少选择 {{min}} 款产品。",
+        "maxProducts": "最多可对比 {{max}} 款产品。",
+        "internalUseOnly": "仅供内部使用",
+        "staleNotice": "部分源数据可能已过期——在与客户分享前请先核实。",
+        "productStale": "数据已超过 {{days}} 天",
+        "productUpdated": "源数据更新于 {{date}}"
+      },
+      "data": {
+        "heading": "数据",
+        "intro": "浏览为助手回答提供依据的参考文档——产品组合、公司信息、竞争定位、竞争对手产品、促销活动以及投保申请表结构。",
+        "searchPlaceholder": "搜索文件...",
+        "clearSearch": "清除搜索",
+        "fileCount": "{{count}} 个文件",
+        "matchCount": "{{total}} 个文件中的 {{count}} 个",
+        "noMatches": "没有文件匹配 \"{{query}}\"。",
+        "selectFile": "请从列表中选择一份文档以查看其内容。",
+        "loadingList": "正在加载文档...",
+        "loadingFile": "正在加载文档...",
+        "emptyList": "暂无可用文档。",
+        "viewRendered": "渲染视图",
+        "viewRaw": "源码",
+        "lastUpdated": "最后更新于 {{date}}",
+        "internalUseOnly": "仅供内部使用",
+        "form": {
+          "sectionCount": "{{count}} 个部分",
+          "fieldCount": "{{count}} 个字段",
+          "requiredCount": "{{count}} 项必填",
+          "required": "必填",
+          "optional": "选填",
+          "options": "选项",
+          "product": "产品",
+          "formId": "表单 ID"
+        },
+        "folders": {
+          "portfolio": "产品组合",
+          "company": "公司信息",
+          "competitive": "竞争定位",
+          "competitors": "竞争对手产品",
+          "promotion": "促销活动",
+          "forms": "投保申请表"
+        }
+      }
+    },
+    "voice": {
+      "heading": "语音对话",
+      "selectCustomer": "选择一位客户开始语音对话。",
+      "startVoice": "开始语音对话",
+      "stopVoice": "停止语音对话",
+      "typePlaceholder": "输入消息...",
+      "connecting": "连接中...",
+      "emptyConnecting": "正在连接到智能体...",
+      "emptyConnected": "在下方输入消息，或点击“开始语音对话”进行语音交流。点击清除可重置对话。",
+      "hintText": "助手仅以文本回复。点击“开始语音对话”即可语音交流并听取回复。",
+      "hintVoice": "语音对话已开启——助手将以语音和文本回复。点击“停止语音对话”可切换为仅文本模式。",
+      "status": {
+        "connecting": "连接中",
+        "connected": "已连接",
+        "listening": "聆听中",
+        "speaking": "回复中"
+      },
+      "mute": "静音",
+      "unmute": "取消静音"
+    },
+    "recommendation": {
+      "loading": "正在分析保障情况并查找缺口...",
+      "noGaps": "未发现重大保障缺口——就其情况而言，该客户已获得充分保障。",
+      "error": "无法生成建议：{{message}}"
+    },
+    "form": {
+      "backToProfile": "档案",
+      "progress": "已填写 {{total}} 个必填字段中的 {{filled}} 个",
+      "progressLabel": "表单完成度",
+      "pendingReview": "{{count}} 项待审核",
+      "looksRight": "确认无误",
+      "stillNeeded": "仍需填写",
+      "carriedOver": "{{count}} 项已沿用",
+      "sendForSignature": "发送以供签署",
+      "sent": "已发送签署",
+      "sentHint": "仅为演示——并未实际发送。",
+      "sendReadyHint": "所有必填字段已完成。",
+      "sendBlocked": "仍有 {{count}} 个必填字段待填写。",
+      "legendProfile": "来自档案",
+      "legendHeard": "对话中获取",
+      "legendConfirm": "请确认",
+      "legendManual": "由您输入"
+    }
+  }
+}

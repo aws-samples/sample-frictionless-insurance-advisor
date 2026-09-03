@@ -1,3 +1,7 @@
+---
+last_updated: 2026-06-30
+---
+
 # StarBasic Shield (StarInsure)
 ### Type: Critical Illness Insurance
 

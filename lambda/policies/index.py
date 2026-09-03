@@ -29,9 +29,9 @@ table = dynamodb.Table(os.environ['POLICIES_TABLE'])
 
 # Demo hygiene: agent-created third-party policies (from the upload/extract
 # flow) are ephemeral. We stamp an `expires_at` epoch on create so DynamoDB
-# TTL (configured on the table in tools_stack.py) auto-deletes them roughly a
-# day later. Seed/mock rows never get this attribute, so they persist.
-DEMO_POLICY_TTL_SECONDS = 24 * 60 * 60
+# TTL (configured on the table in tools_stack.py) auto-deletes them ~2h
+# later. Seed/mock rows never get this attribute, so they persist.
+DEMO_POLICY_TTL_SECONDS = 2 * 60 * 60
 
 
 # Fields the agent is allowed to write on a third-party policy. Anything not
@@ -210,7 +210,7 @@ def handle_create(event, advisor_id):
         'status': body.get('status', 'Active'),
         'start_date': body.get('start_date', date.today().isoformat()),
         'last_updated': date.today().isoformat(),
-        # TTL: auto-expire this demo upload ~24h from now (epoch seconds).
+        # TTL: auto-expire this demo upload ~2h from now (epoch seconds).
         # DynamoDB TTL on the table deletes the row once this time passes.
         'expires_at': int(time.time()) + DEMO_POLICY_TTL_SECONDS,
     }

@@ -1,3 +1,7 @@
+---
+last_updated: 2026-07-20
+---
+
 # QuickSafe Nest Home (QuickSafe)
 ### Type: Home Insurance
 

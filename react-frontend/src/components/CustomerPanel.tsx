@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import {
+  AlertTriangle,
   Briefcase,
   Building2,
   CalendarDays,
@@ -25,6 +26,19 @@ interface CustomerPanelProps {
   customer: Customer | null;
   totalCustomers: number;
   totalPolicies: number;
+}
+
+// BR-GAP-006: prompt the advisor to re-verify a client's details when the
+// profile hasn't been reviewed recently, so the coverage-gap analysis isn't
+// trusted against stale inputs. Threshold stated by the BRD.
+const STALE_AFTER_DAYS = 90;
+
+/** Whole days between an ISO date and now, or null if missing/invalid. */
+function daysSince(iso: string | undefined): number | null {
+  if (!iso) return null;
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.floor((Date.now() - parsed.getTime()) / 86_400_000);
 }
 
 interface InfoRowProps {
@@ -112,6 +126,10 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies }: Custo
     ? t(`domain.maritalStatus.${customer.marital_status}`, { defaultValue: customer.marital_status })
     : null;
 
+  // Fall back to join_date only if last_reviewed is absent (legacy records).
+  const reviewAgeDays = daysSince(customer.last_reviewed ?? customer.join_date);
+  const isStale = reviewAgeDays !== null && reviewAgeDays > STALE_AFTER_DAYS;
+
   return (
     <div className="space-y-6 p-6 sm:p-8">
       {/* Header */}
@@ -124,6 +142,17 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies }: Custo
               <Badge variant={badgeVariant} dot>
                 {badgeText}
               </Badge>
+              {isStale ? (
+                <span
+                  title={t('assistant.customer.dataFreshness.tooltip', { days: STALE_AFTER_DAYS })}
+                  className="inline-flex"
+                >
+                  <Badge variant="warning">
+                    <AlertTriangle className="mr-1 h-3 w-3" />
+                    {t('assistant.customer.dataFreshness.badge')}
+                  </Badge>
+                </span>
+              ) : null}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-foreground-muted">
               <span className="inline-flex items-center gap-1">

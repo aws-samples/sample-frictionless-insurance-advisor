@@ -22,6 +22,9 @@ const VoicePage = lazy(() =>
 const ComparatorPage = lazy(() =>
   import('./components/ComparatorPage').then((m) => ({ default: m.ComparatorPage }))
 );
+const DataPage = lazy(() =>
+  import('./components/DataPage').then((m) => ({ default: m.DataPage }))
+);
 
 /** Centered spinner shown while a page chunk is being fetched. */
 function PageLoading() {
@@ -35,8 +38,9 @@ function PageLoading() {
 /**
  * Single-page app with a top-nav page switcher. AuthGate enforces sign-in
  * (using our custom sign-up flow that calls a backend Lambda — required
- * because the org policy in this account blocks Cognito self-service
- * signup). Once authenticated, AuthedShell renders the chosen page.
+ * because the user pool is configured with AllowAdminCreateUserOnly,
+ * which blocks Cognito self-service signup). Once authenticated,
+ * AuthedShell renders the chosen page.
  */
 export default function App() {
   return (
@@ -87,6 +91,7 @@ function AuthedShell({ advisorEmail, onSignOut }: AuthedShellProps) {
               <VoicePage sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
             ) : null}
             {page === 'comparator' ? <ComparatorPage /> : null}
+            {page === 'data' ? <DataPage /> : null}
           </Suspense>
         </div>
       </RecommendationProvider>

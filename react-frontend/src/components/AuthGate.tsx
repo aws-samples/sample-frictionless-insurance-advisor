@@ -27,10 +27,10 @@ const MIN_PASSWORD_LEN = 12;
 /**
  * Replacement for Amplify's <Authenticator>. Two reasons:
  *
- * 1. The org policy in this account flips AllowAdminCreateUserOnly back to
- *    True on the user pool, which breaks Amplify's self-service SignUp.
- *    We work around it via a public POST /signup Lambda that uses
- *    admin_create_user + admin_set_user_password. Same admin-API pattern.
+ * 1. The user pool is configured with AllowAdminCreateUserOnly, which
+ *    breaks Amplify's self-service SignUp. We work around it via a public
+ *    POST /signup Lambda that uses admin_create_user +
+ *    admin_set_user_password. Same admin-API pattern.
  * 2. Custom auth UI lets us match the new design system end-to-end (no
  *    Amplify CSS overrides needed).
  *

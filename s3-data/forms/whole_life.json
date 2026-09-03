@@ -1,0 +1,219 @@
+{
+  "form_id": "whole_life",
+  "product_type": "whole_life",
+  "product_name": "EverAfter Whole Life",
+  "title": "Whole Life Application",
+  "sections": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "fields": [
+        {
+          "path": "applicant.full_name",
+          "label": "Full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.date_of_birth",
+          "label": "Date of birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "path": "applicant.gender",
+          "label": "Gender",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "male",
+              "label": "Male"
+            },
+            {
+              "value": "female",
+              "label": "Female"
+            }
+          ]
+        },
+        {
+          "path": "applicant.occupation",
+          "label": "Occupation",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.annual_income",
+          "label": "Annual income",
+          "type": "currency",
+          "required": true
+        },
+        {
+          "path": "applicant.email",
+          "label": "Email",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "applicant.phone",
+          "label": "Phone",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "applicant.address",
+          "label": "Address",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Coverage",
+      "fields": [
+        {
+          "path": "coverage.sum_assured",
+          "label": "Death benefit",
+          "type": "currency",
+          "required": true,
+          "hint": "100k / 250k / 500k / 1M / up to 2.5M"
+        },
+        {
+          "path": "coverage.premium_schedule",
+          "label": "Premium payment schedule",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "lifetime",
+              "label": "Lifetime pay"
+            },
+            {
+              "value": "10_pay",
+              "label": "10-pay (paid up after 10 years)"
+            },
+            {
+              "value": "20_pay",
+              "label": "20-pay (paid up after 20 years)"
+            },
+            {
+              "value": "paid_up_65",
+              "label": "Paid up at age 65"
+            }
+          ]
+        },
+        {
+          "path": "coverage.premium_frequency",
+          "label": "Premium frequency",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "monthly",
+              "label": "Monthly"
+            },
+            {
+              "value": "quarterly",
+              "label": "Quarterly"
+            },
+            {
+              "value": "semi_annual",
+              "label": "Semi-annual"
+            },
+            {
+              "value": "annual",
+              "label": "Annual"
+            }
+          ]
+        },
+        {
+          "path": "coverage.dividend_option",
+          "label": "Dividend option",
+          "type": "select",
+          "required": false,
+          "options": [
+            {
+              "value": "cash",
+              "label": "Paid in cash"
+            },
+            {
+              "value": "reduce_premiums",
+              "label": "Reduce premiums"
+            },
+            {
+              "value": "on_deposit",
+              "label": "Left on deposit"
+            },
+            {
+              "value": "paid_up_additions",
+              "label": "Paid-up additions"
+            }
+          ]
+        },
+        {
+          "path": "coverage.riders",
+          "label": "Optional riders",
+          "type": "text",
+          "required": false,
+          "hint": "e.g. paid-up additions, accelerated death benefit, waiver of premium"
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "title": "Health",
+      "fields": [
+        {
+          "path": "health.smoker",
+          "label": "Smoker",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "path": "health.height_cm",
+          "label": "Height (cm)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "path": "health.weight_kg",
+          "label": "Weight (kg)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "path": "health.existing_conditions",
+          "label": "Existing conditions",
+          "type": "text",
+          "required": false,
+          "hint": "Comma-separated, or 'none'"
+        }
+      ]
+    },
+    {
+      "id": "beneficiary",
+      "title": "Beneficiary",
+      "fields": [
+        {
+          "path": "beneficiary.name",
+          "label": "Full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "beneficiary.relationship",
+          "label": "Relationship",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "beneficiary.percentage",
+          "label": "Allocation (%)",
+          "type": "number",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

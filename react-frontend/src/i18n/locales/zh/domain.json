@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "在保",
+      "Inactive": "非活跃",
+      "Prospect": "潜在客户"
+    },
+    "policyStatus": {
+      "Active": "生效中",
+      "Inactive": "未生效",
+      "Pending": "待处理",
+      "Lapsed": "已失效",
+      "Cancelled": "已取消"
+    },
+    "maritalStatus": {
+      "Married": "已婚",
+      "Single": "单身",
+      "Divorced": "离异",
+      "Widowed": "丧偶"
+    },
+    "policyType": {
+      "Auto Insurance": "汽车保险",
+      "Home Insurance": "家庭财产保险",
+      "Life Insurance": "人寿保险",
+      "Health Insurance": "健康保险",
+      "Disability Insurance": "伤残保险",
+      "Travel Insurance": "旅行保险",
+      "Critical Illness Insurance": "重大疾病保险"
+    },
+    "premiumFrequency": {
+      "yearly": "每年",
+      "annually": "每年",
+      "monthly": "每月",
+      "quarterly": "每季度",
+      "weekly": "每周"
+    },
+    "lifeType": {
+      "Term Life": "定期寿险",
+      "Whole Life": "终身寿险",
+      "Universal Life": "万能寿险",
+      "Variable Life": "变额寿险"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "终身缴费",
+      "10-pay": "10 年缴",
+      "20-pay": "20 年缴",
+      "paid-up at 65": "65 岁缴清"
+    },
+    "dividendOption": {
+      "paid in cash": "现金领取",
+      "reduce premiums": "抵扣保费",
+      "left on deposit": "留存生息",
+      "paid-up additions": "购买增额缴清保险"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "方案 A（固定保额）",
+      "Option B (face + cash value)": "方案 B（保额 + 现金价值）",
+      "Option C (face + return of premium)": "方案 C（保额 + 保费返还）"
+    }
+  }
+}

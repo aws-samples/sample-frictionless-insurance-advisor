@@ -7,6 +7,7 @@
       "assistant": "텍스트 어시스턴트",
       "voice": "텍스트+음성 어시스턴트",
       "comparator": "비교",
+      "data": "데이터",
       "signOut": "로그아웃",
       "language": "언어",
       "pitchDeck": "프레젠테이션 열기"

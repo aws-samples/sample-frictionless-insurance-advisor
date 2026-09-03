@@ -26,6 +26,10 @@
         "policiesCount": "Contrats",
         "occupation": "Profession",
         "maritalStatus": "État civil"
+      },
+      "dataFreshness": {
+        "badge": "Vérifier les infos actuelles",
+        "tooltip": "Ce profil n'a pas été révisé depuis plus de {{days}} jours. Confirmez que les informations du client sont toujours à jour avant de vous fier à l'analyse de couverture."
       }
     },
     "policies": {
@@ -136,6 +140,9 @@
         "company": "Parlez-moi de Unicorn Insurance",
         "whyUnicorn": "Pourquoi devrait-il choisir Unicorn plutôt que BigRival ?",
         "qualifyQuestions": "Quelles questions dois-je poser pour qualifier ce prospect ?"
+      },
+      "voice": {
+        "startTermLifeApplication": "Démarrer une demande d'assurance vie temporaire"
       }
     },
     "pages": {
@@ -163,13 +170,90 @@
         "carrier": "Assureur",
         "disclaimer": "Comparaison générée par IA",
         "minProducts": "Sélectionnez au moins {{min}} produits.",
-        "maxProducts": "Vous pouvez comparer au maximum {{max}} produits."
+        "maxProducts": "Vous pouvez comparer au maximum {{max}} produits.",
+        "internalUseOnly": "Usage interne uniquement",
+        "staleNotice": "Certaines données sources peuvent être obsolètes — vérifiez-les avant de les partager avec un client.",
+        "productStale": "Données de plus de {{days}} jours",
+        "productUpdated": "Source mise à jour le {{date}}"
+      },
+      "data": {
+        "heading": "Données",
+        "intro": "Consultez les documents de référence qui étayent les réponses de l'assistant : portefeuille de produits, informations sur l'entreprise, positionnement concurrentiel, produits concurrents, promotions et schémas des formulaires de demande.",
+        "searchPlaceholder": "Rechercher des fichiers...",
+        "clearSearch": "Effacer la recherche",
+        "fileCount": "{{count}} fichiers",
+        "matchCount": "{{count}} fichiers sur {{total}}",
+        "noMatches": "Aucun fichier ne correspond à \"{{query}}\".",
+        "selectFile": "Sélectionnez un document dans la liste pour afficher son contenu.",
+        "loadingList": "Chargement des documents...",
+        "loadingFile": "Chargement du document...",
+        "emptyList": "Aucun document disponible.",
+        "viewRendered": "Mis en forme",
+        "viewRaw": "Brut",
+        "lastUpdated": "Dernière mise à jour le {{date}}",
+        "internalUseOnly": "Usage interne uniquement",
+        "form": {
+          "sectionCount": "{{count}} sections",
+          "fieldCount": "{{count}} champs",
+          "requiredCount": "{{count}} obligatoires",
+          "required": "Obligatoire",
+          "optional": "Facultatif",
+          "options": "Options",
+          "product": "Produit",
+          "formId": "ID du formulaire"
+        },
+        "folders": {
+          "portfolio": "Portefeuille de produits",
+          "company": "Informations sur l'entreprise",
+          "competitive": "Positionnement concurrentiel",
+          "competitors": "Produits concurrents",
+          "promotion": "Promotions",
+          "forms": "Formulaires de demande"
+        }
       }
+    },
+    "voice": {
+      "heading": "Conversation vocale",
+      "selectCustomer": "Sélectionnez un client pour démarrer une conversation vocale.",
+      "startVoice": "Démarrer la conversation vocale",
+      "stopVoice": "Arrêter la conversation vocale",
+      "typePlaceholder": "Saisissez un message...",
+      "connecting": "Connexion...",
+      "emptyConnecting": "Connexion à l'agent...",
+      "emptyConnected": "Saisissez un message ci-dessous ou appuyez sur Démarrer la conversation vocale pour parler. Effacer réinitialise la conversation.",
+      "hintText": "L'assistant répond uniquement par texte. Appuyez sur Démarrer la conversation vocale pour parler et entendre les réponses.",
+      "hintVoice": "La conversation vocale est active — l'assistant répondra par la voix et le texte. Appuyez sur Arrêter la conversation vocale pour saisir uniquement du texte.",
+      "status": {
+        "connecting": "Connexion",
+        "connected": "Connecté",
+        "listening": "À l'écoute",
+        "speaking": "Parle"
+      },
+      "mute": "Couper la voix",
+      "unmute": "Réactiver la voix"
     },
     "recommendation": {
       "loading": "Analyse de la couverture et recherche de lacunes...",
       "noGaps": "Aucune lacune de couverture significative — le client est bien couvert pour son profil.",
       "error": "Impossible de générer une recommandation: {{message}}"
+    },
+    "form": {
+      "backToProfile": "Profil",
+      "progress": "{{filled}} sur {{total}} champs obligatoires",
+      "progressLabel": "Progression du formulaire",
+      "pendingReview": "{{count}} à vérifier",
+      "looksRight": "C'est correct",
+      "stillNeeded": "Encore requis",
+      "carriedOver": "{{count}} conservés",
+      "sendForSignature": "Envoyer pour signature",
+      "sent": "Envoyé pour signature",
+      "sentHint": "Démo uniquement — rien n'a été envoyé.",
+      "sendReadyHint": "Tous les champs obligatoires sont remplis.",
+      "sendBlocked": "{{count}} champ(s) obligatoire(s) manquant(s).",
+      "legendProfile": "Depuis le profil",
+      "legendHeard": "Entendu dans la conversation",
+      "legendConfirm": "À confirmer",
+      "legendManual": "Saisi par vous"
     }
   }
 }

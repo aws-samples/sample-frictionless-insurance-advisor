@@ -26,6 +26,10 @@
         "policiesCount": "Pólizas",
         "occupation": "Ocupación",
         "maritalStatus": "Estado civil"
+      },
+      "dataFreshness": {
+        "badge": "Verificar datos actuales",
+        "tooltip": "Este perfil no se ha revisado en más de {{days}} días. Confirma que los datos del cliente siguen vigentes antes de basarte en el análisis de cobertura."
       }
     },
     "policies": {
@@ -136,6 +140,9 @@
         "company": "Cuéntame sobre Unicorn Insurance",
         "whyUnicorn": "¿Por qué debería elegir Unicorn en lugar de BigRival?",
         "qualifyQuestions": "¿Qué preguntas debería hacer para calificar a este cliente potencial?"
+      },
+      "voice": {
+        "startTermLifeApplication": "Iniciar una solicitud de seguro de vida a término"
       }
     },
     "pages": {
@@ -163,7 +170,46 @@
         "carrier": "Aseguradora",
         "disclaimer": "Comparación generada por IA",
         "minProducts": "Selecciona al menos {{min}} productos.",
-        "maxProducts": "Puedes comparar como máximo {{max}} productos."
+        "maxProducts": "Puedes comparar como máximo {{max}} productos.",
+        "internalUseOnly": "Solo para uso interno",
+        "staleNotice": "Algunos datos de origen pueden estar desactualizados; verifícalos antes de compartirlos con un cliente.",
+        "productStale": "Datos de más de {{days}} días",
+        "productUpdated": "Fuente actualizada el {{date}}"
+      },
+      "data": {
+        "heading": "Datos",
+        "intro": "Consulta los documentos de referencia que respaldan las respuestas del asistente: cartera de productos, información de la empresa, posicionamiento competitivo, productos de la competencia, promociones y esquemas de formularios de solicitud.",
+        "searchPlaceholder": "Buscar archivos...",
+        "clearSearch": "Limpiar búsqueda",
+        "fileCount": "{{count}} archivos",
+        "matchCount": "{{count}} de {{total}} archivos",
+        "noMatches": "Ningún archivo coincide con \"{{query}}\".",
+        "selectFile": "Selecciona un documento de la lista para ver su contenido.",
+        "loadingList": "Cargando documentos...",
+        "loadingFile": "Cargando documento...",
+        "emptyList": "No hay documentos disponibles.",
+        "viewRendered": "Con formato",
+        "viewRaw": "Sin formato",
+        "lastUpdated": "Última actualización el {{date}}",
+        "internalUseOnly": "Solo para uso interno",
+        "form": {
+          "sectionCount": "{{count}} secciones",
+          "fieldCount": "{{count}} campos",
+          "requiredCount": "{{count}} obligatorios",
+          "required": "Obligatorio",
+          "optional": "Opcional",
+          "options": "Opciones",
+          "product": "Producto",
+          "formId": "ID del formulario"
+        },
+        "folders": {
+          "portfolio": "Cartera de productos",
+          "company": "Información de la empresa",
+          "competitive": "Posicionamiento competitivo",
+          "competitors": "Productos de la competencia",
+          "promotion": "Promociones",
+          "forms": "Formularios de solicitud"
+        }
       }
     },
     "voice": {
@@ -182,12 +228,32 @@
         "connected": "Conectado",
         "listening": "Escuchando",
         "speaking": "Hablando"
-      }
+      },
+      "mute": "Silenciar voz",
+      "unmute": "Activar voz"
     },
     "recommendation": {
       "loading": "Analizando la cobertura y buscando brechas...",
       "noGaps": "No se han identificado brechas de cobertura significativas: el cliente está bien cubierto para su perfil.",
       "error": "No se pudo generar la recomendación: {{message}}"
+    },
+    "form": {
+      "backToProfile": "Perfil",
+      "progress": "{{filled}} de {{total}} campos obligatorios",
+      "progressLabel": "Progreso del formulario",
+      "pendingReview": "{{count}} por revisar",
+      "looksRight": "Es correcto",
+      "stillNeeded": "Pendiente",
+      "carriedOver": "{{count}} conservados",
+      "sendForSignature": "Enviar para firma",
+      "sent": "Enviado para firma",
+      "sentHint": "Solo demostración: no se envió nada.",
+      "sendReadyHint": "Todos los campos obligatorios están completos.",
+      "sendBlocked": "Faltan {{count}} campo(s) obligatorio(s).",
+      "legendProfile": "Del perfil",
+      "legendHeard": "Oído en la conversación",
+      "legendConfirm": "Confirmar",
+      "legendManual": "Introducido por ti"
     }
   }
 }

@@ -26,6 +26,10 @@
         "policiesCount": "契約数",
         "occupation": "職業",
         "maritalStatus": "配偶者の有無"
+      },
+      "dataFreshness": {
+        "badge": "最新情報を確認",
+        "tooltip": "このプロフィールは {{days}} 日以上見直されていません。補償分析を利用する前に、顧客情報が最新であることを確認してください。"
       }
     },
     "policies": {
@@ -136,6 +140,9 @@
         "company": "Unicorn Insurance について教えてください",
         "whyUnicorn": "この見込み顧客はなぜ BigRival ではなく Unicorn を選ぶべきですか？",
         "qualifyQuestions": "この見込み顧客を見極めるためにどのような質問をすべきですか？"
+      },
+      "voice": {
+        "startTermLifeApplication": "定期生命保険の申し込みを開始してください"
       }
     },
     "pages": {
@@ -163,7 +170,46 @@
         "carrier": "保険会社",
         "disclaimer": "AI が生成した比較",
         "minProducts": "商品を{{min}} 個以上選択してください。",
-        "maxProducts": "比較できるのは最大 {{max}} 個までです。"
+        "maxProducts": "比較できるのは最大 {{max}} 個までです。",
+        "internalUseOnly": "社内利用限定",
+        "staleNotice": "一部の情報が古い可能性があります。顧客と共有する前に確認してください。",
+        "productStale": "データは {{days}} 日以上前のものです",
+        "productUpdated": "ソース更新日: {{date}}"
+      },
+      "data": {
+        "heading": "データ",
+        "intro": "アシスタントの回答の根拠となる参照ドキュメントを閲覧できます — 商品ポートフォリオ、会社情報、競合ポジショニング、競合商品、キャンペーン、申込書スキーマ。",
+        "searchPlaceholder": "ファイルを検索...",
+        "clearSearch": "検索をクリア",
+        "fileCount": "{{count}} 件のファイル",
+        "matchCount": "{{total}} 件中 {{count}} 件のファイル",
+        "noMatches": "\"{{query}}\" に一致するファイルはありません。",
+        "selectFile": "内容を表示するには、一覧からドキュメントを選択してください。",
+        "loadingList": "ドキュメントを読み込み中...",
+        "loadingFile": "ドキュメントを読み込み中...",
+        "emptyList": "利用できるドキュメントがありません。",
+        "viewRendered": "整形表示",
+        "viewRaw": "ソース",
+        "lastUpdated": "最終更新日: {{date}}",
+        "internalUseOnly": "社内利用限定",
+        "form": {
+          "sectionCount": "{{count}} セクション",
+          "fieldCount": "{{count}} 項目",
+          "requiredCount": "必須 {{count}} 項目",
+          "required": "必須",
+          "optional": "任意",
+          "options": "選択肢",
+          "product": "商品",
+          "formId": "フォームID"
+        },
+        "folders": {
+          "portfolio": "商品ポートフォリオ",
+          "company": "会社情報",
+          "competitive": "競合ポジショニング",
+          "competitors": "競合商品",
+          "promotion": "キャンペーン",
+          "forms": "申込書"
+        }
       }
     },
     "voice": {
@@ -182,12 +228,32 @@
         "connected": "接続済み",
         "listening": "リスニング中",
         "speaking": "応答中"
-      }
+      },
+      "mute": "音声をミュート",
+      "unmute": "ミュート解除"
     },
     "recommendation": {
       "loading": "補償内容を分析し、不足を確認しています...",
       "noGaps": "重要な補償ギャップは見つかりませんでした — このプロファイルでは十分にカバーされています。",
       "error": "推奨を生成できませんでした: {{message}}"
+    },
+    "form": {
+      "backToProfile": "プロフィール",
+      "progress": "必須項目 {{total}} 件中 {{filled}} 件",
+      "progressLabel": "入力の進捗",
+      "pendingReview": "確認待ち {{count}} 件",
+      "looksRight": "問題なし",
+      "stillNeeded": "未入力の項目",
+      "carriedOver": "{{count}} 件を引き継ぎ",
+      "sendForSignature": "署名用に送信",
+      "sent": "署名用に送信しました",
+      "sentHint": "デモのみ — 実際には送信されていません。",
+      "sendReadyHint": "必須項目はすべて入力済みです。",
+      "sendBlocked": "必須項目が残り {{count}} 件あります。",
+      "legendProfile": "プロフィールから",
+      "legendHeard": "会話から取得",
+      "legendConfirm": "確認が必要",
+      "legendManual": "手入力"
     }
   }
 }

@@ -13,6 +13,7 @@ from aws_cdk import (
     CfnOutput,
     RemovalPolicy,
     Stack,
+    aws_bedrockagentcore as agentcore,
     aws_ecr_assets as ecr_assets,
     aws_iam as iam,
     aws_logs as logs,
@@ -20,16 +21,14 @@ from aws_cdk import (
 )
 from constructs import Construct
 
-from .agentcore_runtime_custom import (
-    AgentCoreRuntimeCustom,
-    AgentCoreRuntimeCustomProps,
-    create_authorizer_configuration,
-)
 from .agentcore_stack import AgentCoreStack
 from .auth_stack import AuthStack
 
 
-RUNTIME_NAME = "insurance_voice_runtime"
+# Renamed from `insurance_voice_runtime`: AgentRuntimeName is unique per
+# account/region and CloudFormation creates the L1 replacement before deleting
+# the old custom resource, so the previous name would collide.
+RUNTIME_NAME = "insurance_voice_agent"
 MODEL_ID = "amazon.nova-2-sonic-v1:0"
 BEDROCK_REGION = "us-east-1"
 
@@ -151,9 +150,9 @@ class VoiceStack(Stack):
                 ],
                 resources=[
                     f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:" +
-                    f"gateway/{agentcore_stack.agentcore_gateway.gateway_id}",
+                    f"gateway/{agentcore_stack.gateway_id}",
                     f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:" +
-                    f"gateway/{agentcore_stack.agentcore_gateway.gateway_id}/*",
+                    f"gateway/{agentcore_stack.gateway_id}/*",
                 ],
             )
         )
@@ -198,6 +197,10 @@ class VoiceStack(Stack):
                 ],
             )
         )
+        # Read-only access to the application-form schemas. Scoped to this one
+        # bucket; the runtime reads schemas directly rather than having the
+        # model echo them back as tool arguments.
+        agentcore_stack.forms_bucket.grant_read(runtime_role)
         # AgentCore Memory read/write for the insurance advisor memory.
         runtime_role.add_to_policy(
             iam.PolicyStatement(
@@ -226,53 +229,67 @@ class VoiceStack(Stack):
         # --- Voice AgentCore Runtime ----------------------------------
         # Same JWT authorizer as the insurance runtime so React users sign in
         # once via Amplify and use the same access token for both runtimes.
-        voice_runtime = AgentCoreRuntimeCustom(
+        # Stable L1 (AWS::BedrockAgentCore::Runtime) — see the equivalent comment
+        # in agentcore_stack.py for why this is no longer a custom resource.
+        voice_runtime = agentcore.CfnRuntime(
             self,
-            "VoiceRuntime",
-            AgentCoreRuntimeCustomProps(
-                execution_role=runtime_role,
-                runtime_name=RUNTIME_NAME,
-                container_uri=voice_image.image_uri,
-                server_protocol="HTTP",  # exposes /ping and /ws
-                network_mode="PUBLIC",
-                description=(
-                    "Self-contained voice agent on Nova Sonic 2 with the same " +
-                    "insurance tool access as the main agent"
-                ),
-                allowed_headers=["Authorization"],
-                authorizer_configuration=create_authorizer_configuration(
+            "VoiceRuntimeL1",
+            agent_runtime_name=RUNTIME_NAME,
+            description=(
+                "Self-contained voice agent on Nova Sonic 2 with the same "
+                "insurance tool access as the main agent"
+            ),
+            role_arn=runtime_role.role_arn,
+            agent_runtime_artifact=agentcore.CfnRuntime.AgentRuntimeArtifactProperty(
+                container_configuration=agentcore.CfnRuntime.ContainerConfigurationProperty(
+                    container_uri=voice_image.image_uri
+                )
+            ),
+            network_configuration=agentcore.CfnRuntime.NetworkConfigurationProperty(
+                network_mode="PUBLIC"
+            ),
+            protocol_configuration="HTTP",  # exposes /ping and /ws
+            request_header_configuration=agentcore.CfnRuntime.RequestHeaderConfigurationProperty(
+                request_header_allowlist=["Authorization"]
+            ),
+            authorizer_configuration=agentcore.CfnRuntime.AuthorizerConfigurationProperty(
+                custom_jwt_authorizer=agentcore.CfnRuntime.CustomJWTAuthorizerConfigurationProperty(
                     discovery_url=(
-                        f"https://cognito-idp.{self.region}.amazonaws.com/" +
+                        f"https://cognito-idp.{self.region}.amazonaws.com/"
                         f"{auth_stack.user_pool.user_pool_id}/.well-known/openid-configuration"
                     ),
                     allowed_clients=[auth_stack.app_client.user_pool_client_id],
-                ),
-                environment_variables={
-                    # General
-                    "AWS_REGION": self.region,
-                    "BEDROCK_REGION": BEDROCK_REGION,
-                    "MODEL_ID": MODEL_ID,
-                    # Audio config
-                    "INPUT_SAMPLE_RATE": "16000",
-                    "OUTPUT_SAMPLE_RATE": "16000",
-                    "CHANNELS": "1",
-                    "FORMAT": "pcm",
-                    # Gateway (reuses the insurance runtime's gateway + OAuth provider)
-                    "AGENTCORE_GATEWAY_URL": agentcore_stack.agentcore_gateway.gateway_url,
-                    "GATEWAY_CREDENTIAL_PROVIDER_NAME": "insurance-advisor-runtime-gateway-auth",
-                    # Memory (shared with insurance runtime for cross-surface context)
-                    "BEDROCK_AGENTCORE_MEMORY_ID": agentcore_stack.ltm_memory.attr_memory_id,
-                    # Cognito lookup for advisor_id resolution from JWT
-                    "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
-                    # Guardrail (same as insurance). Version is read
-                    # from SSM at cold start via
-                    # BEDROCK_GUARDRAIL_VERSION_PARAM_NAME so guardrail
-                    # policy updates roll out without redeploying the
-                    # voice runtime.
-                    "BEDROCK_GUARDRAIL_ID": agentcore_stack.guardrail.attr_guardrail_id,
-                    "BEDROCK_GUARDRAIL_VERSION_PARAM_NAME": agentcore_stack.guardrail_version_param_name,
-                },
+                )
             ),
+            environment_variables={
+                # General
+                "AWS_REGION": self.region,
+                "BEDROCK_REGION": BEDROCK_REGION,
+                "MODEL_ID": MODEL_ID,
+                # Audio config
+                "INPUT_SAMPLE_RATE": "16000",
+                "OUTPUT_SAMPLE_RATE": "16000",
+                "CHANNELS": "1",
+                "FORMAT": "pcm",
+                # Gateway (reuses the insurance runtime's gateway + OAuth provider)
+                "AGENTCORE_GATEWAY_URL": agentcore_stack.gateway_url,
+                "GATEWAY_CREDENTIAL_PROVIDER_NAME": "insurance-advisor-runtime-gateway-auth",
+                # Memory (shared with insurance runtime for cross-surface context)
+                "BEDROCK_AGENTCORE_MEMORY_ID": agentcore_stack.ltm_memory.attr_memory_id,
+                # Cognito lookup for advisor_id resolution from JWT
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                # Application-form schemas. Read straight from S3 by the
+                # open_application_form tool so the schema is never routed
+                # back through the model as a tool argument.
+                "FORMS_BUCKET": agentcore_stack.forms_bucket.bucket_name,
+                # Guardrail (same as insurance). Version is read
+                # from SSM at cold start via
+                # BEDROCK_GUARDRAIL_VERSION_PARAM_NAME so guardrail
+                # policy updates roll out without redeploying the
+                # voice runtime.
+                "BEDROCK_GUARDRAIL_ID": agentcore_stack.guardrail.attr_guardrail_id,
+                "BEDROCK_GUARDRAIL_VERSION_PARAM_NAME": agentcore_stack.guardrail_version_param_name,
+            },
         )
         voice_runtime.node.add_dependency(log_group)
 
@@ -281,7 +298,7 @@ class VoiceStack(Stack):
             self,
             "VoiceRuntimeArnParam",
             parameter_name="/insurance-advisor/voice/runtime-arn",
-            string_value=voice_runtime.agent_runtime_arn,
+            string_value=voice_runtime.attr_agent_runtime_arn,
             description="AgentCore Runtime ARN for the voice agent",
         )
 
@@ -289,7 +306,7 @@ class VoiceStack(Stack):
         CfnOutput(
             self,
             "VoiceRuntimeArn",
-            value=voice_runtime.agent_runtime_arn,
+            value=voice_runtime.attr_agent_runtime_arn,
             description="Voice AgentCore Runtime ARN",
         )
         CfnOutput(

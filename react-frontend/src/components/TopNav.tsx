@@ -1,4 +1,4 @@
-import { LogOut, Mic, MessageSquare, Moon, Presentation, Scale, Sun } from 'lucide-react';
+import { Database, LogOut, Mic, MessageSquare, Moon, Presentation, Scale, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '../hooks/useTheme';
@@ -19,6 +19,7 @@ const PAGES = [
   { id: 'assistant', labelKey: 'common.nav.assistant', Icon: MessageSquare },
   { id: 'voice', labelKey: 'common.nav.voice', Icon: Mic },
   { id: 'comparator', labelKey: 'common.nav.comparator', Icon: Scale },
+  { id: 'data', labelKey: 'common.nav.data', Icon: Database },
 ] as const;
 
 export function TopNav({ activePage, onChangePage, advisorEmail, onSignOut }: TopNavProps) {

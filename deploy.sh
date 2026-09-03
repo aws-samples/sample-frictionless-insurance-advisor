@@ -23,17 +23,11 @@ uv run cdk deploy \
     --concurrency 4 \
     --require-approval never
 
-# 1.5) Re-assert AgentCore Runtime requestHeaderConfiguration. CDK's
-#      AwsCustomResource provider Lambda installs the AWS SDK at deploy
-#      time and the version pulled is non-deterministic; older versions
-#      silently drop the requestHeaderConfiguration field. This script
-#      uses our pinned boto3 to ensure both runtimes forward the
-#      Authorization header into the container, so the agents can
-#      identify the caller from their verified Cognito JWT instead of
-#      relying on a client-supplied advisor_id (which would let an
-#      authenticated user impersonate any other advisor).
-echo "🔐 Asserting Authorization header forwarding on AgentCore Runtimes..."
-uv run python scripts/assert_runtime_header_config.py
+# Note: there used to be a step here re-asserting requestHeaderConfiguration on
+# the AgentCore Runtimes, because they were AwsCustomResource-backed and the
+# provider Lambda's npm-installed AWS SDK sometimes silently dropped the field.
+# The runtimes are now AWS::BedrockAgentCore::Runtime (L1), so the Authorization
+# allowlist is declared in CloudFormation and cannot drift. Script removed.
 
 # 2) Pull SSM values into react-frontend/.env.local and build the SPA.
 #    First generate the sample policy PDFs from their markdown sources.

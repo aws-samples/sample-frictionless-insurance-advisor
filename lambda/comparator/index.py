@@ -2,12 +2,12 @@
 Insurance Product Comparator Lambda
 
 Fetches selected products' markdown from S3 and asks Bedrock (Claude Sonnet
-4.5 via the Converse API) to produce a fixed-shape JSON comparison suitable
+5 via the Converse API) to produce a fixed-shape JSON comparison suitable
 for table rendering in the React frontend.
 
 Route:
   POST /comparator/compare
-    Body: { "product_ids": ["...", "..."], "locale": "en|ja|ko|es" }
+    Body: { "product_ids": ["...", "..."], "locale": <see SUPPORTED_LOCALES> }
     Returns: the LLM's JSON payload (schema documented below).
 
 Design notes:
@@ -25,6 +25,7 @@ Design notes:
 import json
 import os
 import traceback
+from datetime import date, datetime
 from typing import Any
 
 import boto3
@@ -33,12 +34,17 @@ from botocore.config import Config
 MIN_PRODUCTS = 2
 MAX_PRODUCTS = 4
 
-# Supported frontend locales. Anything else falls through to English.
-SUPPORTED_LOCALES = {"en", "ja", "ko", "es"}
+# BR-COMP-003: source documents carry a `last_updated` front-matter date.
+# A product whose source is older than this many days is flagged so the
+# advisor can verify it before sharing. Matches the BRD's 90-day window.
+STALE_AFTER_DAYS = 90
 
-# Claude Sonnet 4.5 on us-east-1 Bedrock runtime.
+# Supported frontend locales. Anything else falls through to English.
+SUPPORTED_LOCALES = {"en", "ja", "ko", "es", "fr", "zh", "ms", "th", "id"}
+
+# Claude Sonnet 5 on us-east-1 Bedrock runtime.
 BEDROCK_MODEL_ID = os.environ.get(
-    "BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    "BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-5"
 )
 
 # Bedrock Guardrail wired by the agentcore stack at deploy time. The
@@ -244,12 +250,63 @@ def _fetch_markdown(entry: dict) -> str:
             return body.decode("utf-8", errors="replace")
 
 
+def _parse_front_matter(md: str) -> tuple[dict, str]:
+    """Split a leading YAML-ish `--- ... ---` front-matter block off a markdown
+    document. Returns (metadata, body). If there's no front-matter, returns
+    ({}, original). Only simple `key: value` lines are parsed — enough for the
+    `last_updated` date we care about, without pulling in a YAML dependency.
+
+    The body is returned WITHOUT the front-matter so the LLM never sees the
+    metadata and can't mistake it for product content.
+    """
+    if not md.startswith("---"):
+        return {}, md
+    lines = md.splitlines()
+    end = None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            end = i
+            break
+    if end is None:
+        return {}, md
+    meta: dict[str, str] = {}
+    for line in lines[1:end]:
+        if ":" in line:
+            key, _, value = line.partition(":")
+            meta[key.strip()] = value.strip()
+    body = "\n".join(lines[end + 1 :]).lstrip("\n")
+    return meta, body
+
+
+def _freshness_from_meta(meta: dict) -> dict | None:
+    """Turn a front-matter `last_updated` date into a freshness descriptor.
+
+    Returns {"last_updated": "YYYY-MM-DD", "stale": bool} or None when the
+    date is missing/unparseable (in which case the product simply carries no
+    freshness signal and the UI shows nothing).
+    """
+    raw = (meta.get("last_updated") or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    age_days = (date.today() - parsed).days
+    return {"last_updated": raw, "stale": age_days > STALE_AFTER_DAYS}
+
+
 def _locale_language_name(locale: str) -> str:
     return {
         "en": "English",
         "ja": "Japanese",
         "ko": "Korean",
         "es": "Spanish",
+        "fr": "French",
+        "zh": "Simplified Chinese",
+        "ms": "Malay (Bahasa Melayu)",
+        "th": "Thai",
+        "id": "Indonesian (Bahasa Indonesia)",
     }.get(locale, "English")
 
 
@@ -420,7 +477,18 @@ def handler(event, context):
         entries = _fetch_catalog_entries(product_ids)
 
         # Pull markdown from S3 in parallel? For 4 files it's not worth it.
-        markdowns = [_fetch_markdown(e) for e in entries]
+        raw_markdowns = [_fetch_markdown(e) for e in entries]
+
+        # BR-COMP-003: split off each document's `last_updated` front-matter.
+        # The LLM gets the front-matter-free body; we keep the parsed date to
+        # flag stale sources in the response. Aligned with `entries` order.
+        parsed = [_parse_front_matter(m) for m in raw_markdowns]
+        markdowns = [body for _meta, body in parsed]
+        freshness_by_pid: dict[str, dict] = {}
+        for entry, (meta, _body) in zip(entries, parsed):
+            fr = _freshness_from_meta(meta)
+            if fr:
+                freshness_by_pid[entry["product_id"]] = fr
 
         request_kwargs = _build_converse_request(entries, markdowns, locale)
         bedrock_response = bedrock_runtime.converse(**request_kwargs)
@@ -463,6 +531,19 @@ def handler(event, context):
                         f"Row '{row.get('attribute')}' has "
                         f"{len(row.get('values', []))} values; expected {len(product_ids)}"
                     )
+
+        # BR-COMP-003: attach source-freshness to each product so the frontend
+        # can warn on stale data. Match on the model-echoed product id, falling
+        # back to positional order (products come back in the requested order)
+        # if the model altered an id.
+        products = payload["products"]
+        for idx, prod in enumerate(products):
+            fr = freshness_by_pid.get(prod.get("id"))
+            if fr is None and idx < len(product_ids):
+                fr = freshness_by_pid.get(product_ids[idx])
+            if fr:
+                prod["last_updated"] = fr["last_updated"]
+                prod["stale"] = fr["stale"]
 
         return _response(200, payload)
 

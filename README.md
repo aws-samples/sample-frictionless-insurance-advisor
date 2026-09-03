@@ -4,7 +4,9 @@
 
 > An AI co-pilot that gives every advisor instant, coverage-aware insight into each customer's portfolio, products, and competitors — so they walk into every conversation already prepared.
 
-Advisors sign in to a React app and either chat with the agent or talk to it in real time. The agent reaches across eight MCP tools — customer profiles, policies, the Unicorn product catalog, current promotions, company facts, competitive talking points, competitor product references, and policy-document extraction — to answer questions grounded in real customer data. It tracks third-party policies the customer holds elsewhere so cross-sell suggestions stay coverage-aware, can onboard a brand-new prospect just by talking, accepts uploaded policy documents (PDF / image / markdown) and extracts structured fields the advisor confirms before saving, and remembers context per customer across sessions through AgentCore Memory. Separate comparator and recommender Lambdas generate side-by-side product views and structured coverage-gap analyses on demand.
+Advisors sign in to a React app and either chat with the agent or talk to it in real time. The agent reaches across nine MCP tools — customer profiles, policies, the Unicorn product catalog, current promotions, company facts, competitive talking points, competitor product references, policy-document extraction, and life-product application forms — to answer questions grounded in real customer data. It tracks third-party policies the customer holds elsewhere so cross-sell suggestions stay coverage-aware, can onboard a brand-new prospect just by talking, accepts uploaded policy documents (PDF / image / markdown) and extracts structured fields the advisor confirms before saving, and remembers context per customer across sessions through AgentCore Memory. Separate comparator and recommender Lambdas generate side-by-side product views and structured coverage-gap analyses on demand, and a built-in data explorer lets the advisor read the same reference documents the agent is grounded in.
+
+The app is available in **nine languages**, and every surface — chat, voice, comparator, recommender, and the UI itself — responds in the advisor's chosen locale.
 
 ## Why it matters
 
@@ -19,7 +21,7 @@ Advisors sign in to a React app and either chat with the agent or talk to it in 
 | Conversational text agent | Anthropic **Claude Haiku 4.5** | Fast, low-cost multi-turn reasoning with tool use |
 | Voice agent | Amazon **Nova Sonic 2** | Bidirectional voice with low end-to-end latency |
 | Comparator + recommender Lambdas | Anthropic **Claude Haiku 4.5** | Fast structured-output generation for tool-forced JSON |
-| Document extraction (vision) | Anthropic **Claude Sonnet 4.5** | PDF/image vision for third-party policy field extraction |
+| Document extraction (vision) | Anthropic **Claude Sonnet 5** | PDF/image vision for third-party policy field extraction |
 
 ## Architecture
 
@@ -40,10 +42,10 @@ Advisors sign in to a React app and either chat with the agent or talk to it in 
    AgentCore Runtime (voice)                             (profile, policy,
    container · ARM64                                     catalog, comparator,
    Strands · Haiku / Nova Sonic                          recommend, signup,
-                │                                        documents)
+                │                                        documents, data)
                 │  M2M JWT via AgentCore Identity Token Vault
                 ▼
-   AgentCore Gateway (MCP, 8 tool targets)
+   AgentCore Gateway (MCP, 9 tool targets)
                 │
                 ├── OAuth2 → API Gateway → λ profile, λ policies → DynamoDB
                 ├── IAM    → λ portfolio · promotions · company · competitive · competitors → S3
@@ -60,18 +62,18 @@ Five stacks, deployed in order:
 | Stack | Purpose |
 |---|---|
 | `insadv-01-auth` | Cognito user pool (advisors) + gateway pool (M2M) + app + runtime + gateway clients |
-| `insadv-02-tools` | DynamoDB profiles + policies + catalog tables; 14 Lambdas (profile, policies, portfolio, promotions, company, competitive, competitors, catalog, comparator, recommend, signup, documents, extract_policy, mock_data); API Gateway with WAF (rate-limited /signup); S3 markdown knowledge bases + uploads bucket; **shared Bedrock Guardrail** consumed by every model surface; AWS Budget on Bedrock + Lambda spend; KMS key for log encryption |
-| `insadv-03-agentcore` | AgentCore Runtime (Claude Haiku 4.5 text agent), Gateway, eight tool targets, AgentCore Identity OAuth2 credential providers, long-term memory (summary + preference + semantic strategies, 90-day TTL) |
+| `insadv-02-tools` | DynamoDB profiles + policies + catalog tables; 16 Lambdas (profile, policies, portfolio, promotions, company, competitive, competitors, catalog, comparator, recommend, signup, documents, extract_policy, formschema, data, mock_data); API Gateway with WAF (rate-limited /signup); S3 markdown knowledge bases + uploads bucket; **shared Bedrock Guardrail** consumed by every model surface; AWS Budget on Bedrock + Lambda spend; KMS key for log encryption |
+| `insadv-03-agentcore` | AgentCore Runtime (Claude Haiku 4.5 text agent), Gateway, nine tool targets, AgentCore Identity OAuth2 credential providers, long-term memory (summary + preference + semantic strategies, 90-day TTL) |
 | `insadv-04-voice` | AgentCore Runtime (Nova Sonic 2 voice agent), shares the same gateway, memory, guardrail and Cognito as the text runtime |
 | `insadv-05-frontend` | S3 site bucket + CloudFront distribution with Origin Access Control hosting the React build |
 
 `deploy.sh` handles the ordering: backend stacks first (parallel where the DAG allows via `--concurrency 4`), then `npm run build` against fresh SSM env vars, then the frontend stack. The frontend stack only synthesises after `react-frontend/dist/` exists, so a cold `cdk deploy insadv-01-auth` still works on a clean checkout.
 
-After every backend deploy, `scripts/assert_runtime_header_config.py` re-asserts `requestHeaderConfiguration={requestHeaderAllowlist:["Authorization"]}` on both AgentCore runtimes. CDK's AwsCustomResource provider Lambda installs the AWS SDK at deploy time and historically silently dropped this field, leaving Authorization not forwarded into the container — the script uses our pinned boto3 to make the setting deterministic.
+Both AgentCore runtimes are plain `AWS::BedrockAgentCore::Runtime` (L1 `CfnRuntime`). They previously went through an `AwsCustomResource` wrapper plus a post-deploy script, because `requestHeaderConfiguration` was not exposed by CloudFormation and the provider Lambda's deploy-time SDK silently dropped the field — leaving `Authorization` not forwarded into the container. It is now a first-class CloudFormation property, so the allowlist is declared in the stack and no post-deploy reconciliation is needed.
 
 ## Agent tools (MCP)
 
-Eight tools exposed through the AgentCore Gateway. Read-only for Unicorn data, write-enabled for prospect onboarding and third-party policy tracking only.
+Nine tools exposed through the AgentCore Gateway. Read-only for Unicorn data, write-enabled for prospect onboarding and third-party policy tracking only.
 
 | Tool | Source | Purpose |
 |---|---|---|
@@ -83,8 +85,67 @@ Eight tools exposed through the AgentCore Gateway. Read-only for Unicorn data, w
 | `get_competitive_info` | Competitive Lambda → S3 | Unicorn's competitive talking points and head-to-head Q&A |
 | `get_competitor_products` | Competitors Lambda → S3 | Reference info on fictional competitors BigRival, StarInsure, QuickSafe |
 | `extract_policy_from_document` | Extract Policy Lambda → S3 + Bedrock vision | Reads an uploaded PDF/image/markdown and returns structured policy fields with defense-in-depth validators (numeric clamps, date sanity, injection-keyword heuristic, insurer rejection) |
+| `get_form_schema` | Form Schema Lambda → S3 | Application-form schema for a life product (sections, fields, types, required flags). `product_type` is checked against an allowlist before it becomes an S3 key; unknown values return the published list so the agent can self-correct |
 
 The comparator (side-by-side product table) and recommender (coverage-gap analysis) are direct Bedrock Converse calls from their own Lambdas behind the API Gateway, not MCP tools — they're one-shot structured generations that don't benefit from the runtime's tool-use loop.
+
+## Frontend surfaces
+
+Four tabs in the React app, each lazy-loaded:
+
+| Tab | Backed by | What the advisor does |
+|---|---|---|
+| **Text Assistant** | AgentCore text runtime (SSE) | Streaming chat, per-customer history, document upload, "New Prospect" onboarding |
+| **Text+Voice Assistant** | AgentCore voice runtime (WebSocket) | Real-time voice with barge-in, plus a self-filling application form |
+| **Comparator** | Comparator + recommender Lambdas | Side-by-side view of 2-4 products; per-customer coverage-gap analysis |
+| **Data** | `data` Lambda → S3 knowledge bases | Browse and read the reference documents the agent is grounded in |
+
+The customer sidebar, dark-mode toggle, language switcher, and a pitch-deck link are shared across tabs. Panel sizes and sidebar state persist to `localStorage`.
+
+### Data explorer
+
+The Data tab is a read-only window onto the same `s3-data` corpus the agent reads, so an advisor can check the underlying source rather than taking a generated answer on faith.
+
+Six folders are surfaced — Product Portfolio, Company Info, Competitive Positioning, Competitor Products, Promotions, and Application Forms. The folder list is allowlisted and ordered server-side in the `data` Lambda; `mock-policies` is deliberately excluded because those are served as static downloads instead. Only `.md` and `.json` are browsable.
+
+- The file listing is fetched once (metadata only); document bodies load lazily per selection and are cached for the session.
+- Markdown renders at full document type scale, with front matter stripped and shown as a "Last updated" line.
+- **Form-schema JSON gets a real rendered view** — section cards listing each field's label, type, required flag, dotted path, hint, and options, with a Rendered/Raw toggle for the source. Reading a 20-field schema as raw JSON is unpleasant; this makes the same file legible. JSON that isn't a form schema falls back to source only.
+- Search filters across filename, sub-path, and folder label.
+- `competitive` and `competitors` documents carry an **Internal Use Only** badge so a battlecard doesn't get screen-shared to a customer.
+
+Content reaches the browser through API Gateway and the `data` Lambda, authorized with the same Cognito JWT as every other API route. Nothing is bundled into the SPA and the browser never touches S3 directly, so the knowledge-base buckets stay private.
+
+## Voice-driven application forms
+
+In the voice assistant, when the advisor and customer agree to start an application, an application form takes over the left panel and fills itself from the conversation. The advisor keeps talking; fields land as they speak.
+
+**Four life products** have published forms, each backed by a JSON schema in S3 (`s3-data/forms/`):
+
+| `product_type` | Product | Shape |
+|---|---|---|
+| `term_life` | Rainbow Life | Fixed term, no cash value |
+| `whole_life` | EverAfter Whole Life | Permanent, guaranteed cash value |
+| `universal_life` | HorizonFlex Universal Life | Permanent, flexible premium |
+| `variable_life` | StardustVariable Life | Permanent, sub-account investing |
+
+**Answers carry over when the product changes.** All four schemas share an identical `applicant`, `health` and `beneficiary` section plus a common `coverage.sum_assured` and `coverage.premium_frequency` — 18 of ~20 paths. So if the conversation moves from term to whole life, only the 2-4 product-specific fields are outstanding; the advisor is never asked for a date of birth twice. Field state is keyed on path and deliberately not cleared on switch, and the tool tells the agent exactly what carried over so it doesn't re-ask.
+
+**Three tools, split by concern:**
+
+| Tool | Where | Why |
+|---|---|---|
+| `get_form_schema` | Gateway target (shared) | Read-only data lookup. The **text** agent uses it to answer "what does this application require?" |
+| `open_application_form` | Local to the voice runtime | Reads the schema straight from S3 and pushes it down the open WebSocket. Needs the socket in scope, so it can't be a gateway tool |
+| `fill_form_field` | Local to the voice runtime | Emits one field to the browser |
+
+The schema is **never routed through the model**. `open_application_form` fetches from S3 server-side and sends it to the browser directly; the model only gets back a compact list of field paths. Passing 20 fields of JSON back out as a tool argument would burn tokens twice and risk silent truncation or invented fields.
+
+**Confidence drives the UI, not the data.** The model self-reports 0.0-1.0 per field. ≥0.85 fills green; below that fills amber with a "Looks right" confirm. Nothing is hidden from the advisor. These scores are a heuristic prompt signal, **not calibrated probabilities** — they're there to draw the eye, not to be quoted as accuracy. Values are clamped server-side and default to amber if malformed.
+
+**Guards.** `fill_form_field` rejects any path not in the schema actually opened, and refuses outright if no form is open — field paths originate from a model and the UI keys its state on them. `product_type` is allowlisted before it becomes an S3 key.
+
+Precedence is **manual > voice > profile**: fields known from the customer's record are prefilled and marked as such, the conversation can override them (a job change, say), and anything the advisor types by hand is never overwritten.
 
 ## Bedrock Guardrail
 
@@ -124,7 +185,7 @@ Highlights of what's enforced today:
 - Python 3.13, [`uv`](https://docs.astral.sh/uv/)
 - Node.js 18+
 - A container builder running (Finch is supported; Docker / Colima also work)
-- Bedrock model access in `us-east-1` for Claude Haiku 4.5, Claude Sonnet 4.5, and Nova Sonic 2
+- Bedrock model access in `us-east-1` for Claude Haiku 4.5, Claude Sonnet 5, and Nova Sonic 2
 
 ### Deploy
 
@@ -132,7 +193,9 @@ Highlights of what's enforced today:
 ./deploy.sh
 ```
 
-Runs `uv sync`, deploys backend stacks (`insadv-01-auth` → `04-voice` with `--concurrency 4`), runs the post-deploy header-config assertion, pulls SSM values into `react-frontend/.env.local` via `setup-env.sh`, runs `npm install && npm run build`, then deploys `insadv-05-frontend`. First deploy ~10 minutes (Cognito pools, WAF, agent + voice container builds, AgentCore runtime + memory provisioning). Subsequent redeploys are incremental.
+Runs `uv sync`, deploys backend stacks (`insadv-01-auth` → `04-voice` with `--concurrency 4`), generates the sample-policy PDFs, pulls SSM values into `react-frontend/.env.local` via `setup-env.sh`, runs `npm install && npm run build`, then deploys `insadv-05-frontend`. First deploy ~10 minutes (Cognito pools, WAF, agent + voice container builds, AgentCore runtime + memory provisioning). Subsequent redeploys are incremental.
+
+The frontend must be rebuilt whenever the runtime ARNs change, because `setup-env.sh` bakes them into the bundle at build time. `deploy.sh` already does this in the right order — prefer a full run over a partial `cdk deploy` of a single stack.
 
 The CloudFront URL is emitted as `insadv-05-frontend.SiteUrl`.
 
@@ -167,7 +230,7 @@ Two channels, same Cognito JWT.
 - Text: HTTPS POST to `bedrock-agentcore.<region>.amazonaws.com/runtimes/{ARN}/invocations` with `Authorization: Bearer <jwt>`. Streams SSE. The runtime forwards the Authorization header into the container via `requestHeaderConfiguration` and verifies the JWT in-process.
 - Voice: WebSocket to the same host's `/ws` path. Browsers can't set headers on a WebSocket, so the JWT travels base64url-encoded as a `Sec-WebSocket-Protocol` subprotocol — AgentCore's documented browser-OAuth path. The Authorization header is also forwarded for consistency with the text path.
 
-**2. Browser → API Gateway** (profile, policy, catalog, comparator, recommender, signup, documents)
+**2. Browser → API Gateway** (profile, policy, catalog, comparator, recommender, signup, documents, data)
 - Same JWT, this time validated by an API Gateway `CognitoUserPoolsAuthorizer` against the user pool. Methods require the `insurance-advisor-api/api.access` scope. Signup is the only `authorization_type=NONE` route — and it's allowlist-gated and WAF rate-limited.
 
 **3. Runtime → Gateway** (machine-to-machine)
@@ -209,8 +272,7 @@ insurance-advisor-agentcore/
 │   ├── agentcore_stack.py         # Text runtime, gateway, identity, long-term memory
 │   ├── voice_stack.py             # Voice runtime (Nova Sonic 2)
 │   ├── frontend_stack.py          # S3 + CloudFront for the React build
-│   ├── agentcore_oauth_provider.py
-│   └── agentcore_runtime_custom.py
+│   └── agentcore_oauth_provider.py
 ├── agent/                         # Strands text agent (Claude Haiku 4.5)
 ├── voice-agent/                   # Strands BidiAgent voice agent (Nova Sonic 2)
 ├── lambda/
@@ -219,21 +281,34 @@ insurance-advisor-agentcore/
 │   ├── company/ competitive/ competitors/
 │   ├── catalog/ comparator/ recommend/
 │   ├── documents/ extract_policy/ # Document upload + extraction
+│   ├── formschema/                # Application-form schema lookup
+│   ├── data/                      # Data explorer: lists + serves s3-data docs
 │   ├── signup/
 │   ├── oauth_provider/
 │   └── mock_data/
 ├── s3-data/
 │   ├── company/ competitive/ competitors/ portfolio/ promotion/
+│   ├── forms/                     # Application-form schemas, one JSON per life product
 │   └── mock-policies/             # Sample third-party PDFs for the upload flow
-├── react-frontend/                # React + Vite + Amplify UI app
-│   └── public/presentation/       # Sales pitch deck (reveal.js + drawio)
-└── scripts/
-    └── assert_runtime_header_config.py    # Post-deploy: pin requestHeaderConfiguration
+└── react-frontend/                # React 18 + Vite 8 + Tailwind 4 SPA (9 locales)
+    └── public/presentation/       # Sales pitch deck (reveal.js + drawio)
 ```
 
 ## Internationalization
 
-React UI ships with English, Japanese, Korean, Spanish, and French locales. Backend datastores and S3 markdown content are English-only — the LLM handles multilingual prompts natively, so a Japanese question produces a Japanese reply against an English knowledge base. Language switcher in the top nav, persisted to `localStorage`. See `react-frontend/README.md` for the i18n structure and the recipe for adding a new locale.
+Nine UI locales ship today, all at full key parity — no partial translations:
+
+| | | |
+|---|---|---|
+| English (`en`) | 日本語 (`ja`) | 한국어 (`ko`) |
+| Español (`es`) | Français (`fr`) | 简体中文 (`zh`) |
+| Bahasa Melayu (`ms`) | ไทย (`th`) | Bahasa Indonesia (`id`) |
+
+Language switcher in the top nav, persisted to `localStorage` and restored on the next visit. Region variants collapse to the base language (`en-US` → `en`), falling back to English.
+
+Backend datastores and S3 markdown content are English-only by design. The LLM handles multilingual prompts natively, so a Japanese question produces a Japanese reply against an English knowledge base. The comparator and recommender go a step further and pass the active locale explicitly with the request, because their output is generated rather than conversational.
+
+See [`react-frontend/README.md`](./react-frontend/README.md) for the i18n structure and the recipe for adding a new locale.
 
 ## Design decisions worth knowing
 
@@ -263,7 +338,7 @@ Removes all five stacks and their Cognito pools, DynamoDB tables, S3 buckets, Cl
 
 This is a demonstration build, and advisor **sign-up is intentionally constrained** — worth knowing before sharing the app:
 
-- **No open self-registration.** The AWS account's organization policy enforces `AllowAdminCreateUserOnly` on Cognito, so Cognito's self-service sign-up flow is disabled. Accounts are only ever created server-side by the `/signup` Lambda via `admin_create_user` + `admin_set_user_password`.
+- **No open self-registration.** The Cognito user pool is configured with `AllowAdminCreateUserOnly`, so Cognito's self-service sign-up flow is disabled by design. Accounts are only ever created server-side by the `/signup` Lambda via `admin_create_user` + `admin_set_user_password`.
 - **Hard-coded allowlist of two demo advisors.** The `/signup` Lambda accepts only `john.doe@example.com` and `jane.doe@example.com`; every other address is rejected. Adding an advisor means editing the allowlist in `lambda/signup/` and redeploying `insadv-02-tools` — there is no runtime UI or API path to onboard new advisors.
 - **Edge rate-limiting.** WAF caps `/signup` at 100 requests / 5 min / source IP, so even the allowlisted path is not suited to bulk onboarding.
 - **Net effect.** The app effectively supports only the two seeded advisors and their seeded customer sets. A real multi-tenant onboarding flow (self-registration, email verification, MFA, per-advisor provisioning) is out of scope for the demo and tracked under the deferred production-hardening items.

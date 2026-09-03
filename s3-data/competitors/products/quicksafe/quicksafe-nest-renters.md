@@ -1,3 +1,7 @@
+---
+last_updated: 2026-07-20
+---
+
 # QuickSafe Nest Renters (QuickSafe)
 ### Type: Renters Insurance
 

@@ -5,11 +5,18 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "aws-cdk-aws-bedrock-agentcore-alpha>=2.233.0a0",
-    "aws-cdk-lib>=2.233.0",
+    # AgentCore resources come from aws-cdk-lib's stable aws_bedrockagentcore
+    # module (L1 Cfn* only). The alpha package that used to be required here
+    # is gone: it forced an exact version pairing with aws-cdk-lib and is
+    # slated for removal in CDK v3.
+    #
+    # aws-cdk-lib stays exactly pinned because the installed CDK CLI (2.1122.0)
+    # only understands cloud-assembly schema <= 53; 2.266.0 emits 54 and breaks
+    # every synth. Bump this only together with the CLI.
+    "aws-cdk-lib==2.253.0",
     "boto3>=1.42.21",
     "cdk-nag>=2.37.55",
-    "constructs>=10.4.4",
+    "constructs>=10.5.0",
     "requests>=2.33.0",
     "urllib3>=2.7.0",
 ]

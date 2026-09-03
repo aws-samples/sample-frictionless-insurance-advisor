@@ -7,6 +7,12 @@ import './MarkdownMessage.css';
 
 interface MarkdownMessageProps {
   content: string;
+  /**
+   * `chat` (default) uses the compressed scale suited to narrow chat bubbles.
+   * `doc` restores a full document scale — visible heading hierarchy and
+   * looser rhythm — for rendering standalone documents (the Data explorer).
+   */
+  variant?: 'chat' | 'doc';
 }
 
 /**
@@ -24,9 +30,9 @@ interface MarkdownMessageProps {
  * Styling lives in MarkdownMessage.css so the component stays focused on
  * behavior.
  */
-function MarkdownMessageInner({ content }: MarkdownMessageProps) {
+function MarkdownMessageInner({ content, variant = 'chat' }: MarkdownMessageProps) {
   return (
-    <div className="markdown-message">
+    <div className={variant === 'doc' ? 'markdown-message markdown-doc' : 'markdown-message'}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

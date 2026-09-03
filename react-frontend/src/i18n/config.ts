@@ -27,6 +27,26 @@ import frAuth from './locales/fr/auth.json';
 import frAssistant from './locales/fr/assistant.json';
 import frDomain from './locales/fr/domain.json';
 
+import zhCommon from './locales/zh/common.json';
+import zhAuth from './locales/zh/auth.json';
+import zhAssistant from './locales/zh/assistant.json';
+import zhDomain from './locales/zh/domain.json';
+
+import msCommon from './locales/ms/common.json';
+import msAuth from './locales/ms/auth.json';
+import msAssistant from './locales/ms/assistant.json';
+import msDomain from './locales/ms/domain.json';
+
+import thCommon from './locales/th/common.json';
+import thAuth from './locales/th/auth.json';
+import thAssistant from './locales/th/assistant.json';
+import thDomain from './locales/th/domain.json';
+
+import idCommon from './locales/id/common.json';
+import idAuth from './locales/id/auth.json';
+import idAssistant from './locales/id/assistant.json';
+import idDomain from './locales/id/domain.json';
+
 /**
  * Single source of truth for which locales the UI offers.
  *
@@ -41,6 +61,10 @@ export const SUPPORTED_LOCALES: readonly { code: string; label: string }[] = [
   { code: 'ko', label: '한국어' },
   { code: 'es', label: 'Español' },
   { code: 'fr', label: 'Français' },
+  { code: 'zh', label: '简体中文' },
+  { code: 'ms', label: 'Bahasa Melayu' },
+  { code: 'th', label: 'ไทย' },
+  { code: 'id', label: 'Bahasa Indonesia' },
 ];
 
 const DEFAULT_LOCALE = 'en';
@@ -68,6 +92,10 @@ void i18n
       ko: { translation: mergeBundles(koCommon, koAuth, koAssistant, koDomain) },
       es: { translation: mergeBundles(esCommon, esAuth, esAssistant, esDomain) },
       fr: { translation: mergeBundles(frCommon, frAuth, frAssistant, frDomain) },
+      zh: { translation: mergeBundles(zhCommon, zhAuth, zhAssistant, zhDomain) },
+      ms: { translation: mergeBundles(msCommon, msAuth, msAssistant, msDomain) },
+      th: { translation: mergeBundles(thCommon, thAuth, thAssistant, thDomain) },
+      id: { translation: mergeBundles(idCommon, idAuth, idAssistant, idDomain) },
     },
     fallbackLng: DEFAULT_LOCALE,
     supportedLngs: SUPPORTED_LOCALES.map((l) => l.code),

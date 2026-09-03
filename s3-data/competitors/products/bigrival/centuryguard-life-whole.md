@@ -1,3 +1,7 @@
+---
+last_updated: 2025-10-15
+---
+
 # CenturyGuard Life Whole (BigRival)
 ### Type: Whole Life Insurance
 

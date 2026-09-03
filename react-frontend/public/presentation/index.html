@@ -217,6 +217,20 @@
         <p>Existing portfolio reviews or new prospect onboarding</p>
       </div>
     </div>
+    <div class="grid grid-3" style="margin-top:14px;">
+      <div class="card">
+        <h4>Applications That Fill Themselves</h4>
+        <p>The application form opens mid-conversation and populates as the advisor and customer talk</p>
+      </div>
+      <div class="card">
+        <h4>Show Your Sources</h4>
+        <p>Browse the same product, company, and competitor documents the AI is grounded in</p>
+      </div>
+      <div class="card">
+        <h4>Nine Languages</h4>
+        <p>Interface and AI answers in English, 日本語, 한국어, 简体中文, Español, Français, Bahasa Melayu, ไทย, Bahasa Indonesia</p>
+      </div>
+    </div>
   </section>
 
   <!-- ============== SLIDE 3: BUSINESS BENEFITS ============== -->
@@ -256,7 +270,7 @@
       </div>
       <div class="card">
         <h4>Consistent Experience</h4>
-        <p>Standardized advice quality across all advisors</p>
+        <p>Standardized advice quality across every advisor — and across nine languages from one knowledge base</p>
       </div>
     </div>
   </section>
@@ -295,6 +309,41 @@
     </div>
   </section>
 
+  <!-- ============== SLIDE 5: VOICE-DRIVEN APPLICATIONS ============== -->
+  <section class="has-bar">
+    <span class="pill pill-grad">Flagship capability</span>
+    <h2>The Application Fills <span class="grad-text">Itself</span></h2>
+    <p style="margin-bottom:16px;">When the advisor and customer agree to start an application, the form takes over the panel and populates from the conversation. The advisor keeps talking; fields land as they speak.</p>
+    <div class="grid grid-3" style="margin-top:8px;">
+      <div class="card">
+        <h4>Four life products</h4>
+        <p>Term, whole, universal, and variable life — each with a published form schema of sections, fields, types, and mandatory flags</p>
+      </div>
+      <div class="card">
+        <h4>Answers carry over</h4>
+        <p>All four schemas share the applicant, health, and beneficiary sections — 18 of ~20 fields. Switch product mid-conversation and nobody is asked their date of birth twice</p>
+      </div>
+      <div class="card">
+        <h4>Confidence you can see</h4>
+        <p>High-confidence answers fill green; anything less fills amber with a "Looks right" confirmation. Nothing is hidden from the advisor</p>
+      </div>
+    </div>
+    <div class="grid grid-3" style="margin-top:14px;">
+      <div class="card">
+        <h4>Known details prefilled</h4>
+        <p>Fields already on the customer record arrive filled and labelled as such. Precedence is manual &gt; voice &gt; profile, so typed corrections are never overwritten</p>
+      </div>
+      <div class="card">
+        <h4>The schema never touches the model</h4>
+        <p>Forms are read from S3 server-side and pushed straight to the browser. The model only receives the field paths — no wasted tokens, no invented fields</p>
+      </div>
+      <div class="card">
+        <h4>Guarded by design</h4>
+        <p>A field write is rejected unless its path exists in the form actually open, and refused outright if no form is open</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ============== APPENDIX: ARCHITECTURE ============== -->
   <section class="has-bar">
     <span class="pill">Appendix</span>
@@ -320,9 +369,9 @@
 
       <!-- Frontend -->
       <rect class="box box-front" x="32" y="92"  width="184" height="74" />
-      <text class="label-bold" x="48" y="116">React + Vite</text>
-      <text class="label-mute" x="48" y="134">Local dev — no IAM creds</text>
-      <text class="label-mute" x="48" y="150">Cognito JWT in browser</text>
+      <text class="label-bold" x="48" y="116">React + Vite SPA</text>
+      <text class="label-mute" x="48" y="134">CloudFront · 4 tabs · 9 locales</text>
+      <text class="label-mute" x="48" y="150">Cognito JWT only — no IAM creds</text>
 
       <!-- Identity boxes -->
       <rect class="box box-id" x="262" y="92"  width="170" height="58" />
@@ -339,80 +388,118 @@
       <text class="label-mute" x="278" y="308">OAuth2 providers</text>
 
       <!-- AgentCore stack -->
-      <rect class="box box-rt" x="476" y="80"  width="220" height="74" />
-      <text class="label-bold" x="492" y="102">Runtime — text</text>
-      <text class="label-mute" x="492" y="120">Strands · Claude Haiku 4.5</text>
-      <text class="label-mute" x="492" y="136">Streaming SSE</text>
+      <rect class="box box-rt" x="476" y="76"  width="220" height="70" />
+      <text class="label-bold" x="492" y="98">Runtime — text</text>
+      <text class="label-mute" x="492" y="116">Strands · Claude Haiku 4.5</text>
+      <text class="label-mute" x="492" y="132">Streaming SSE</text>
 
-      <rect class="box box-rt" x="476" y="166" width="220" height="74" />
-      <text class="label-bold" x="492" y="188">Runtime — voice</text>
-      <text class="label-mute" x="492" y="206">Strands BidiAgent · Nova Sonic 2</text>
-      <text class="label-mute" x="492" y="222">WebSocket bidi audio</text>
+      <rect class="box box-rt" x="476" y="156" width="220" height="70" />
+      <text class="label-bold" x="492" y="178">Runtime — voice</text>
+      <text class="label-mute" x="492" y="196">Strands BidiAgent · Nova Sonic 2</text>
+      <text class="label-mute" x="492" y="212">WebSocket bidi audio</text>
 
-      <rect class="box box-rt" x="476" y="252" width="220" height="74" />
-      <text class="label-bold" x="492" y="274">AgentCore Gateway</text>
-      <text class="label-mute" x="492" y="292">MCP · 7 tool targets</text>
-      <text class="label-mute" x="492" y="308">JWT authorizer</text>
+      <rect class="box box-rt" x="476" y="236" width="220" height="70" />
+      <text class="label-bold" x="492" y="258">AgentCore Gateway</text>
+      <text class="label-mute" x="492" y="276">MCP · 8 tool targets</text>
+      <text class="label-mute" x="492" y="292">JWT authorizer</text>
 
-      <rect class="box box-rt" x="476" y="338" width="220" height="74" />
-      <text class="label-bold" x="492" y="360">AgentCore Memory</text>
-      <text class="label-mute" x="492" y="378">Summaries · preferences</text>
-      <text class="label-mute" x="492" y="394">Facts · per-customer</text>
+      <rect class="box box-rt" x="476" y="316" width="220" height="70" />
+      <text class="label-bold" x="492" y="338">AgentCore Memory</text>
+      <text class="label-mute" x="492" y="356">Summaries · preferences · facts</text>
+      <text class="label-mute" x="492" y="372">Per-customer · 90-day TTL</text>
+
+      <rect class="box box-rt" x="476" y="396" width="220" height="58" />
+      <text class="label-bold" x="492" y="418">Bedrock Guardrail</text>
+      <text class="label-mute" x="492" y="436">Shared · gates all 5 model surfaces</text>
 
       <!-- Tools / data -->
-      <rect class="box box-tool" x="858" y="92"  width="170" height="40" />
-      <text class="label-bold" x="874" y="116">API Gateway + WAF</text>
+      <rect class="box box-tool" x="858" y="88"  width="170" height="36" />
+      <text class="label-bold" x="874" y="111">API Gateway + WAF</text>
 
-      <rect class="box box-tool" x="858" y="142" width="170" height="36" />
-      <text class="label-bold" x="874" y="164">λ profile</text>
-      <rect class="box box-tool" x="858" y="184" width="170" height="36" />
-      <text class="label-bold" x="874" y="206">λ policies</text>
-      <rect class="box box-tool" x="858" y="226" width="170" height="36" />
-      <text class="label-bold" x="874" y="248">λ portfolio</text>
-      <rect class="box box-tool" x="858" y="268" width="170" height="36" />
-      <text class="label-bold" x="874" y="290">λ promotions</text>
-      <rect class="box box-tool" x="858" y="310" width="170" height="36" />
-      <text class="label-bold" x="874" y="332">λ company</text>
-      <rect class="box box-tool" x="858" y="352" width="170" height="36" />
-      <text class="label-bold" x="874" y="374">λ competitive</text>
-      <rect class="box box-tool" x="858" y="394" width="170" height="36" />
-      <text class="label-bold" x="874" y="416">λ competitors</text>
+      <!-- Reached through API Gateway (Cognito-authorized) -->
+      <rect class="box box-tool" x="858" y="130" width="170" height="26" />
+      <text class="label-bold" x="874" y="147">&#955; profile</text>
+      <rect class="box box-tool" x="858" y="161" width="170" height="26" />
+      <text class="label-bold" x="874" y="178">&#955; policies</text>
+      <rect class="box box-tool" x="858" y="192" width="170" height="26" />
+      <text class="label-bold" x="874" y="209">&#955; data · comparator · recommend</text>
 
-      <rect class="box box-data" x="1054" y="142" width="190" height="80" />
-      <text class="label-bold" x="1070" y="166">DynamoDB</text>
-      <text class="label-mute" x="1070" y="184">profiles</text>
-      <text class="label-mute" x="1070" y="200">policies</text>
+      <!-- Invoked directly by the gateway with its own IAM role -->
+      <rect class="box box-tool" x="858" y="228" width="170" height="26" />
+      <text class="label-bold" x="874" y="245">&#955; portfolio</text>
+      <rect class="box box-tool" x="858" y="259" width="170" height="26" />
+      <text class="label-bold" x="874" y="276">&#955; promotions</text>
+      <rect class="box box-tool" x="858" y="290" width="170" height="26" />
+      <text class="label-bold" x="874" y="307">&#955; company</text>
+      <rect class="box box-tool" x="858" y="321" width="170" height="26" />
+      <text class="label-bold" x="874" y="338">&#955; competitive</text>
+      <rect class="box box-tool" x="858" y="352" width="170" height="26" />
+      <text class="label-bold" x="874" y="369">&#955; competitors</text>
+      <rect class="box box-tool" x="858" y="383" width="170" height="26" />
+      <text class="label-bold" x="874" y="400">&#955; extract_policy</text>
+      <rect class="box box-tool" x="858" y="414" width="170" height="26" />
+      <text class="label-bold" x="874" y="431">&#955; formschema</text>
 
-      <rect class="box box-data" x="1054" y="234" width="190" height="194" />
-      <text class="label-bold" x="1070" y="258">S3 buckets</text>
-      <text class="label-mute" x="1070" y="278">portfolio</text>
-      <text class="label-mute" x="1070" y="296">promotion</text>
-      <text class="label-mute" x="1070" y="314">company</text>
-      <text class="label-mute" x="1070" y="332">competitive</text>
-      <text class="label-mute" x="1070" y="350">competitors</text>
+      <rect class="box box-data" x="1054" y="130" width="190" height="70" />
+      <text class="label-bold" x="1070" y="152">DynamoDB</text>
+      <text class="label-mute" x="1070" y="170">profiles · policies</text>
+      <text class="label-mute" x="1070" y="186">catalog</text>
 
-      <!-- Edges -->
-      <path class="edge-grad" d="M216,116 C 340,116 380,116 476,116" />
-      <path class="edge-grad" d="M696,275 C 760,200 800,140 858,116" />
-      <text class="edge-label" x="760" y="200">OAuth2</text>
-      <path class="edge" d="M696,275 C 760,260 800,160 858,160" />
-      <path class="edge" d="M696,278 C 760,265 800,200 858,202" />
-      <path class="edge" d="M696,282 C 760,272 800,240 858,244" />
-      <path class="edge" d="M696,285 C 760,285 800,285 858,286" />
-      <path class="edge" d="M696,288 C 760,300 800,320 858,328" />
-      <path class="edge" d="M696,292 C 760,320 800,360 858,370" />
-      <path class="edge" d="M696,296 C 760,340 800,400 858,412" />
-      <text class="edge-label" x="730" y="320">IAM</text>
-      <path class="edge" d="M1028,160 C 1042,160 1048,176 1054,176" />
-      <path class="edge" d="M1028,202 C 1042,202 1048,192 1054,192" />
-      <path class="edge" d="M1028,244 C 1042,244 1048,278 1054,278" />
-      <path class="edge" d="M1028,286 C 1042,286 1048,296 1054,296" />
-      <path class="edge" d="M1028,328 C 1042,328 1048,314 1054,314" />
-      <path class="edge" d="M1028,370 C 1042,370 1048,332 1054,332" />
-      <path class="edge" d="M1028,412 C 1042,412 1048,350 1054,350" />
+      <rect class="box box-data" x="1054" y="212" width="190" height="228" />
+      <text class="label-bold" x="1070" y="234">S3 buckets</text>
+      <text class="label-mute" x="1070" y="256">portfolio</text>
+      <text class="label-mute" x="1070" y="274">promotion</text>
+      <text class="label-mute" x="1070" y="292">company</text>
+      <text class="label-mute" x="1070" y="310">competitive</text>
+      <text class="label-mute" x="1070" y="328">competitors</text>
+      <text class="label-mute" x="1070" y="346">forms</text>
+      <text class="label-mute" x="1070" y="364">uploads</text>
+
+      <!-- Edges: browser -> runtimes (JWT), and browser -> REST API over the top -->
+      <path class="edge-grad" d="M216,111 C 340,111 380,111 476,111" />
+      <path class="edge-dashed" d="M124,92 C 124,0 900,0 900,88" />
+      <text class="edge-label" x="486" y="12">Same Cognito JWT · REST</text>
+
+      <!-- Gateway -> API Gateway (OAuth2 via Identity token vault) -->
+      <path class="edge-grad" d="M696,258 C 770,200 810,140 858,110" />
+      <text class="edge-label" x="742" y="182">OAuth2</text>
+
+      <!-- API Gateway bus -> the Cognito-authorized lambdas -->
+      <path class="edge" d="M866,124 L848,124 L848,205" />
+      <path class="edge" d="M848,143 L858,143" />
+      <path class="edge" d="M848,174 L858,174" />
+      <path class="edge" d="M848,205 L858,205" />
+
+      <!-- Gateway -> the 7 IAM-invoked tool lambdas -->
+      <path class="edge" d="M696,268 C 770,250 810,238 858,241" />
+      <path class="edge" d="M696,272 C 770,268 810,268 858,272" />
+      <path class="edge" d="M696,276 C 770,286 810,298 858,303" />
+      <path class="edge" d="M696,280 C 770,300 810,326 858,334" />
+      <path class="edge" d="M696,284 C 770,316 810,352 858,365" />
+      <path class="edge" d="M696,288 C 770,332 810,382 858,396" />
+      <path class="edge" d="M696,292 C 770,348 810,410 858,427" />
+      <text class="edge-label" x="726" y="330">IAM</text>
+
+      <!-- Lambdas -> datastores -->
+      <path class="edge" d="M1028,143 C 1042,143 1046,166 1054,166" />
+      <path class="edge" d="M1028,174 C 1042,174 1046,172 1054,172" />
+      <path class="edge" d="M1028,205 C 1042,205 1046,250 1054,250" />
+      <path class="edge" d="M1028,241 C 1042,241 1046,256 1054,256" />
+      <path class="edge" d="M1028,272 C 1042,272 1046,274 1054,274" />
+      <path class="edge" d="M1028,303 C 1042,303 1046,292 1054,292" />
+      <path class="edge" d="M1028,334 C 1042,334 1046,310 1054,310" />
+      <path class="edge" d="M1028,365 C 1042,365 1046,328 1054,328" />
+      <path class="edge" d="M1028,427 C 1042,427 1046,346 1054,346" />
+      <path class="edge" d="M1028,396 C 1042,396 1046,364 1054,364" />
+
+      <!-- Guardrail applies to both runtimes -->
+      <path class="edge-dashed" d="M476,425 L466,425 L466,111 L476,111" />
+      <path class="edge-dashed" d="M466,191 L476,191" />
     </svg>
     <p class="muted" style="margin-top:8px;">
-      Models: <strong>Claude Haiku 4.5</strong> (chat) · <strong>Nova Sonic 2</strong> (voice) · <strong>Claude Sonnet 4.5</strong> (comparator &amp; recommendations).
+      Models: <strong>Claude Haiku 4.5</strong> (chat, comparator &amp; recommendations) · <strong>Nova Sonic 2</strong> (voice) · <strong>Claude Sonnet 5</strong> (document extraction).
+      One shared Bedrock Guardrail — content filters, PII handling, denied topics and contextual grounding — gates all five model surfaces.
+      Five CDK stacks; every AgentCore resource is stable CloudFormation.
     </p>
   </section>
 

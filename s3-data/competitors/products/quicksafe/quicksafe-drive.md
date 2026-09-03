@@ -1,3 +1,7 @@
+---
+last_updated: 2026-07-20
+---
+
 # QuickSafe Drive (QuickSafe)
 ### Type: Auto Insurance
 

@@ -1,0 +1,61 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "ใช้งานอยู่",
+      "Inactive": "ไม่ใช้งาน",
+      "Prospect": "ผู้มุ่งหวัง"
+    },
+    "policyStatus": {
+      "Active": "มีผลบังคับใช้",
+      "Inactive": "ไม่มีผลบังคับใช้",
+      "Pending": "รอดำเนินการ",
+      "Lapsed": "ขาดอายุ",
+      "Cancelled": "ยกเลิกแล้ว"
+    },
+    "maritalStatus": {
+      "Married": "สมรส",
+      "Single": "โสด",
+      "Divorced": "หย่าร้าง",
+      "Widowed": "หม้าย"
+    },
+    "policyType": {
+      "Auto Insurance": "ประกันภัยรถยนต์",
+      "Home Insurance": "ประกันภัยบ้าน",
+      "Life Insurance": "ประกันชีวิต",
+      "Health Insurance": "ประกันสุขภาพ",
+      "Disability Insurance": "ประกันทุพพลภาพ",
+      "Travel Insurance": "ประกันการเดินทาง",
+      "Critical Illness Insurance": "ประกันโรคร้ายแรง"
+    },
+    "premiumFrequency": {
+      "yearly": "รายปี",
+      "annually": "รายปี",
+      "monthly": "รายเดือน",
+      "quarterly": "รายไตรมาส",
+      "weekly": "รายสัปดาห์"
+    },
+    "lifeType": {
+      "Term Life": "ประกันชีวิตแบบชั่วระยะเวลา",
+      "Whole Life": "ประกันชีวิตแบบตลอดชีพ",
+      "Universal Life": "ประกันชีวิตแบบยูนิเวอร์แซล",
+      "Variable Life": "ประกันชีวิตแบบควบการลงทุน"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "ชำระตลอดชีพ",
+      "10-pay": "ชำระ 10 ปี",
+      "20-pay": "ชำระ 20 ปี",
+      "paid-up at 65": "ชำระครบเมื่ออายุ 65 ปี"
+    },
+    "dividendOption": {
+      "paid in cash": "รับเป็นเงินสด",
+      "reduce premiums": "ลดเบี้ยประกัน",
+      "left on deposit": "ฝากสะสมไว้",
+      "paid-up additions": "ซื้อความคุ้มครองเพิ่มแบบชำระครบ"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "ตัวเลือก A (ทุนประกันคงที่)",
+      "Option B (face + cash value)": "ตัวเลือก B (ทุนประกัน + มูลค่าเงินสด)",
+      "Option C (face + return of premium)": "ตัวเลือก C (ทุนประกัน + คืนเบี้ยประกัน)"
+    }
+  }
+}

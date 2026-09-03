@@ -1,11 +1,10 @@
 """
 Public sign-up Lambda for the React app.
 
-The Cognito user pool in this account has AllowAdminCreateUserOnly forced
-back to True by an organisation-wide policy, which blocks the SPA's
-unauthenticated SignUp call. We work around it by taking the credentials
-from a public POST endpoint and create the user server-side via
-admin_create_user + admin_set_user_password.
+The Cognito user pool is configured with AllowAdminCreateUserOnly, which
+blocks the SPA's unauthenticated SignUp call. We work around it by taking
+the credentials from a public POST endpoint and create the user
+server-side via admin_create_user + admin_set_user_password.
 
 This endpoint is intentionally unauthenticated. WAFv2 is associated with
 the API Gateway and provides the AWS managed common rule set, which gives
