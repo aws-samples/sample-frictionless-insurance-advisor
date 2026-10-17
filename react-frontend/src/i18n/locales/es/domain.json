@@ -56,6 +56,16 @@
       "Option A (level face)": "Opción A (capital fijo)",
       "Option B (face + cash value)": "Opción B (capital + valor en efectivo)",
       "Option C (face + return of premium)": "Opción C (capital + devolución de primas)"
+    },
+    "gender": {
+      "male": "Hombre",
+      "female": "Mujer"
+    },
+    "productLine": {
+      "life": "Productos de vida",
+      "general": "Productos generales",
+      "health": "Productos de salud",
+      "all": "Todos los productos"
     }
   }
 }

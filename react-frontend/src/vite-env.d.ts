@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string;
   readonly VITE_AGENT_RUNTIME_ARN: string;
   readonly VITE_VOICE_RUNTIME_ARN: string;
+  readonly VITE_ENABLE_SIGNUP?: string;
 }
 
 interface ImportMeta {

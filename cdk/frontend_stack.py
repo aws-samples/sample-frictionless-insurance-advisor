@@ -88,6 +88,9 @@ class FrontendStack(Stack):
                 allowed_methods=cloudfront.AllowedMethods.ALLOW_GET_HEAD,
                 cached_methods=cloudfront.CachedMethods.CACHE_GET_HEAD,
                 compress=True,
+                # HSTS, X-Content-Type-Options, X-Frame-Options (SAMEORIGIN),
+                # Referrer-Policy and X-XSS-Protection, from the managed policy.
+                response_headers_policy=cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
             ),
             default_root_object="index.html",
             # SPA routing: any 403/404 from S3 returns index.html with 200

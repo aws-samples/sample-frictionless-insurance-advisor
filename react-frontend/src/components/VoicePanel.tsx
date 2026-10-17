@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   ChevronDown,
+  FileText,
+  GraduationCap,
   MessageCircle,
   Mic,
   MicOff,
@@ -9,17 +11,19 @@ import {
   VolumeX,
   Send,
   Sparkles,
-  Sprout,
   Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { useVoiceChat, type VoiceFormHandlers } from '../hooks/useVoiceChat';
-import { uploadDocument } from '../lib/api';
+import { useVoiceChat, type VoiceConsentHandlers, type VoiceFormHandlers } from '../hooks/useVoiceChat';
+import { friendlyApiError, scoreRoleplay, uploadDocument } from '../lib/api';
 import { cn } from '../lib/cn';
 import { Alert, Button, IconButton } from '../ui';
-import type { Customer, UploadedDocument } from '../types';
+import type { Customer, RoleplayConfig, RoleplayScoreResponse, UploadedDocument } from '../types';
 
+import { ConsentBar } from './ConsentBar';
+import { MeetingNotePanel } from './MeetingNotePanel';
+import { RoleplayBanner, RoleplayScoreView, RoleplaySetup } from './RoleplayPanel';
 import { DocumentAttachment } from './DocumentAttachment';
 import { SamplePoliciesMenu } from './SamplePoliciesMenu';
 
@@ -32,19 +36,21 @@ interface VoicePanelProps {
   formHandlers?: VoiceFormHandlers;
   /** Field paths already filled from the customer record; relayed to the agent. */
   formPrefill?: Record<string, string>;
+  /** Called when recording consent is confirmed, so the page can log it. */
+  consentHandlers?: VoiceConsentHandlers;
+  /** Called after a meeting note is saved, so the page can refresh the customer. */
+  onNoteSaved?: () => void;
 }
-
 const CUSTOMER_PROMPT_KEYS = [
   'assistant.prompts.customer.policies',
   'assistant.prompts.customer.coverageGap',
   'assistant.prompts.customer.premiumDelta',
   'assistant.prompts.customer.claimsModel',
   'assistant.prompts.customer.incomeVsLumpSum',
-  // Voice-only: triggers open_application_form so a tester can exercise the
-  // form-filler without first uploading a document or talking the agent
-  // into starting an application. Not offered on the text Assistant page —
-  // application forms only render in the voice panel's left form pane.
-  'assistant.prompts.voice.startTermLifeApplication',
+  // Triggers open_application_form so a tester can exercise the form-filler
+  // without first uploading a document or talking the agent into starting an
+  // application. The text Assistant offers the same starter.
+  'assistant.prompts.application.startTermLife',
 ] as const;
 
 const PROSPECT_PROMPT_KEYS = [
@@ -52,14 +58,21 @@ const PROSPECT_PROMPT_KEYS = [
   'assistant.prompts.prospect.discovery',
   'assistant.prompts.prospect.bestProducts',
   'assistant.prompts.prospect.company',
-  'assistant.prompts.prospect.whyUnicorn',
+  'assistant.prompts.prospect.whyAwesome',
   'assistant.prompts.prospect.qualifyQuestions',
-  // Voice-only, see note above.
-  'assistant.prompts.voice.startTermLifeApplication',
+  // See note above.
+  'assistant.prompts.application.startTermLife',
 ] as const;
 
-export function VoicePanel({ customer, formHandlers, formPrefill }: VoicePanelProps) {
-  const { t } = useTranslation();
+export function VoicePanel({ customer, formHandlers, formPrefill, consentHandlers, onNoteSaved }: VoicePanelProps) {
+  const { t, i18n } = useTranslation();
+  // Practice mode (see RoleplayPanel / voice-agent/roleplay.py). `practice` is the
+  // active session's setup; `stage` is where the advisor is in the flow.
+  const [practice, setPractice] = useState<RoleplayConfig | null>(null);
+  const [stage, setStage] = useState<'idle' | 'setup' | 'active' | 'result'>('idle');
+  const [scoring, setScoring] = useState<boolean>(false);
+  const [score, setScore] = useState<RoleplayScoreResponse | null>(null);
+  const [scoreError, setScoreError] = useState<string>('');
   const {
     connected,
     recording,
@@ -75,11 +88,16 @@ export function VoicePanel({ customer, formHandlers, formPrefill }: VoicePanelPr
     clearError,
     muted,
     toggleMute,
-  } = useVoiceChat(customer, formHandlers, formPrefill);
+    consent,
+    consentAt,
+    consentNotice,
+    answerConsent,
+  } = useVoiceChat(customer, formHandlers, formPrefill, consentHandlers, practice);
 
   const [input, setInput] = useState<string>('');
   const [attachment, setAttachment] = useState<UploadedDocument | null>(null);
   const [quickQuestionsOpen, setQuickQuestionsOpen] = useState<boolean>(false);
+  const [noteOpen, setNoteOpen] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const messagesPresent =
@@ -91,15 +109,55 @@ export function VoicePanel({ customer, formHandlers, formPrefill }: VoicePanelPr
     return keys.map((key) => ({ key, text: t(key) }));
   }, [isProspect, t]);
 
-  const HeaderIcon = isProspect ? Sprout : MessageCircle;
-  const headerText = isProspect
-    ? t('assistant.chat.headingProspect')
-    : t('assistant.chat.headingCustomer');
+  // The same title and icon for a customer and for a prospect: it is the same assistant.
+  const HeaderIcon = MessageCircle;
+  // "AI Chat - <customer name>", or "AI Chat - Prospect" while onboarding someone new (no record yet).
+  const headerText = `${t('assistant.chat.heading')} - ${customer ? customer.name : t('assistant.cockpit.prospect')}`;
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [history, partialUser, partialAssistant]);
+  // A draft belongs to one customer's conversation.
+  const customerKey = customer?.customer_id ?? null;
+  useEffect(() => {
+    setNoteOpen(false);
+    // A practice session is with one customer's persona.
+    setPractice(null);
+    setStage('idle');
+    setScore(null);
+    setScoreError('');
+  }, [customerKey]);
+  const leavePractice = () => {
+    setPractice(null);
+    setStage('idle');
+    setScore(null);
+    setScoreError('');
+  };
+  const endAndScore = async () => {
+    if (!customer || !practice) return;
+    stopRecording();
+    setStage('result');
+    setScoring(true);
+    setScore(null);
+    setScoreError('');
+    try {
+      const res = await scoreRoleplay(
+        customer.customer_id,
+        history.map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', text: m.text })),
+        practice.difficulty,
+        practice.focus,
+        i18n.resolvedLanguage ?? i18n.language
+      );
+      setScore(res);
+    } catch (err) {
+      setScoreError(friendlyApiError(err));
+    } finally {
+      setScoring(false);
+    }
+  };
+  // Needs a customer to attach the note to, recording consent, and something said.
+  const canSummarise = customer !== null && consent === 'confirmed' && history.length >= 2;
 
   const toggleVoice = () => {
     if (!connected) return;
@@ -242,6 +300,18 @@ export function VoicePanel({ customer, formHandlers, formPrefill }: VoicePanelPr
               <Volume2 className="h-4 w-4" />
             )}
           </IconButton>
+          {customer && !practice && stage === 'idle' ? (
+            <Button variant="secondary" size="sm" onClick={() => setStage('setup')} disabled={!connected}>
+              <GraduationCap className="h-4 w-4" />
+              {t('assistant.roleplay.button')}
+            </Button>
+          ) : null}
+          {canSummarise ? (
+            <Button variant="secondary" size="sm" onClick={() => setNoteOpen(true)} disabled={noteOpen}>
+              <FileText className="h-4 w-4" />
+              {t('assistant.meetingNote.button')}
+            </Button>
+          ) : null}
           {messagesPresent ? (
             <IconButton
               aria-label={t('common.actions.clear')}
@@ -256,6 +326,58 @@ export function VoicePanel({ customer, formHandlers, formPrefill }: VoicePanelPr
         </div>
       </div>
 
+      {practice ? null : (
+        <ConsentBar
+          status={consent}
+          at={consentAt}
+          customerName={customer?.name ?? null}
+          notice={consentNotice}
+          connected={connected}
+          onAnswer={answerConsent}
+          onStartNew={clearHistory}
+        />
+      )}
+      {customer && stage === 'setup' ? (
+        <RoleplaySetup
+          customer={customer}
+          onCancel={leavePractice}
+          onStart={(cfg) => {
+            setPractice(cfg);
+            setStage('active');
+          }}
+        />
+      ) : null}
+      {customer && practice && stage === 'active' ? (
+        <RoleplayBanner
+          customerName={customer.name}
+          difficulty={practice.difficulty}
+          canEnd={history.length >= 2 && connected}
+          onEnd={() => void endAndScore()}
+          onLeave={leavePractice}
+        />
+      ) : null}
+      {customer && practice && stage === 'result' ? (
+        <RoleplayScoreView
+          loading={scoring}
+          error={scoreError}
+          result={score}
+          onAgain={() => {
+            setScore(null);
+            setScoreError('');
+            setPractice(null);
+            setStage('setup');
+          }}
+          onClose={leavePractice}
+        />
+      ) : null}
+      {noteOpen && customer ? (
+        <MeetingNotePanel
+          customer={customer}
+          turns={history}
+          onClose={() => setNoteOpen(false)}
+          onSaved={() => onNoteSaved?.()}
+        />
+      ) : null}
       {error ? (
         <div className="px-6 pt-3">
           <Alert variant="danger" onDismiss={clearError}>

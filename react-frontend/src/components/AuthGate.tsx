@@ -23,14 +23,17 @@ interface AuthGateProps {
 type AuthMode = 'signin' | 'signup';
 
 const MIN_PASSWORD_LEN = 12;
+/** The "Create account" tab exists only if the backend deployed the opt-in /signup route. */
+const SIGNUP_ENABLED = import.meta.env.VITE_ENABLE_SIGNUP === 'true';
 
 /**
  * Replacement for Amplify's <Authenticator>. Two reasons:
  *
- * 1. The user pool is configured with AllowAdminCreateUserOnly, which
- *    breaks Amplify's self-service SignUp. We work around it via a public
- *    POST /signup Lambda that uses admin_create_user +
- *    admin_set_user_password. Same admin-API pattern.
+ * 1. The user pool is closed to self-service sign-up. Demo accounts are created
+ *    by scripts/create-demo-users.sh. If the backend was deployed with
+ *    `enable_public_signup=true`, a public POST /signup Lambda (admin_create_user
+ *    + admin_set_user_password) is available and this screen shows a "Create
+ *    account" tab; otherwise there is only sign-in.
  * 2. Custom auth UI lets us match the new design system end-to-end (no
  *    Amplify CSS overrides needed).
  *
@@ -201,7 +204,8 @@ function AuthShell({ onAuthenticated }: AuthShellProps) {
         </div>
 
         {/* Mode tabs */}
-        <div className="mt-4 grid grid-cols-2 rounded-lg border border-border bg-background-muted p-0.5">
+        {SIGNUP_ENABLED ? (
+          <div className="mt-4 grid grid-cols-2 rounded-lg border border-border bg-background-muted p-0.5">
           <button
             type="button"
             onClick={() => switchMode('signin')}
@@ -217,6 +221,7 @@ function AuthShell({ onAuthenticated }: AuthShellProps) {
             {t('auth.actions.createAccount')}
           </button>
         </div>
+        ) : null}
 
         {error ? (
           <div className="mt-4">
@@ -226,7 +231,7 @@ function AuthShell({ onAuthenticated }: AuthShellProps) {
           </div>
         ) : null}
 
-        {mode === 'signin' ? (
+        {mode === 'signin' || !SIGNUP_ENABLED ? (
           <form className="mt-4 flex flex-col gap-3" onSubmit={handleSignIn}>
             <FieldEmail value={email} onChange={setEmail} placeholder={t('auth.fields.emailPlaceholder')} />
             <FieldPassword

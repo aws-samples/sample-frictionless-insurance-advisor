@@ -1,6 +1,6 @@
 import { fetchAuthSession } from 'aws-amplify/auth';
 
-import { readSSEStream } from './sse';
+import { readSSEStream, type StreamItem } from './sse';
 
 /**
  * Stream a chat response from the AgentCore Runtime.
@@ -13,7 +13,11 @@ export async function* streamChat(opts: {
   prompt: string;
   customerId?: string;
   sessionId: string;
-}): AsyncGenerator<string> {
+  /** The application form open on screen, so the agent knows what it holds. */
+  form?: { productType: string; values: Record<string, string> };
+  /** Field values the customer's record already supplies. */
+  formPrefill?: Record<string, string>;
+}): AsyncGenerator<StreamItem> {
   const session = await fetchAuthSession();
   const token = session.tokens?.accessToken?.toString();
   if (!token) {
@@ -43,6 +47,10 @@ export async function* streamChat(opts: {
     body: JSON.stringify({
       prompt: opts.prompt,
       ...(opts.customerId && { customerId: opts.customerId }),
+      ...(opts.form && { form: opts.form }),
+      ...(opts.formPrefill && Object.keys(opts.formPrefill).length > 0 && {
+        formPrefill: opts.formPrefill,
+      }),
     }),
   });
 

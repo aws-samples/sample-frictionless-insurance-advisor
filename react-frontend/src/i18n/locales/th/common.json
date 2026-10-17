@@ -7,7 +7,7 @@
       "assistant": "ผู้ช่วยแบบข้อความ",
       "voice": "ผู้ช่วยแบบข้อความ+เสียง",
       "comparator": "เครื่องมือเปรียบเทียบ",
-      "data": "ข้อมูล",
+      "data": "ตัวสำรวจข้อมูล",
       "signOut": "ออกจากระบบ",
       "language": "ภาษา",
       "pitchDeck": "เปิดเอกสารนำเสนอ"
@@ -16,7 +16,9 @@
       "send": "ส่ง",
       "clear": "ล้าง",
       "refresh": "รีเฟรช",
-      "cancel": "ยกเลิก"
+      "cancel": "ยกเลิก",
+      "close": "ปิด",
+      "retry": "ลองอีกครั้ง"
     },
     "states": {
       "loading": "กำลังโหลด...",
@@ -31,7 +33,7 @@
       "reload": "โหลดใหม่"
     },
     "brand": {
-      "nameAccent": "Unicorn",
+      "nameAccent": "Awesome",
       "nameSuffix": "Insurance"
     }
   }

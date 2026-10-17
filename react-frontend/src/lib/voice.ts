@@ -12,9 +12,21 @@
  */
 import { fetchAuthSession } from 'aws-amplify/auth';
 
-import type { FormFillEvent, FormSchema } from '../types';
+import type { FormFillEvent, FormSchema, RoleplayConfig } from '../types';
 
 export type TranscriptRole = 'user' | 'assistant';
+
+/** Where the runtime stands on consent to record this conversation. */
+export type ConsentStatus = 'pending' | 'confirmed' | 'declined';
+
+export interface ConsentEvent {
+  status: ConsentStatus;
+  /** When consent was confirmed (ISO), if it was. */
+  at: string | null;
+  customerId: string | null;
+  /** 'customer_changed' when a different customer reset an earlier answer. */
+  reason?: string;
+}
 
 export interface ConnectOptions {
   customerId: string | null;
@@ -24,9 +36,13 @@ export interface ConnectOptions {
    * agent so it knows not to ask the advisor for details already on screen.
    */
   formPrefill?: Record<string, string>;
+  /** Start a practice session in which the runtime plays the customer. */
+  roleplay?: RoleplayConfig | null;
   onAudioChunk: (audioBase64: string, format: string, sampleRate: number) => void;
   onTranscript: (text: string, isFinal: boolean, role: TranscriptRole) => void;
   onInterruption?: () => void;
+  /** The runtime recorded, reset or refused consent to record. */
+  onConsent?: (event: ConsentEvent) => void;
   /**
    * The agent opened an application form. Emitted by the voice runtime's
    * local `open_application_form` tool once it has a schema in hand.
@@ -115,6 +131,8 @@ export async function connectVoice(options: ConnectOptions): Promise<VoiceConnec
         customerId: options.customerId,
         customerName: options.customerName,
         prefill: options.formPrefill ?? {},
+        // Practice mode: the runtime plays the customer. Sent only on connect.
+        ...(options.roleplay ? { mode: 'roleplay', roleplay: options.roleplay } : {}),
       });
       options.onConnected?.();
       if (!settled) {
@@ -155,6 +173,15 @@ export async function connectVoice(options: ConnectOptions): Promise<VoiceConnec
           options.onTranscript(data.text, true, 'assistant');
         } else if (data.type === 'bidi_interruption') {
           options.onInterruption?.();
+        } else if (data.type === 'consent') {
+          const status: ConsentStatus =
+            data.status === 'confirmed' || data.status === 'declined' ? data.status : 'pending';
+          options.onConsent?.({
+            status,
+            at: typeof data.at === 'string' ? data.at : null,
+            customerId: typeof data.customerId === 'string' ? data.customerId : null,
+            reason: typeof data.reason === 'string' ? data.reason : undefined,
+          });
         } else if (data.type === 'form_open' && data.schema) {
           options.onFormOpen?.(String(data.productType ?? ''), data.schema as FormSchema);
         } else if (data.type === 'form_fill' && typeof data.path === 'string') {

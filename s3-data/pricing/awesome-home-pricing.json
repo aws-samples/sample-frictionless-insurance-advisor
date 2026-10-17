@@ -1,0 +1,202 @@
+{
+  "product_type": "home",
+  "product_name": "Awesome Home Insurance",
+  "premium_basis": "per year",
+  "notes": [
+    "Invented demo rates sized to the demo customers' existing home policies (about $2.40 per $1,000 of rebuilding cost for a single-family home)."
+  ],
+  "inputs": {
+    "dwelling_value": {
+      "type": "number",
+      "min": 100000,
+      "max": 3000000,
+      "required": true,
+      "description": "Estimated rebuilding cost of the home in USD."
+    },
+    "property_type": {
+      "type": "choice",
+      "choices": [
+        "single_family",
+        "condominium",
+        "townhouse",
+        "rental",
+        "vacation"
+      ],
+      "required": true,
+      "description": "Type of property."
+    },
+    "deductible": {
+      "type": "choice",
+      "choices": [
+        "500",
+        "1000",
+        "2500",
+        "5000"
+      ],
+      "default": "1000",
+      "description": "Deductible in USD."
+    },
+    "contents_percent": {
+      "type": "choice",
+      "choices": [
+        "50",
+        "70",
+        "100"
+      ],
+      "default": "70",
+      "description": "Personal property cover as a % of the dwelling amount."
+    },
+    "liability": {
+      "type": "choice",
+      "choices": [
+        "100000",
+        "300000",
+        "500000",
+        "1000000"
+      ],
+      "default": "300000",
+      "description": "Personal liability limit in USD."
+    },
+    "living_expenses_months": {
+      "type": "choice",
+      "choices": [
+        "12",
+        "24",
+        "36"
+      ],
+      "default": "12",
+      "description": "Months of additional living expenses covered."
+    },
+    "claims_last_5_years": {
+      "type": "number",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "description": "Home claims in the last 5 years."
+    },
+    "flood": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flood protection."
+    },
+    "home_business": {
+      "type": "boolean",
+      "default": false,
+      "description": "Home business coverage."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "rate_by_choice",
+    "amount_input": "dwelling_value",
+    "unit": 1000,
+    "choice_input": "property_type",
+    "rates": {
+      "single_family": 2.4,
+      "condominium": 1.8,
+      "townhouse": 2.3,
+      "rental": 3.2,
+      "vacation": 3.6
+    },
+    "label": "Annual rate per $1,000 of rebuilding cost, at the default choices"
+  },
+  "factors": [
+    {
+      "input": "deductible",
+      "label": "Deductible",
+      "map": {
+        "500": 1.12,
+        "1000": 1.0,
+        "2500": 0.88,
+        "5000": 0.78
+      }
+    },
+    {
+      "input": "contents_percent",
+      "label": "Personal property cover",
+      "map": {
+        "50": 0.95,
+        "70": 1.0,
+        "100": 1.12
+      }
+    },
+    {
+      "input": "liability",
+      "label": "Liability limit",
+      "map": {
+        "100000": 0.95,
+        "300000": 1.0,
+        "500000": 1.08,
+        "1000000": 1.2
+      }
+    },
+    {
+      "input": "living_expenses_months",
+      "label": "Living expenses",
+      "map": {
+        "12": 1.0,
+        "24": 1.05,
+        "36": 1.1
+      }
+    },
+    {
+      "input": "claims_last_5_years",
+      "label": "Claims history",
+      "map": {
+        "0": 1.0,
+        "1": 1.15,
+        "2+": 1.35
+      }
+    }
+  ],
+  "addons": [
+    {
+      "input": "flood",
+      "label": "Flood protection",
+      "pct": 0.35
+    },
+    {
+      "input": "home_business",
+      "label": "Home business coverage",
+      "pct": 0.12
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "$750,000 single-family home, default choices",
+      "options": {
+        "dwelling_value": 750000,
+        "property_type": "single_family"
+      },
+      "annual_premium": 1800
+    },
+    {
+      "label": "$400,000 condominium with flood protection",
+      "options": {
+        "dwelling_value": 400000,
+        "property_type": "condominium",
+        "flood": true
+      },
+      "annual_premium": 972
+    }
+  ]
+}

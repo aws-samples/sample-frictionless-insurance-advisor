@@ -10,7 +10,6 @@ Desktop.ini
 .idea/
 *.iml
 *.code-workspace
-.kiro/
 
 # ─── Python ──────────────────────────────────────────────
 __pycache__/
@@ -64,14 +63,8 @@ build/
 dist/
 *.log
 
-# ─── Security scan outputs (keep .gitkeep, ignore content)
-security-scans/**/results.txt
-security-scans/**/results.json
-security-scans/**/results/
 
 # ─── Project-specific ────────────────────────────────────
-BusinessRequirements.md
-UnicornGymPlan.md
 .scratch_*
 *.tmp
 /docs/

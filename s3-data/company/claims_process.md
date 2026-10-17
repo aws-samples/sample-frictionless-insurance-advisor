@@ -1,4 +1,4 @@
-# Unicorn Insurance Claims Process
+# Awesome Insurance Claims Process
 
 This document describes how we handle claims: what the customer needs to do, what we do, how long it typically takes, what documents we need, and what to do if the customer disagrees with our decision. It is written for advisors and applies across our lines of business. Specific policy wordings always take precedence over this summary.
 
@@ -22,7 +22,7 @@ Customers can open a claim through any of the following channels:
 - The **claims hotline** (24/7, numbers per market — see customer service documentation).
 - The **mobile app** ("Start a claim" on the home screen).
 - The **customer portal** on the web.
-- **In-app secure messaging** or **email** to `claims@unicorninsurance.example`.
+- **In-app secure messaging** or **email** to `claims@awesomeinsurance.example`.
 - **Through their advisor**, with the customer's consent.
 
 At submission we capture the basic facts: policy number, date of loss, what happened, who was involved, and how to contact the customer. We issue a claim reference number immediately and confirm next steps in writing the same day.
@@ -69,8 +69,8 @@ Once approved:
 - BigRival eLOG takes 4-6 hours for planned admissions.
 - BigRival's panel list is not searchable online (must call agent).
 
-**vs StarInsure:**
-- StarInsure does not offer health insurance or cashless claims at all.
+**vs Brookmere:**
+- Brookmere does not offer health insurance or cashless claims at all.
 
 ### Reimbursement Claims (Health)
 

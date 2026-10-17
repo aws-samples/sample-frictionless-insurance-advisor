@@ -49,6 +49,8 @@ NagSuppressions.add_resource_suppressions(
     auth_stack.user_pool,
     [
         {"id": "AwsSolutions-COG3", "reason": "Advanced Security Mode requires Plus feature plan which is not needed for this demo - UserPool"},
+        # COG8 arrived with cdk-nag 2.38: same Plus-tier requirement as COG3, same rationale.
+        {"id": "AwsSolutions-COG8", "reason": "Plus feature plan is not needed for this demo - UserPool"},
         {"id": "AwsSolutions-COG2", "reason": "MFA intentionally disabled for demo ease of use - UserPool"},
     ]
 )
@@ -56,6 +58,7 @@ NagSuppressions.add_resource_suppressions(
     auth_stack.gateway_pool,
     [
         {"id": "AwsSolutions-COG3", "reason": "Advanced Security Mode requires Plus feature plan which is not needed for this demo - GatewayPool"},
+        {"id": "AwsSolutions-COG8", "reason": "Plus feature plan not applicable - GatewayPool is for service-to-service auth with no human sign-ins"},
         {"id": "AwsSolutions-COG2", "reason": "MFA not applicable - GatewayPool is for service-to-service auth with no human users"},
     ]
 )
@@ -97,17 +100,19 @@ NagSuppressions.add_resource_suppressions(
 # Public sign-up endpoint cannot be authenticated by definition. WAFv2 with
 # the AWS managed common rule set is associated with the API Gateway and
 # provides baseline abuse protection. Targeted at just the /signup resource
-# so the rules still apply to the rest of the API.
-NagSuppressions.add_resource_suppressions_by_path(
-    tools_stack,
-    "/insadv-02-tools/InsuranceAdvisorApi/Default/signup/POST/Resource",
-    [
-        {"id": "AwsSolutions-APIG4",
-         "reason": "Public sign-up endpoint is unauthenticated by design. The Cognito user pool is configured with AllowAdminCreateUserOnly, so self-service signup is not available. Backend Lambda creates the user via admin APIs after validating the request. WAFv2 protects the endpoint."},
-        {"id": "AwsSolutions-COG4",
-         "reason": "Public sign-up endpoint is unauthenticated by design - the user does not yet exist in the Cognito pool when calling /signup."},
-    ],
-)
+# so the rules still apply to the rest of the API. The route exists only when
+# the `enable_public_signup` context flag is set, so the suppression does too.
+if tools_stack.public_signup_enabled:
+    NagSuppressions.add_resource_suppressions_by_path(
+        tools_stack,
+        "/insadv-02-tools/InsuranceAdvisorApi/Default/signup/POST/Resource",
+        [
+            {"id": "AwsSolutions-APIG4",
+             "reason": "Public sign-up endpoint is unauthenticated by design. The Cognito user pool is configured with AllowAdminCreateUserOnly, so self-service signup is not available. Backend Lambda creates the user via admin APIs after validating the request. WAFv2 protects the endpoint."},
+            {"id": "AwsSolutions-COG4",
+             "reason": "Public sign-up endpoint is unauthenticated by design - the user does not yet exist in the Cognito pool when calling /signup."},
+        ],
+    )
 
 # --- AgentCore Stack: service-level wildcards ---
 NagSuppressions.add_stack_suppressions(agentcore_stack, [

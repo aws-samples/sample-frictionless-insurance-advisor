@@ -1,11 +1,11 @@
 @import 'tailwindcss';
 
 /*
- * Unicorn Insurance — design system
+ * Awesome Insurance — design system
  *
  * Tailwind v4 CSS-first configuration. The `@theme` block exposes design
  * tokens as both CSS custom properties and Tailwind utility classes. We
- * keep neon as ACCENT (logo, active state, primary CTA, gradient brand
+ * keep the brand colours as ACCENT (logo, active state, primary CTA, gradient brand
  * mark, focus rings) — never as background. Canvas stays calm so the
  * data is the focal point.
  *
@@ -32,10 +32,10 @@
     --success: 16 185 129;
     --info: 14 165 233;
 
-    /* ----- brand neon (accent only) ----- */
-    --brand-1: 244 63 124;   /* fuchsia-pink */
-    --brand-2: 139 92 246;   /* violet */
-    --brand-3: 14 165 233;   /* sky-cyan */
+    /* ----- brand accent (accent only, never a background) ----- */
+    --brand-1: 37 99 235;    /* blue-600 */
+    --brand-2: 79 70 229;    /* indigo-600 */
+    --brand-3: 13 148 136;   /* teal-600 */
 
     /* Single-stop accent for solid uses (active tab, badge dot, etc.) */
     --accent: var(--brand-2);
@@ -44,7 +44,7 @@
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
     --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
     --shadow-lg: 0 12px 24px -8px rgb(0 0 0 / 0.10), 0 4px 8px -4px rgb(0 0 0 / 0.04);
-    --shadow-glow: 0 0 0 1px rgb(139 92 246 / 0.15), 0 8px 24px -4px rgb(139 92 246 / 0.20);
+    --shadow-glow: 0 0 0 1px rgb(79 70 229 / 0.15), 0 8px 24px -4px rgb(79 70 229 / 0.20);
 
     color-scheme: light;
   }
@@ -57,13 +57,17 @@
     --foreground-muted: 161 161 170;       /* zinc-400 */
     --border: 39 39 51;                    /* dark cool */
     --border-strong: 55 55 73;
-    --ring: 167 139 250;                   /* violet-400 */
+    --ring: 129 140 248;                   /* indigo-400 */
+    /* Lighter brand tones so the gradient keeps its contrast on the dark canvas */
+    --brand-1: 96 165 250;                 /* blue-400 */
+    --brand-2: 129 140 248;                /* indigo-400 */
+    --brand-3: 45 212 191;                 /* teal-400 */
     --accent: var(--brand-2);
 
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.40);
     --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.40);
     --shadow-lg: 0 12px 24px -8px rgb(0 0 0 / 0.55), 0 4px 8px -4px rgb(0 0 0 / 0.40);
-    --shadow-glow: 0 0 0 1px rgb(167 139 250 / 0.30), 0 12px 32px -4px rgb(167 139 250 / 0.30);
+    --shadow-glow: 0 0 0 1px rgb(129 140 248 / 0.30), 0 12px 32px -4px rgb(129 140 248 / 0.30);
 
     color-scheme: dark;
   }

@@ -1,4 +1,4 @@
-# Unicorn Insurance Digital Platform
+# Awesome Insurance Digital Platform
 
 This document describes the customer-facing and advisor-facing digital tools we provide, and the security and privacy standards they operate to. It is aimed at advisors who need to explain the platform to prospects or help existing clients use it.
 
@@ -6,7 +6,7 @@ This document describes the customer-facing and advisor-facing digital tools we 
 
 Our digital platform has three main surfaces that share one back-end:
 
-- The **Unicorn Insurance mobile app**, for customers.
+- The **Awesome Insurance mobile app**, for customers.
 - The **customer portal** on the web, also for customers.
 - The **advisor workbench**, for licensed advisors who distribute our products.
 
@@ -82,7 +82,7 @@ The workbench is responsive and usable on tablet and phone, which covers most on
 
 - All personal data is processed in line with GDPR, UK GDPR, and equivalent local laws (for example, PDPA in Singapore, Privacy Act in Australia, PIPEDA in Canada, HIPAA-aligned handling for U.S. health data).
 - Data residency is aligned to the customer's market. EEA customer data stays within the EEA. UK customer data stays in the UK. APAC and North American data stay within their respective regions.
-- Customers can exercise data rights (access, correction, erasure where applicable, portability) through the portal's privacy settings or by contacting `privacy@unicorninsurance.example`. See the customer service documentation for the full list of privacy contacts.
+- Customers can exercise data rights (access, correction, erasure where applicable, portability) through the portal's privacy settings or by contacting `privacy@awesomeinsurance.example`. See the customer service documentation for the full list of privacy contacts.
 
 ## Security Certifications
 
@@ -120,7 +120,7 @@ In addition to the certifications above, the platform applies these practices:
 - **Encryption** — TLS 1.2+ in transit for all client connections; AES-256 at rest for customer data.
 - **Least-privilege access** — role-based access control for internal staff, with just-in-time elevation for sensitive actions. All access is logged.
 - **Secure development** — secure-by-default coding standards, mandatory code review, automated security testing (SAST, DAST, dependency scanning), and annual external penetration tests.
-- **Vulnerability disclosure** — a responsible-disclosure program at `security@unicorninsurance.example`. We acknowledge reports within two business days.
+- **Vulnerability disclosure** — a responsible-disclosure program at `security@awesomeinsurance.example`. We acknowledge reports within two business days.
 - **Incident response** — a 24/7 security operations function with defined runbooks and regulatory notification paths.
 
 ## Roadmap Highlights

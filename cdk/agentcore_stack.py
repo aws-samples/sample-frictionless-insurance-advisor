@@ -5,7 +5,10 @@ from aws_cdk import (
     aws_bedrock as bedrock,
     aws_bedrockagentcore as agentcore,
     aws_ecr_assets as ecr_assets,
+    aws_lambda as _lambda,
+    aws_logs as logs,
     aws_ssm as ssm,
+    Duration,
     RemovalPolicy,
     CfnOutput,
 )
@@ -23,6 +26,35 @@ class AgentCoreStack(Stack):
         
         # Gateway authentication is handled by AWS IAM
 
+        # Gateway request interceptor: ties every tool call to the signed-in advisor.
+        #
+        # The assistants reach the gateway with a machine token that cannot say which
+        # advisor is being served. The runtimes therefore also send the advisor's own
+        # access token (header X-Advisor-Token). This function, which the gateway runs
+        # before every call, verifies that token with Cognito, refuses the call if there
+        # is none, swaps the token into the call to the REST API, and overwrites
+        # `advisor_id` for Lambda tools that take it. See lambda/gateway_interceptor.
+        # TARGET_MODES (which target gets which treatment) is filled in below, from the
+        # same target definitions, so the two cannot drift apart.
+        self.interceptor_lambda = _lambda.Function(
+            self, "GatewayInterceptorLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/gateway_interceptor"),
+            environment={
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                "APP_CLIENT_ID": auth_stack.app_client.user_pool_client_id,
+            },
+            timeout=Duration.seconds(10),
+            log_group=logs.LogGroup(
+                self, "GatewayInterceptorLambdaLogGroup",
+                retention=logs.RetentionDays.ONE_MONTH,
+                removal_policy=RemovalPolicy.DESTROY,
+            ),
+        )
+        # {gateway target name: how the interceptor treats its calls}
+        interceptor_modes: dict[str, str] = {}
+
         # Create IAM role for AgentCore Gateway with enhanced logging permissions
         self.gateway_role = iam.Role(
             self, "AgentCoreGatewayRole",
@@ -34,8 +66,10 @@ class AgentCoreStack(Stack):
                             effect=iam.Effect.ALLOW,
                             actions=["lambda:InvokeFunction"],
                             resources=[
-                                tools_stack.profile_lambda.function_arn,
-                                tools_stack.policies_lambda.function_arn,
+                                # The request interceptor. The profile and policies
+                                # Lambdas are reached through the REST API, never
+                                # invoked by the gateway directly, so they are not here.
+                                self.interceptor_lambda.function_arn,
                                 tools_stack.portfolio_lambda.function_arn,
                                 tools_stack.promotions_lambda.function_arn,
                                 tools_stack.company_lambda.function_arn,
@@ -164,6 +198,21 @@ class AgentCoreStack(Stack):
             ),
             # Debug-level exception messages for detailed troubleshooting.
             exception_level="DEBUG",
+            # Runs before every tool call. passRequestHeaders is required: the
+            # advisor's token arrives in a header. The function never logs it.
+            interceptor_configurations=[
+                agentcore.CfnGateway.GatewayInterceptorConfigurationProperty(
+                    interception_points=["REQUEST"],
+                    interceptor=agentcore.CfnGateway.InterceptorConfigurationProperty(
+                        lambda_=agentcore.CfnGateway.LambdaInterceptorConfigurationProperty(
+                            arn=self.interceptor_lambda.function_arn,
+                        )
+                    ),
+                    input_configuration=agentcore.CfnGateway.InterceptorInputConfigurationProperty(
+                        pass_request_headers=True,
+                    ),
+                )
+            ],
         )
 
         # Stack-level handles for the gateway's identity. Downstream code (and
@@ -193,15 +242,6 @@ class AgentCoreStack(Stack):
                         "summary": "Get customer profile by ID or list all profiles",
                         "description": "Retrieve customer profile information. If no ID is provided, returns all profiles for the authenticated advisor.",
                         "parameters": [
-                            {
-                                "name": "advisor_id",
-                                "in": "query",
-                                "required": True,
-                                "schema": {
-                                    "type": "string"
-                                },
-                                "description": "Advisor ID (required)"
-                            },
                             {
                                 "name": "customer_id",
                                 "in": "query",
@@ -240,17 +280,6 @@ class AgentCoreStack(Stack):
                         "operationId": "create_profile",
                         "summary": "Create a new prospect profile",
                         "description": "Create a new prospect profile in the database. The agent uses this when onboarding a new prospect through conversation. Only 'name' is required; other fields can be added later via update_profile.",
-                        "parameters": [
-                            {
-                                "name": "advisor_id",
-                                "in": "query",
-                                "required": True,
-                                "schema": {
-                                    "type": "string"
-                                },
-                                "description": "Advisor ID (required)"
-                            }
-                        ],
                         "requestBody": {
                             "required": True,
                             "content": {
@@ -271,6 +300,7 @@ class AgentCoreStack(Stack):
                                             "annual_income": {"type": "integer", "description": "Annual income in USD"},
                                             "home_owner": {"type": "boolean", "description": "Whether the prospect owns their home"},
                                             "smoking": {"type": "boolean", "description": "Whether the prospect smokes"},
+                                            "gender": {"type": "string", "enum": ["male", "female"], "description": "Gender, male or female. Needed for life-insurance rates and application forms. Ask the advisor; never work it out from a name."},
                                             "medical_conditions": {"type": "string", "description": "Known medical conditions"},
                                             "financial_objective": {"type": "string", "description": "Primary financial objective"},
                                             "time_horizon": {"type": "string", "description": "Investment/insurance time horizon"},
@@ -309,17 +339,6 @@ class AgentCoreStack(Stack):
                         "operationId": "update_profile",
                         "summary": "Update an existing customer or prospect profile",
                         "description": "Update fields on an existing profile. The agent uses this to save information collected during conversation. Only fields included in the request body will be updated.",
-                        "parameters": [
-                            {
-                                "name": "advisor_id",
-                                "in": "query",
-                                "required": True,
-                                "schema": {
-                                    "type": "string"
-                                },
-                                "description": "Advisor ID (required)"
-                            }
-                        ],
                         "requestBody": {
                             "required": True,
                             "content": {
@@ -341,6 +360,7 @@ class AgentCoreStack(Stack):
                                             "annual_income": {"type": "integer", "description": "Annual income in USD"},
                                             "home_owner": {"type": "boolean", "description": "Whether they own their home"},
                                             "smoking": {"type": "boolean", "description": "Whether they smoke"},
+                                            "gender": {"type": "string", "enum": ["male", "female"], "description": "Gender, male or female. Needed for life-insurance rates and application forms. Ask the advisor; never work it out from a name."},
                                             "medical_conditions": {"type": "string", "description": "Known medical conditions"},
                                             "financial_objective": {"type": "string", "description": "Primary financial objective"},
                                             "time_horizon": {"type": "string", "description": "Investment/insurance time horizon"},
@@ -382,21 +402,126 @@ class AgentCoreStack(Stack):
                         ]
                     }
                 },
+                # Only POST is exposed to the agents. DELETE /profile/notes/{note_id}
+                # exists on API Gateway but is deliberately left out of this
+                # spec (and restricted to the advisor's sign-in scope), so the
+                # assistant can add notes but never remove them.
+                "/profile/notes": {
+                    "post": {
+                        "operationId": "add_note",
+                        "summary": "Add a note to a customer or prospect profile",
+                        "description": (
+                            "Save a note on a customer's profile, but ONLY when the advisor's "
+                            "message explicitly instructs you to add, save, record or note "
+                            "something (for example 'add a note that...'). Do NOT call this "
+                            "when the advisor merely tells you something about the customer "
+                            "(for example 'Lisa told me she is moving'): answer, then offer to "
+                            "save it. A note is a life event (marriage, new baby, house move, "
+                            "job change) or an interaction (call, meeting, request, "
+                            "follow-up). Notes cannot be edited or deleted through this tool."
+                        ),
+                        "requestBody": {
+                            "required": True,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "required": ["customer_id", "type", "text"],
+                                        "properties": {
+                                            "customer_id": {"type": "string", "description": "Customer ID the note belongs to (required)"},
+                                            "type": {
+                                                "type": "string",
+                                                "enum": ["life_event", "interaction"],
+                                                "description": "life_event for something that happened or will happen in the customer's life; interaction for a contact with the customer"
+                                            },
+                                            "text": {"type": "string", "description": "The note, in the advisor's words, up to 1,000 characters"},
+                                            "event_date": {"type": "string", "description": "Optional date of the event (YYYY-MM-DD), past or planned"}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "201": {
+                                "description": "Note added",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            },
+                            "400": {
+                                "description": "Bad request - missing or invalid fields"
+                            },
+                            "401": {
+                                "description": "Unauthorized"
+                            },
+                            "403": {
+                                "description": "Forbidden - profile belongs to another advisor"
+                            },
+                            "404": {
+                                "description": "Profile not found"
+                            },
+                            "409": {
+                                "description": "The profile already has the maximum number of notes"
+                            }
+                        },
+                        "security": [
+                            {
+                                "CognitoAuth": []
+                            }
+                        ]
+                    }
+                },
+                "/priorities": {
+                    "get": {
+                        "operationId": "get_priorities",
+                        "summary": "Get the advisor's priorities for today",
+                        "description": "Returns the advisor's customers that most need attention today, most urgent first, each with the reason: profile review overdue (over 90 days), a life event coming up in the next 60 days or just passed with no follow-up, a policy renewing in the next 60 days (any insurer) or recently past its renewal date, yearly premiums above 10% of income, or a prospect with no contact for 30 days. Use it when the advisor asks what to do today, who to call, or which customers need attention. The ranking is computed by the service; report it as given.",
+                        "parameters": [
+                            {
+                                "name": "limit",
+                                "in": "query",
+                                "required": False,
+                                "schema": {
+                                    "type": "integer"
+                                },
+                                "description": "Optional. How many customers to return (default 8, at most 25)."
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Ranked priorities",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            },
+                            "401": {
+                                "description": "Unauthorized"
+                            },
+                            "500": {
+                                "description": "Internal server error"
+                            }
+                        },
+                        "security": [
+                            {
+                                "CognitoAuth": []
+                            }
+                        ]
+                    }
+                },
                 "/policy": {
                     "get": {
                         "operationId": "get_policy",
                         "summary": "Get insurance policy by customer ID or list all policies",
-                        "description": "Retrieve insurance policy information by customer id. If no customer ID is provided, returns all policies for the authenticated advisor. Returned policies may be Unicorn-issued or third-party (third_party=true with an insurer name).",
+                        "description": "Retrieve insurance policy information by customer id. If no customer ID is provided, returns all policies for the authenticated advisor. Returned policies may be Awesome-issued or third-party (third_party=true with an insurer name). Each policy includes annual_premium (yearly cost) and days_until_renewal. Pass include_totals=true together with customer_id to get {policies, totals}: totals hold the yearly premium totals (own and other insurers), the renewals in date order and the share of income against the 10% guide, all computed by the service. Use those totals; never add premiums yourself.",
                         "parameters": [
-                            {
-                                "name": "advisor_id",
-                                "in": "query",
-                                "required": True,
-                                "schema": {
-                                    "type": "string"
-                                },
-                                "description": "Advisor ID (required)"
-                            },
                             {
                                 "name": "customer_id",
                                 "in": "query",
@@ -405,6 +530,15 @@ class AgentCoreStack(Stack):
                                     "type": "string"
                                 },
                                 "description": "Customer ID (optional - filters policies for specific customer)"
+                            },
+                            {
+                                "name": "include_totals",
+                                "in": "query",
+                                "required": False,
+                                "schema": {
+                                    "type": "boolean"
+                                },
+                                "description": "Optional. With customer_id, returns {policies, totals} with yearly premium totals, renewals and the affordability share computed by the service."
                             }
                         ],
                         "responses": {
@@ -434,16 +568,7 @@ class AgentCoreStack(Stack):
                     "post": {
                         "operationId": "create_third_party_policy",
                         "summary": "Create a third-party insurance policy",
-                        "description": "Create a record of a policy the customer holds with another insurance carrier. ONLY for third-party policies — Unicorn-issued policies are read-only. The server forces third_party=true on the new record. Required: customer_id, type, insurer.",
-                        "parameters": [
-                            {
-                                "name": "advisor_id",
-                                "in": "query",
-                                "required": True,
-                                "schema": {"type": "string"},
-                                "description": "Advisor ID (required)"
-                            }
-                        ],
+                        "description": "Create a record of a policy the customer holds with another insurance carrier. ONLY for third-party policies — Awesome-issued policies are read-only. The server forces third_party=true on the new record. Required: customer_id, type, insurer.",
                         "requestBody": {
                             "required": True,
                             "content": {
@@ -483,16 +608,7 @@ class AgentCoreStack(Stack):
                     "put": {
                         "operationId": "update_third_party_policy",
                         "summary": "Update an existing third-party insurance policy",
-                        "description": "Update fields on a third-party policy the customer already has on record. ONLY works on policies where third_party=true; Unicorn-issued policies remain read-only.",
-                        "parameters": [
-                            {
-                                "name": "advisor_id",
-                                "in": "query",
-                                "required": True,
-                                "schema": {"type": "string"},
-                                "description": "Advisor ID (required)"
-                            }
-                        ],
+                        "description": "Update fields on a third-party policy the customer already has on record. ONLY works on policies where third_party=true; Awesome-issued policies remain read-only.",
                         "requestBody": {
                             "required": True,
                             "content": {
@@ -526,7 +642,7 @@ class AgentCoreStack(Stack):
                             "200": {"description": "Policy updated"},
                             "400": {"description": "Bad request"},
                             "401": {"description": "Unauthorized"},
-                            "403": {"description": "Forbidden - Unicorn policy or different advisor"},
+                            "403": {"description": "Forbidden - Awesome policy or different advisor"},
                             "404": {"description": "Policy not found"}
                         },
                         "security": [{"CognitoAuth": []}]
@@ -534,15 +650,8 @@ class AgentCoreStack(Stack):
                     "delete": {
                         "operationId": "delete_third_party_policy",
                         "summary": "Delete a third-party insurance policy",
-                        "description": "Delete a third-party policy record. ONLY works on policies where third_party=true; Unicorn-issued policies cannot be deleted via this endpoint.",
+                        "description": "Delete a third-party policy record. ONLY works on policies where third_party=true; Awesome-issued policies cannot be deleted via this endpoint.",
                         "parameters": [
-                            {
-                                "name": "advisor_id",
-                                "in": "query",
-                                "required": True,
-                                "schema": {"type": "string"},
-                                "description": "Advisor ID (required)"
-                            },
                             {
                                 "name": "id",
                                 "in": "query",
@@ -555,7 +664,7 @@ class AgentCoreStack(Stack):
                             "200": {"description": "Policy deleted"},
                             "400": {"description": "Bad request"},
                             "401": {"description": "Unauthorized"},
-                            "403": {"description": "Forbidden - Unicorn policy or different advisor"},
+                            "403": {"description": "Forbidden - Awesome policy or different advisor"},
                             "404": {"description": "Policy not found"}
                         },
                         "security": [{"CognitoAuth": []}]
@@ -616,6 +725,11 @@ class AgentCoreStack(Stack):
                     )
                 )
             ),
+            # The interceptor adds this header to tell the Lambdas the call came through
+            # the assistant. Propagation is by allowlist, so it has to be named here.
+            metadata_configuration=agentcore.CfnGatewayTarget.MetadataConfigurationProperty(
+                allowed_request_headers=["X-Advisor-Via-Gateway"],
+            ),
             credential_provider_configurations=[
                 agentcore.CfnGatewayTarget.CredentialProviderConfigurationProperty(
                     credential_provider_type="OAUTH",
@@ -629,6 +743,12 @@ class AgentCoreStack(Stack):
             ],
         )
 
+        # The API takes no machine token on any route. The interceptor replaces the
+        # token this OAuth provider fetches with the advisor's own, so the call is made
+        # as the signed-in advisor. The provider stays as the target's outbound
+        # credential; should the interceptor ever not replace it, API Gateway refuses
+        # the machine token's scope, so the call fails rather than running unattributed.
+        interceptor_modes["InsuranceAdvisorApiService"] = "forward_token"
         # The gateway assumes its role to fetch the OAuth token (and the
         # client secret behind it) before calling API Gateway. The alpha L2
         # granted this implicitly when given an OAuth credential provider.
@@ -696,6 +816,9 @@ class AgentCoreStack(Stack):
                 ],
             )
             lambda_function.grant_invoke(self.gateway_role)
+            # A tool that takes `advisor_id` gets it from the interceptor, never from the model.
+            if any("advisor_id" in (getattr(getattr(t, "input_schema", None), "properties", None) or {}) for t in tools):
+                interceptor_modes[name] = "set_argument"
             return target
 
         def _no_arg_tool(name: str, description: str) -> agentcore.CfnGatewayTarget.ToolDefinitionProperty:
@@ -744,11 +867,11 @@ class AgentCoreStack(Stack):
         self.company_target = _lambda_target(
             "CompanyTarget",
             name="CompanyInfoService",
-            description="Information about Unicorn Insurance — history, ratings, claims process, customer service",
+            description="Information about Awesome Insurance — history, ratings, claims process, customer service",
             lambda_function=tools_stack.company_lambda,
             tools=[_no_arg_tool(
                 "get_company_info",
-                "Retrieve factual information about Unicorn Insurance: company overview, "
+                "Retrieve factual information about Awesome Insurance: company overview, "
                 "regulatory credentials and financial ratings, customer service channels, "
                 "claims process, and digital platform capabilities. Use when the customer "
                 "or prospect asks about the company itself rather than specific products.",
@@ -759,14 +882,14 @@ class AgentCoreStack(Stack):
         self.competitive_target = _lambda_target(
             "CompetitiveTarget",
             name="CompetitiveInfoService",
-            description="Unicorn Insurance's competitive positioning and advantages",
+            description="Awesome Insurance's competitive positioning and advantages",
             lambda_function=tools_stack.competitive_lambda,
             tools=[_no_arg_tool(
                 "get_competitive_info",
-                "Retrieve talking points about why Unicorn Insurance is a better choice than "
+                "Retrieve talking points about why Awesome Insurance is a better choice than "
                 "competitors — value propositions, advantages by product line, service standards, "
                 "and multi-policy bundle benefits. Use when the advisor needs to position "
-                "Unicorn Insurance against alternatives during a sales conversation.",
+                "Awesome Insurance against alternatives during a sales conversation.",
             )],
         )
 
@@ -779,9 +902,9 @@ class AgentCoreStack(Stack):
             tools=[_no_arg_tool(
                 "get_competitor_products",
                 "Retrieve reference information about competitor insurance products "
-                "(BigRival, StarInsure, QuickSafe) including their coverage, strengths, "
+                "(BigRival, Brookmere, QuickSafe) including their coverage, strengths, "
                 "weaknesses, and pricing tier. Use when the customer mentions a specific "
-                "competitor by name or asks how Unicorn products compare to alternatives. "
+                "competitor by name or asks how Awesome products compare to alternatives. "
                 "Always pair with get_competitive_info to frame the comparison favorably.",
             )],
         )
@@ -823,7 +946,8 @@ class AgentCoreStack(Stack):
                             "Customer ID the document is being attached to. Pass null/omit for '+ New Prospect' mode."
                         ),
                         "advisor_id": _string_field(
-                            "Advisor email (the calling user). Required for S3 namespace scoping."
+                            "Set automatically from the signed-in advisor. You do not need to "
+                            "fill it in: whatever is sent here is replaced by the gateway."
                         ),
                     },
                 ),
@@ -841,7 +965,7 @@ class AgentCoreStack(Stack):
         self.form_schema_target = _lambda_target(
             "FormSchemaTarget",
             name="FormSchemaService",
-            description="Application-form schemas for Unicorn Insurance products",
+            description="Application-form schemas for Awesome Insurance products",
             lambda_function=tools_stack.formschema_lambda,
             tools=[agentcore.CfnGatewayTarget.ToolDefinitionProperty(
                 name="get_form_schema",
@@ -861,12 +985,221 @@ class AgentCoreStack(Stack):
                         "product_type": _string_field(
                             "Product identifier, snake_case. Currently "
                             "published: 'term_life', 'whole_life', "
-                            "'universal_life', 'variable_life'."
+                            "'universal_life', 'variable_life', "
+                            "'critical_illness', 'health', 'home', 'auto', "
+                            "'travel', 'disability'."
                         ),
                     },
                 ),
             )],
         )
+
+        # Pricing targets. Rate tables live in their own bucket and are read
+        # only by these two tools, which do the arithmetic in code, so the
+        # model never multiplies a rate itself. Both agents get them: estimates
+        # are indicative, labelled as such, and never a quote.
+        self.pricing_table_target = _lambda_target(
+            "PricingTableTarget",
+            name="PricingTableService",
+            description="Indicative premium rate tables for Awesome Insurance products",
+            lambda_function=tools_stack.pricing_table_lambda,
+            tools=[agentcore.CfnGatewayTarget.ToolDefinitionProperty(
+                name="get_pricing_table",
+                description=(
+                    "List the products that have indicative premium rates and what "
+                    "each needs to be priced, or (with product_type) return one "
+                    "product's full rate file: its options with the allowed values, "
+                    "the rate tables and the rating factors. Also returns the "
+                    "affordability rule (total annual premium within 10% of income). "
+                    "Use this to see which options estimate_premium accepts, or to "
+                    "explain how a price is built. To price a configuration, call "
+                    "estimate_premium; do not work out premiums from the tables yourself."
+                ),
+                input_schema=agentcore.CfnGatewayTarget.SchemaDefinitionProperty(
+                    type="object",
+                    properties={
+                        "product_type": _string_field(
+                            "Optional. One of term_life, whole_life, universal_life, "
+                            "variable_life, critical_illness, health, home, auto, travel, "
+                            "disability. Omit to list all products."
+                        ),
+                    },
+                ),
+            )],
+        )
+        self.pricing_estimate_target = _lambda_target(
+            "PricingEstimateTarget",
+            name="PremiumEstimateService",
+            description="Indicative premium estimate and affordability check",
+            lambda_function=tools_stack.pricing_estimate_lambda,
+            tools=[agentcore.CfnGatewayTarget.ToolDefinitionProperty(
+                name="estimate_premium",
+                description=(
+                    "Work out an INDICATIVE annual premium for one Awesome product "
+                    "configuration, and, when customer_id is given, "
+                    "check the customer's total annual premium (all active policies, "
+                    "including other insurers', plus this one) against the 10% of "
+                    "income affordability guide. Use it whenever the advisor asks what "
+                    "a cover would cost or whether the customer can afford it. "
+                    "Age and smoker status are taken from the customer's profile; the "
+                    "other options go in `options`, a JSON object whose names and "
+                    "allowed values come from get_pricing_table(product_type). If "
+                    "details are missing the result has status needs_input and lists "
+                    "them: ask the advisor, never guess. If the profile has no income "
+                    "the affordability status is income_unknown: ask the advisor. "
+                    "The result is an estimate, not a quote: always say so, and say "
+                    "the final premium is set by Awesome after the application is "
+                    "assessed."
+                ),
+                input_schema=agentcore.CfnGatewayTarget.SchemaDefinitionProperty(
+                    type="object",
+                    properties={
+                        "product_type": _string_field(
+                            "One of term_life, whole_life, universal_life, variable_life, "
+                            "critical_illness, health, home, auto, travel, disability."
+                        ),
+                        "options": _string_field(
+                            "JSON object text with the product's options, for example "
+                            "'{\"sum_assured\": 500000, \"term_years\": \"20\", \"gender\": \"female\"}'. "
+                            "Option names and allowed values: see get_pricing_table. "
+                            "Also accepts annual_income and other_annual_premiums for "
+                            "prospects with no profile."
+                        ),
+                        "customer_id": _string_field(
+                            "Customer ID, to read age and smoker status and to run the affordability check. Omit for a prospect with no profile."
+                        ),
+                        "advisor_id": _string_field(
+                            "Set automatically from the signed-in advisor. You do not need to "
+                            "fill it in: whatever is sent here is replaced by the gateway."
+                        ),
+                    },
+                    required=["product_type"],
+                ),
+            )],
+        )
+        # Savings-gap calculators. Both scenarios share one tool so there is a single
+        # Lambda; the arithmetic runs in code and the answer lists its assumptions.
+        self.calculators_target = _lambda_target(
+            "CalculatorsTarget",
+            name="CalculatorService",
+            description="Education and retirement savings-gap calculators",
+            lambda_function=tools_stack.calculators_lambda,
+            tools=[agentcore.CfnGatewayTarget.ToolDefinitionProperty(
+                name="calculate_savings_gap",
+                description=(
+                    "Work out an ILLUSTRATIVE savings gap. scenario 'education': what a "
+                    "child's studies will cost and how much more to save. scenario "
+                    "'retirement': the fund needed to pay a wanted income in retirement "
+                    "and how much more to save. All maths is done by the service; report "
+                    "its numbers and never calculate growth yourself. Required inputs: "
+                    "education needs child_age and annual_cost_today; retirement needs "
+                    "current_age and annual_income_today. If something is missing the "
+                    "result has status needs_input: ask the advisor, never guess. "
+                    "Assumptions (inflation, returns, ages) have defaults and are listed "
+                    "in the result with their source; the advisor may override them. "
+                    "The result is an illustration, not a forecast, quote or guarantee."
+                ),
+                input_schema=agentcore.CfnGatewayTarget.SchemaDefinitionProperty(
+                    type="object",
+                    properties={
+                        "scenario": _string_field("Either 'education' or 'retirement'."),
+                        "inputs": _string_field(
+                            "JSON object text. education: child_age, annual_cost_today; optional "
+                            "current_savings, monthly_saving, start_age, years_of_study, "
+                            "education_cost_inflation_percent, investment_return_percent. "
+                            "retirement: current_age, annual_income_today; optional "
+                            "other_annual_income_today, current_savings, monthly_saving, "
+                            "retirement_age, life_expectancy, income_replacement_percent, "
+                            "inflation_percent, return_before_retirement_percent, "
+                            "return_in_retirement_percent. Example: "
+                            "'{\"child_age\": 6, \"annual_cost_today\": 25000}'."
+                        ),
+                    },
+                    required=["scenario", "inputs"],
+                ),
+            )],
+        )
+        # Web Search connector (AWS-managed, no Lambda). The gateway reaches
+        # the AWS-run web index with its own role, so there is no API key to
+        # hold. The tool shows up in tools/list as
+        # `WebSearchService___WebSearch` (target name + connector
+        # configuration name). The text agent uses it for general insurance
+        # questions only; the voice agent drops it at start-up (see
+        # voice-agent/app.py) and the system prompt keeps customer details
+        # out of queries.
+        #
+        # Domains: the open web minus a short list of social and Q&A sites,
+        # set on the target so neither agent can widen it. CloudFormation's
+        # ConnectorSource has no `version` property, so the target takes the
+        # connector's default version (1.2.0 when this was deployed; checked
+        # against a live target). Its target-level exclude list is used here.
+        # 1.2.0 also lets the model pass per-request filters; those can only
+        # narrow results, and the system prompt tells the model not to.
+        self.web_search_target = agentcore.CfnGatewayTarget(
+            _target_scope("WebSearchTarget"), "Resource",
+            name="WebSearchService",
+            description="Web search for general insurance questions (not for Awesome products or customers)",
+            gateway_identifier=self.gateway_id,
+            target_configuration=agentcore.CfnGatewayTarget.TargetConfigurationProperty(
+                mcp=agentcore.CfnGatewayTarget.McpTargetConfigurationProperty(
+                    connector=agentcore.CfnGatewayTarget.ConnectorTargetConfigurationProperty(
+                        source=agentcore.CfnGatewayTarget.ConnectorSourceProperty(
+                            connector_id="web-search"
+                        ),
+                        configurations=[
+                            agentcore.CfnGatewayTarget.ConnectorConfigurationProperty(
+                                name="WebSearch",
+                                parameter_values={
+                                    "domainFilter": {
+                                        "exclude": [
+                                            "reddit.com",
+                                            "quora.com",
+                                            "facebook.com",
+                                            "instagram.com",
+                                            "x.com",
+                                            "twitter.com",
+                                            "tiktok.com",
+                                            "pinterest.com",
+                                        ],
+                                    },
+                                },
+                            )
+                        ],
+                    )
+                )
+            ),
+            credential_provider_configurations=[
+                agentcore.CfnGatewayTarget.CredentialProviderConfigurationProperty(
+                    credential_provider_type="GATEWAY_IAM_ROLE"
+                )
+            ],
+        )
+        # The connector is AWS-owned, so the resource is an AWS-account ARN
+        # rather than anything in this account.
+        self.gateway_role.add_to_policy(
+            iam.PolicyStatement(
+                sid="InvokeWebSearch",
+                effect=iam.Effect.ALLOW,
+                actions=["bedrock-agentcore:InvokeWebSearch"],
+                resources=[
+                    f"arn:aws:bedrock-agentcore:{self.region}:aws:tool/web-search.v1"
+                ],
+            )
+        )
+        self.web_search_target.node.add_dependency(
+            self.gateway_role.node.find_child("DefaultPolicy")
+        )
+        # Tell the interceptor how to treat each target, now that all are defined.
+        self.interceptor_lambda.add_environment(
+            "TARGET_MODES", json.dumps(interceptor_modes, sort_keys=True)
+        )
+        # Guard against regressions: the REST tools identify the advisor by the token the
+        # interceptor forwards. A re-added `advisor_id` parameter would invite a
+        # caller-chosen identity back in, so fail the build instead.
+        assert '"advisor_id"' not in json.dumps(openapi_spec), (
+            "The REST API tools must not take advisor_id; the advisor is the signed-in token."
+        )
+        assert interceptor_modes.get("InsuranceAdvisorApiService") == "forward_token"
 
         # Amazon Bedrock Guardrail — defined in tools_stack so the Lambdas
         # in that stack can reference it without a cross-stack cycle. Keep
@@ -885,6 +1218,8 @@ class AgentCoreStack(Stack):
         # model as tool arguments — see open_application_form in
         # voice-agent/app.py.
         self.forms_bucket = tools_stack.forms_bucket
+        # Re-exported for the voice stack, which is the only writer.
+        self.transcripts_bucket = tools_stack.transcripts_bucket
 
         # Docker Image Asset - CDK will build and push automatically
         self.agent_image = ecr_assets.DockerImageAsset(
@@ -907,14 +1242,12 @@ class AgentCoreStack(Stack):
                                 "bedrock:InvokeModelWithResponseStream",
                             ],
                             resources=[
-                                # Cross-region inference profile
-                                f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
-                                # Underlying foundation models in destination regions
-                                "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-                                "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-                                "arn:aws:bedrock:us-west-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-                                "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-                                "arn:aws:bedrock:ca-central-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+                                # Claude Haiku 5.5: cross-region inference profile
+                                f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-haiku-5-5",
+                                # Underlying foundation models in the profile's destination regions
+                                "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-5-5",
+                                "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-5-5",
+                                "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-haiku-5-5",
                             ]
                         )
                     ]
@@ -943,16 +1276,28 @@ class AgentCoreStack(Stack):
                 ),
                 "AgentCoreRuntimePolicy": iam.PolicyDocument(
                     statements=[
+                        # AgentCore (memory, token vault, gateway, workload identity):
+                        # limited to this account and region.
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=["bedrock-agentcore:*"],
+                            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:*"],
+                        ),
+                        # Pull the container image: the token call has no resource-level scope;
+                        # the layer calls are limited to this account's repositories.
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=["ecr:GetAuthorizationToken"],
+                            resources=["*"],
+                        ),
                         iam.PolicyStatement(
                             effect=iam.Effect.ALLOW,
                             actions=[
-                                "bedrock-agentcore:*",
-                                "ecr:GetAuthorizationToken",
                                 "ecr:BatchCheckLayerAvailability",
                                 "ecr:GetDownloadUrlForLayer",
-                                "ecr:BatchGetImage"
+                                "ecr:BatchGetImage",
                             ],
-                            resources=["*"]
+                            resources=[f"arn:aws:ecr:{self.region}:{self.account}:repository/*"],
                         )
                     ]
                 ),
@@ -1041,7 +1386,7 @@ class AgentCoreStack(Stack):
             self, "InsuranceAdvisorLTM", 
             name="insurance_advisor_ltm",
             description="Long-term memory for Insurance Advisor agent - extracts and summarizes key information across sessions",
-            # Threat model M17: 90 days. Originally 365 (the platform max).
+            # Retention: 90 days. Originally 365 (the platform max).
             # Bounding the retention window limits the GDPR right-to-erasure
             # window for chat history that DynamoDB profile/policy deletes
             # don't reach (M16 would couple them properly; deferred for now).
@@ -1143,6 +1488,8 @@ class AgentCoreStack(Stack):
             environment_variables={
                 "AWS_REGION": self.region,
                 "AGENTCORE_GATEWAY_URL": self.gateway_url,
+                # Raise to DEBUG only while troubleshooting: DEBUG logs contain prompts and customer data.
+                "AGENT_LOG_LEVEL": self.node.try_get_context("agent_log_level") or "INFO",
                 # AgentCore Identity provider name for runtime-to-gateway M2M auth
                 # The SDK's @requires_access_token decorator resolves this name via the Token Vault
                 "GATEWAY_CREDENTIAL_PROVIDER_NAME": "insurance-advisor-runtime-gateway-auth",
@@ -1156,8 +1503,12 @@ class AgentCoreStack(Stack):
                 # redeploy.
                 "BEDROCK_GUARDRAIL_ID": self.guardrail.attr_guardrail_id,
                 "BEDROCK_GUARDRAIL_VERSION_PARAM_NAME": self.guardrail_version_param_name,
+                # Form schemas are read directly by the open_application_form
+                # tool (agent/form_tools.py), the same way the voice agent does.
+                "FORMS_BUCKET": self.forms_bucket.bucket_name,
             },
         )
+        self.forms_bucket.grant_read(self.runtime_role)
 
         # Grant runtime role explicit permission to invoke the gateway
         self.runtime_role.add_to_policy(

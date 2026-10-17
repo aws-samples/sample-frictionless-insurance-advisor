@@ -21,10 +21,10 @@ PrimeCare Health is BigRival's supplemental health product, sitting alongside pu
 | 56-65    | $4,200/yr     | $6,720/yr     | $10,140/yr   |
 
 ### Premium Positioning
-- **Premium tier pricing**: Typically 15-25% higher than Unicorn's HealingHorn Health and 40-60% higher than StarInsure's offerings.
+- **Premium tier pricing**: Typically 15-25% higher than Awesome's Awesome Health and 40-60% higher than Brookmere's offerings.
 - **Claims-based loading**: After a major claim ($10,000+), BigRival applies a premium loading of up to 30% at next renewal. This loading persists for 3 consecutive claim-free years before reverting to standard rate.
 - **No multi-policy discount** for combining with other BigRival products.
-- **Loyalty discount**: 5% off after 5 continuous years of membership (lower than Unicorn's 10% after 2 years).
+- **Loyalty discount**: 5% off after 5 continuous years of membership (lower than Awesome's 10% after 2 years).
 - **Annual premium increases**: Historically 5-8% per year, driven by older demographic portfolio and higher claims frequency.
 
 ## Coverage Details

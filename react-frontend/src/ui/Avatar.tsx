@@ -15,15 +15,15 @@ const SIZE = {
   lg: 'h-14 w-14 text-base',
 };
 
-// Six neon-leaning gradient pairs. Stable per-name via a hash so a customer
-// always gets the same avatar tint.
+// Six gradient pairs. Stable per-name via a hash so a customer always gets
+// the same avatar tint.
 const GRADIENTS = [
-  ['from-fuchsia-500', 'to-violet-500'],
-  ['from-violet-500', 'to-sky-500'],
+  ['from-blue-500', 'to-indigo-500'],
+  ['from-indigo-500', 'to-sky-500'],
   ['from-sky-500', 'to-emerald-400'],
-  ['from-emerald-400', 'to-fuchsia-500'],
-  ['from-orange-400', 'to-rose-500'],
-  ['from-amber-400', 'to-pink-500'],
+  ['from-emerald-400', 'to-teal-500'],
+  ['from-teal-500', 'to-blue-500'],
+  ['from-slate-500', 'to-indigo-500'],
 ] as const;
 
 function hash(s: string): number {

@@ -34,14 +34,14 @@ interface SamplePolicy {
 const SAMPLE_POLICIES: SamplePolicy[] = [
   {
     customerId: '1',
-    filename: 'johnson-sarah-starinsure-disability',
-    label: 'StarInsure Income Shield LTD',
+    filename: 'johnson-sarah-brookmere-disability',
+    label: 'Brookmere Income Shield LTD',
     description: '$5K/mo benefit, 5-year period, 90-day elimination — covers a real disability gap',
   },
   {
     customerId: '2',
-    filename: 'rodriguez-emily-biginsure-term-life',
-    label: 'BigInsure Term Life 15',
+    filename: 'rodriguez-emily-bigrival-term-life',
+    label: 'BigRival Term Life 15',
     description: '$250K, 15-year level term, $18.50/mo — adds first life policy on file',
   },
   {
@@ -52,20 +52,20 @@ const SAMPLE_POLICIES: SamplePolicy[] = [
   },
   {
     customerId: '4',
-    filename: 'thompson-lisa-biginsure-auto',
-    label: 'BigInsure SafeDrive Auto',
+    filename: 'thompson-lisa-bigrival-auto',
+    label: 'BigRival SafeDrive Auto',
     description: '2022 Subaru Forester, $300K/$500K liability — adds first auto policy',
   },
   {
     customerId: '5',
-    filename: 'chen-michael-biginsure-home',
-    label: 'BigInsure HomeSecure Premier',
+    filename: 'chen-michael-bigrival-home',
+    label: 'BigRival HomeSecure Premier',
     description: 'IL home, $620K dwelling, annual premium — fills the missing home line',
   },
   {
     customerId: '6',
-    filename: 'davis-amanda-starinsure-term-life',
-    label: 'StarInsure FoundersTerm Life',
+    filename: 'davis-amanda-brookmere-term-life',
+    label: 'Brookmere FoundersTerm Life',
     description: '$300K, 10-year term with founder buyout rider — first life policy',
   },
   {
@@ -76,9 +76,75 @@ const SAMPLE_POLICIES: SamplePolicy[] = [
   },
   {
     customerId: '8',
-    filename: 'martinez-jessica-biginsure-home',
-    label: 'BigInsure HomeSecure Coastal',
+    filename: 'martinez-jessica-bigrival-home',
+    label: 'BigRival HomeSecure Coastal',
     description: 'CA coastal home, $740K dwelling, with earthquake rider — fills the missing home line',
+  },
+  {
+    customerId: '9',
+    filename: 'okafor-david-bigrival-disability',
+    label: 'BigRival CareerShield Income Protection',
+    description: '$8K/mo benefit to age 65 — fills the missing disability line',
+  },
+  {
+    customerId: '10',
+    filename: 'patel-priya-bigrival-health',
+    label: 'BigRival PrimeCare Family Health',
+    description: 'Family PPO, $250K annual limit per person — fills the missing health line',
+  },
+  {
+    customerId: '11',
+    filename: 'bennett-marcus-brookmere-critical-illness',
+    label: 'Brookmere Critical Illness Plus',
+    description: '$150K lump sum — a competitor critical illness cover',
+  },
+  {
+    customerId: '12',
+    filename: 'lee-hannah-quicksafe-renters',
+    label: 'QuickSafe Nest Renters',
+    description: 'Seattle apartment, $300K liability — fills the missing renters line',
+  },
+  {
+    customerId: '13',
+    filename: 'mendez-carlos-brookmere-critical-illness',
+    label: 'Brookmere Critical Illness Plus',
+    description: '$100K lump sum, smoker rate class — a competitor critical illness cover',
+  },
+  {
+    customerId: '14',
+    filename: 'grant-olivia-brookmere-travel',
+    label: 'Brookmere BasicCover Travel',
+    description: 'Annual multi-trip family policy, 45 days per trip — adds first travel policy',
+  },
+  {
+    customerId: '15',
+    filename: 'brooks-ethan-quicksafe-home',
+    label: 'QuickSafe Nest Home',
+    description: 'Raleigh home, $680K dwelling — fills the missing home line',
+  },
+  {
+    customerId: '16',
+    filename: 'laurent-sophie-quicksafe-auto',
+    label: 'QuickSafe Drive Auto',
+    description: 'Chicago, 100/300 liability, monthly payments — first policy on file',
+  },
+  {
+    customerId: '17',
+    filename: 'nguyen-tom-brookmere-auto',
+    label: 'Brookmere BasicCover Auto',
+    description: 'Austin, self-employed use rider — adds an auto policy next to his BigRival term life',
+  },
+  {
+    customerId: '18',
+    filename: 'haddad-nadia-brookmere-term-life',
+    label: 'Brookmere BasicCover Life 20',
+    description: '$400K, 20-year level term — first life policy',
+  },
+  {
+    customerId: '19',
+    filename: 'schmidt-leo-bigrival-auto',
+    label: 'BigRival SafeHaven Motor',
+    description: 'Work van with business use, 250/500 liability — adds an auto policy next to his QuickSafe home',
   },
 ];
 

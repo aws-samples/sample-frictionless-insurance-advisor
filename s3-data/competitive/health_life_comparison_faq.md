@@ -1,23 +1,23 @@
 # Frequently Asked Customer Questions: Health & Life Insurance Competitive Comparison
 
-This document provides advisor-ready answers to the most common competitive questions customers ask when comparing Unicorn Insurance's health and life products against alternatives. Each answer is structured with our position, key proof points, and a concise comparison.
+This document provides advisor-ready answers to the most common competitive questions customers ask when comparing Awesome Insurance's health and life products against alternatives. Each answer is structured with our position, key proof points, and a concise comparison.
 
 ---
 
 ## Q1: "Why is your premium higher/lower than [competitor]?"
 
 ### Our Position
-Unicorn HealingHorn Health is positioned as **mid-market** — our premiums are typically 15-20% lower than BigRival PrimeCare and 25-35% higher than StarInsure (though StarInsure doesn't offer a comparable health product).
+Awesome Health is positioned as **mid-market** — our premiums are typically 15-20% lower than BigRival PrimeCare and 25-35% higher than Brookmere (though Brookmere doesn't offer a comparable health product).
 
 ### Key Talking Points
 1. **No claims-based premium loading**: Unlike BigRival which increases premiums up to 30% after a major claim, our premiums stay stable regardless of claim history.
-2. **Multi-policy discounts**: 10-15% off when bundled with other Unicorn products. BigRival and StarInsure offer no bundling discounts.
+2. **Multi-policy discounts**: 10-15% off when bundled with other Awesome products. BigRival and Brookmere offer no bundling discounts.
 3. **No-claim loyalty reward**: 10% off after 2 claim-free years (BigRival: 5% after 5 years).
-4. **Transparent annual adjustments**: Our premiums increase 3-5% annually (medical inflation); BigRival: 5-8%; StarInsure CI: 8-12%.
+4. **Transparent annual adjustments**: Our premiums increase 3-5% annually (medical inflation); BigRival: 5-8%; Brookmere CI: 8-12%.
 5. **Value for money**: When you factor in the breadth of coverage (outpatient, dental, mental health, alternative medicine), our effective cost per benefit is significantly lower.
 
 ### Premium Comparison (Age 30, Individual, Non-Smoker)
-| Product | Unicorn | BigRival | StarInsure |
+| Product | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | Health (mid-tier) | $1,560/yr | $2,040/yr (+31%) | N/A (no health product) |
 | Critical Illness ($100K) | $600/yr (Standard) | N/A | $528/yr ($50K max only) |
@@ -29,10 +29,10 @@ Unicorn HealingHorn Health is positioned as **mid-market** — our premiums are 
 ## Q2: "Do you cover outpatient treatments, dental, or optical?"
 
 ### Our Position
-Yes — HealingHorn Health provides outpatient, dental, and optical coverage depending on tier selected.
+Yes — Awesome Health provides outpatient, dental, and optical coverage depending on tier selected.
 
 ### Coverage Matrix
-| Benefit | Unicorn Essential | Unicorn Standard | Unicorn Premium | BigRival Enhanced | BigRival Premier | StarInsure |
+| Benefit | Awesome Essential | Awesome Standard | Awesome Premium | BigRival Enhanced | BigRival Premier | Brookmere |
 |---------|-------------------|-----------------|-----------------|-------------------|-----------------|-----------|
 | GP outpatient | Post-hosp only | 24 visits/yr ($80/visit) | 24 visits/yr ($80/visit) | Post-hosp only | 20 visits/yr ($100) | No health product |
 | Specialist outpatient | No | 12 visits/yr ($200) | 12 visits/yr ($200) | 10 visits/yr ($250) | 10 visits/yr ($250) | N/A |
@@ -44,17 +44,17 @@ Yes — HealingHorn Health provides outpatient, dental, and optical coverage dep
 | Physiotherapy | No | 20 sessions/yr ($150) | 20 sessions/yr ($150) | 15 sessions ($150) | 15 sessions ($150) | N/A |
 
 ### Key Differentiator
-StarInsure does NOT offer any health insurance product at all — their StarBasic Shield is a critical illness lump-sum product only. If a customer is comparing us to StarInsure on health coverage, they're comparing apples to oranges.
+Brookmere does NOT offer any health insurance product at all — their BasicCover Shield is a critical illness lump-sum product only. If a customer is comparing us to Brookmere on health coverage, they're comparing apples to oranges.
 
 ---
 
 ## Q3: "What's your day-one cover vs. waiting period compared to others?"
 
 ### Our Position
-We provide day-one coverage for accidents and emergencies, with industry-standard waiting periods for other conditions — and importantly, pre-existing conditions ARE covered after the waiting period (unlike StarInsure which permanently excludes them).
+We provide day-one coverage for accidents and emergencies, with industry-standard waiting periods for other conditions — and importantly, pre-existing conditions ARE covered after the waiting period (unlike Brookmere which permanently excludes them).
 
 ### Waiting Period Comparison
-| Condition Type | Unicorn | BigRival | StarInsure (CI only) |
+| Condition Type | Awesome | BigRival | Brookmere (CI only) |
 |---------------|---------|----------|---------------------|
 | Accidents/Emergency | **Day 1** | Day 1 | Day 1 |
 | General illness | 30 days | 30 days | 90 days |
@@ -67,11 +67,11 @@ We provide day-one coverage for accidents and emergencies, with industry-standar
 | Chronic condition mgmt | 6 months | 12 months | N/A |
 
 ### Key Differentiators
-1. **Shorter mental health waiting**: 90 days (Unicorn) vs 180 days (BigRival).
-2. **Shorter maternity waiting**: 12 months (Unicorn) vs 18 months (BigRival).
-3. **Pre-existing covered**: After 12 months with us, fully covered with NO premium loading. StarInsure never covers them.
-4. **No waiting period reset on upgrade**: Upgrading within Unicorn preserves your served waiting time. BigRival resets waiting periods on any plan upgrade.
-5. **Portability credit**: We honour time served at other insurers. BigRival and StarInsure don't.
+1. **Shorter mental health waiting**: 90 days (Awesome) vs 180 days (BigRival).
+2. **Shorter maternity waiting**: 12 months (Awesome) vs 18 months (BigRival).
+3. **Pre-existing covered**: After 12 months with us, fully covered with NO premium loading. Brookmere never covers them.
+4. **No waiting period reset on upgrade**: Upgrading within Awesome preserves your served waiting time. BigRival resets waiting periods on any plan upgrade.
+5. **Portability credit**: We honour time served at other insurers. BigRival and Brookmere don't.
 
 ---
 
@@ -81,7 +81,7 @@ We provide day-one coverage for accidents and emergencies, with industry-standar
 We offer both cashless (direct billing via eLOG) and reimbursement, with cashless available at 800+ panel facilities.
 
 ### Cashless Claims Comparison
-| Feature | Unicorn | BigRival | StarInsure |
+| Feature | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | Cashless available | **Yes** | Yes | **No** (no health product) |
 | Panel hospitals | 800+ | ~600 | N/A |
@@ -109,7 +109,7 @@ We offer both cashless (direct billing via eLOG) and reimbursement, with cashles
 We apply a standard 12-month waiting period, after which pre-existing conditions are **fully covered at the same benefit level as any other condition**, with NO premium loading or surcharge.
 
 ### Pre-Existing Condition Comparison
-| Feature | Unicorn | BigRival | StarInsure |
+| Feature | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | Waiting period | 12 months | 12 months | **Permanently excluded** |
 | Coverage after waiting | **Full (same as any condition)** | Full but may load premium | Never covered |
@@ -120,9 +120,9 @@ We apply a standard 12-month waiting period, after which pre-existing conditions
 | Chronic disease support | **Yes** (management programme from month 7) | After 12 months only | N/A |
 
 ### Why This Matters
-- A customer with managed diabetes switching from BigRival to Unicorn gets credit for waiting time already served — no gap in coverage.
+- A customer with managed diabetes switching from BigRival to Awesome gets credit for waiting time already served — no gap in coverage.
 - A customer with pre-existing asthma who has completed 12 months with us gets full coverage for asthma-related hospitalisations, outpatient care, and medications — same limits as any other condition, no questions asked.
-- StarInsure's permanent exclusion means a customer with ANY pre-existing condition will NEVER be covered for that condition, regardless of how long they hold the policy.
+- Brookmere's permanent exclusion means a customer with ANY pre-existing condition will NEVER be covered for that condition, regardless of how long they hold the policy.
 
 ---
 
@@ -135,17 +135,17 @@ We offer BOTH, plus a hospital daily cash benefit — three distinct income prot
 
 | Product | Type | Amount Range | Duration | Trigger |
 |---------|------|-------------|----------|---------|
-| Unicorn Health Critical | **Lump-sum** | $25K - $500K | One-time (multi-stage possible) | Diagnosis of covered condition |
-| ShieldUnicorn Disability | **Monthly income** | $2K - $15K/month | Up to retirement age | Inability to work |
-| HealingHorn Health (add-on) | **Daily hospital cash** | $100 - $500/day | Duration of hospital stay | Hospitalisation |
+| Awesome Critical Illness | **Lump-sum** | $25K - $500K | One-time (multi-stage possible) | Diagnosis of covered condition |
+| Awesome Disability | **Monthly income** | $2K - $15K/month | Up to retirement age | Inability to work |
+| Awesome Health (add-on) | **Daily hospital cash** | $100 - $500/day | Duration of hospital stay | Hospitalisation |
 
 ### How They Work Together (Three-Layer Protection)
-1. **Day 1 of hospitalisation**: HealingHorn Health pays medical bills (cashless) + hospital cash benefit ($100-$500/day).
-2. **On diagnosis of critical illness**: Unicorn Health Critical pays lump-sum ($25K-$500K) immediately.
-3. **If unable to work beyond waiting period**: ShieldUnicorn Disability pays monthly income ($2K-$15K/month) until recovery or retirement.
+1. **Day 1 of hospitalisation**: Awesome Health pays medical bills (cashless) + hospital cash benefit ($100-$500/day).
+2. **On diagnosis of critical illness**: Awesome Critical Illness pays lump-sum ($25K-$500K) immediately.
+3. **If unable to work beyond waiting period**: Awesome Disability pays monthly income ($2K-$15K/month) until recovery or retirement.
 
 ### vs Competitors
-| Feature | Unicorn | BigRival | StarInsure |
+| Feature | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | Lump-sum CI payout | $25K-$500K (multi-stage) | No standalone CI product | $10K-$50K (single payout) |
 | Monthly income replacement | $2K-$15K/month | Separate product (CareerShield) | Not available |
@@ -162,7 +162,7 @@ We offer BOTH, plus a hospital daily cash benefit — three distinct income prot
 Yes to all three — mental health and alternative treatments are included in Standard/Premium tiers, and maternity is available as an add-on across all tiers.
 
 ### Mental Health Coverage Comparison
-| Feature | Unicorn Premium | Unicorn Standard | BigRival Premier | BigRival Enhanced | StarInsure |
+| Feature | Awesome Premium | Awesome Standard | BigRival Premier | BigRival Enhanced | Brookmere |
 |---------|----------------|-----------------|-----------------|------------------|-----------|
 | Inpatient psychiatric | $15,000/yr | $8,000/yr | $12,000/yr | $6,000/yr | Not covered |
 | Outpatient sessions | 20/yr ($200/session) | 12/yr ($150/session) | 15/yr ($180/session) | 8/yr ($120/session) | Not covered |
@@ -171,7 +171,7 @@ Yes to all three — mental health and alternative treatments are included in St
 | Annual cap | $4,000 outpatient | $1,800 outpatient | $2,700 outpatient | $960 outpatient | N/A |
 
 ### Maternity Coverage Comparison
-| Feature | Unicorn (add-on) | BigRival (add-on, Premier only) | StarInsure |
+| Feature | Awesome (add-on) | BigRival (add-on, Premier only) | Brookmere |
 |---------|------------------|--------------------------------|-----------|
 | Available to | All tiers | Premier tier only | Not available |
 | Waiting period | **12 months** | **18 months** | N/A |
@@ -185,7 +185,7 @@ Yes to all three — mental health and alternative treatments are included in St
 | Additional premium (age 30) | ~$1,200-$2,400/yr | ~$2,800-$4,500/yr | N/A |
 
 ### Alternative Treatment Coverage Comparison
-| Treatment | Unicorn Premium | Unicorn Standard | BigRival (all tiers) | StarInsure |
+| Treatment | Awesome Premium | Awesome Standard | BigRival (all tiers) | Brookmere |
 |-----------|----------------|-----------------|---------------------|-----------|
 | TCM | $80/session, 15/yr | $80/session, 15/yr | **Not covered** | Not covered |
 | Acupuncture | $100/session, 12/yr | $100/session, 12/yr | Not covered | Not covered |
@@ -194,4 +194,4 @@ Yes to all three — mental health and alternative treatments are included in St
 | Naturopathy | $80/session, 10/yr | Not covered | Not covered | Not covered |
 
 ### Key Message
-Unicorn is the **only carrier among our competitor set** that covers alternative medicine. For customers who value holistic health approaches (TCM, acupuncture, chiropractic), we are the only option that doesn't require them to pay entirely out of pocket.
+Awesome is the **only carrier among our competitor set** that covers alternative medicine. For customers who value holistic health approaches (TCM, acupuncture, chiropractic), we are the only option that doesn't require them to pay entirely out of pocket.

@@ -1,0 +1,185 @@
+{
+  "product_type": "whole_life",
+  "product_name": "Awesome Whole Life",
+  "premium_basis": "per year",
+  "notes": [
+    "Rates are for lifetime pay; shorter payment schedules cost more each year.",
+    "Paid-up at 65 is not offered to applicants aged 60 or over."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 18,
+      "max": 70,
+      "required": true,
+      "source": "profile",
+      "description": "Age last birthday"
+    },
+    "gender": {
+      "type": "choice",
+      "choices": [
+        "male",
+        "female"
+      ],
+      "required": true,
+      "source": "profile",
+      "description": "Used to apply the gender factor. Taken from the customer's profile; if it is missing (for example a new prospect), ask the advisor."
+    },
+    "smoker": {
+      "type": "boolean",
+      "required": true,
+      "source": "profile",
+      "description": "Whether the person smokes or has used tobacco in the last 12 months."
+    },
+    "sum_assured": {
+      "type": "number",
+      "min": 100000,
+      "max": 2500000,
+      "required": true,
+      "description": "Death benefit in USD."
+    },
+    "premium_schedule": {
+      "type": "choice",
+      "choices": [
+        "lifetime",
+        "10_pay",
+        "20_pay",
+        "paid_up_65"
+      ],
+      "required": true,
+      "description": "Lifetime pay, paid up after 10 or 20 years, or paid up at 65."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "age_rate",
+    "amount_input": "sum_assured",
+    "unit": 1000,
+    "age_bands": [
+      {
+        "min": 18,
+        "max": 25
+      },
+      {
+        "min": 26,
+        "max": 30
+      },
+      {
+        "min": 31,
+        "max": 35
+      },
+      {
+        "min": 36,
+        "max": 40
+      },
+      {
+        "min": 41,
+        "max": 45
+      },
+      {
+        "min": 46,
+        "max": 50
+      },
+      {
+        "min": 51,
+        "max": 55
+      },
+      {
+        "min": 56,
+        "max": 60
+      },
+      {
+        "min": 61,
+        "max": 65
+      },
+      {
+        "min": 66,
+        "max": 70
+      }
+    ],
+    "rates": [
+      4.8,
+      5.8,
+      7.0,
+      8.5,
+      10.5,
+      13.0,
+      16.0,
+      20.0,
+      25.0,
+      31.0
+    ],
+    "label": "Annual rate per $1,000 of cover, male non-smoker, at the reference choices"
+  },
+  "factors": [
+    {
+      "input": "gender",
+      "label": "Gender",
+      "map": {
+        "male": 1.0,
+        "female": 0.88
+      }
+    },
+    {
+      "input": "smoker",
+      "label": "Smoker",
+      "map": {
+        "true": 1.9,
+        "false": 1.0
+      }
+    },
+    {
+      "input": "premium_schedule",
+      "label": "Premium schedule",
+      "map": {
+        "lifetime": 1.0,
+        "20_pay": 1.38,
+        "10_pay": 2.1,
+        "paid_up_65": 1.55
+      }
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "Age 40, female, non-smoker, $500,000, lifetime pay",
+      "options": {
+        "age": 40,
+        "gender": "female",
+        "smoker": false,
+        "sum_assured": 500000,
+        "premium_schedule": "lifetime"
+      },
+      "annual_premium": 3740
+    },
+    {
+      "label": "Same, paid up after 20 years",
+      "options": {
+        "age": 40,
+        "gender": "female",
+        "smoker": false,
+        "sum_assured": 500000,
+        "premium_schedule": "20_pay"
+      },
+      "annual_premium": 5161
+    }
+  ]
+}

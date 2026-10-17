@@ -2,7 +2,22 @@ import { useCallback, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { streamChat } from '../lib/agentcore';
-import type { ChatMessage, Customer } from '../types';
+import type { AppEvent } from '../lib/sse';
+import { parseSources } from '../lib/sources';
+import type { ChatMessage, Customer, FormFillEvent, FormSchema } from '../types';
+
+/**
+ * What the chat needs from the application form that sits beside it. Held in a
+ * ref so a new object on every render never restarts anything.
+ */
+export interface ChatFormBridge {
+  /** The form open on screen with its current values, or null when none is. */
+  getFormContext: () => { productType: string; values: Record<string, string> } | null;
+  /** Field values the customer's record already supplies. */
+  prefill: Record<string, string>;
+  onFormOpen: (productType: string, schema: FormSchema) => void;
+  onFormFill: (event: FormFillEvent) => void;
+}
 
 interface UseAgentChatResult {
   messages: ChatMessage[];
@@ -31,7 +46,12 @@ interface CustomerChatEntry {
  * - Session ID format: `react-<customerId>-<uuid>`. AgentCore Memory uses
  *   this as the session_id for the chat history.
  */
-export function useAgentChat(customer: Customer | null): UseAgentChatResult {
+export function useAgentChat(
+  customer: Customer | null,
+  formBridge?: ChatFormBridge
+): UseAgentChatResult {
+  const formBridgeRef = useRef<ChatFormBridge | undefined>(formBridge);
+  formBridgeRef.current = formBridge;
   const customerId = customer?.customer_id ?? '__new_prospect__';
 
   // Per-customer chat state stored in a ref so switching customers doesn't
@@ -94,11 +114,35 @@ export function useAgentChat(customer: Customer | null): UseAgentChatResult {
       const sessionId = entriesRef.current[customerId].sessionId;
 
       try {
-        for await (const chunk of streamChat({
+        const bridge = formBridgeRef.current;
+        const form = bridge?.getFormContext() ?? undefined;
+        for await (const item of streamChat({
           prompt: enrichedPrompt,
           customerId: customer?.customer_id ?? undefined,
           sessionId,
+          form,
+          formPrefill: bridge?.prefill,
         })) {
+          if (item.kind === 'app_event') {
+            if (item.event.type === 'sources') {
+              // Sources belong to the answer being streamed, not to a form.
+              const sources = parseSources(item.event.sources);
+              if (sources.length > 0) {
+                updateActive((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last && last.role === 'assistant') {
+                    next[next.length - 1] = { ...last, sources };
+                  }
+                  return next;
+                });
+              }
+              continue;
+            }
+            applyAppEvent(item.event, formBridgeRef.current);
+            continue;
+          }
+          const chunk = item.text;
           updateActive((prev) => {
             const next = [...prev];
             const last = next[next.length - 1];
@@ -136,6 +180,21 @@ export function useAgentChat(customer: Customer | null): UseAgentChatResult {
   }, [customerId]);
 
   return { messages, streaming, send, reset };
+}
+
+/** Route one typed event from the agent's form tools to the form on screen. */
+function applyAppEvent(event: AppEvent, bridge: ChatFormBridge | undefined): void {
+  if (!bridge) return;
+  if (event.type === 'form_open' && typeof event.productType === 'string' && event.schema) {
+    bridge.onFormOpen(event.productType, event.schema as FormSchema);
+  } else if (event.type === 'form_fill' && typeof event.path === 'string') {
+    bridge.onFormFill({
+      path: event.path,
+      value: String(event.value ?? ''),
+      confidence: typeof event.confidence === 'number' ? event.confidence : 0.6,
+      source: typeof event.source === 'string' ? event.source : undefined,
+    });
+  }
 }
 
 /**

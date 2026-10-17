@@ -1,5 +1,5 @@
 """
-Competitive differentiation Lambda — returns Unicorn Insurance competitive
+Competitive differentiation Lambda — returns Awesome Insurance competitive
 talking points concatenated from S3 markdown files
 """
 import json

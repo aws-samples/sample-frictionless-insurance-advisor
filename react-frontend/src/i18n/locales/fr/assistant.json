@@ -4,7 +4,8 @@
       "heading": "Clients",
       "collapse": "Réduire la barre latérale",
       "expand": "Développer la barre latérale",
-      "newProspect": "+ Nouveau prospect"
+      "newProspect": "+ Nouveau prospect",
+      "home": "Accueil"
     },
     "welcome": {
       "heading": "Bienvenue",
@@ -25,11 +26,25 @@
         "joinDate": "Client depuis",
         "policiesCount": "Contrats",
         "occupation": "Profession",
-        "maritalStatus": "État civil"
+        "maritalStatus": "État civil",
+        "gender": "Genre"
       },
       "dataFreshness": {
         "badge": "Vérifier les infos actuelles",
         "tooltip": "Ce profil n'a pas été révisé depuis plus de {{days}} jours. Confirmez que les informations du client sont toujours à jour avant de vous fier à l'analyse de couverture."
+      },
+      "actions": {
+        "gapAnalysis": {
+          "button": "Créer l'analyse de couverture",
+          "menuTitle": "Analyser la couverture pour",
+          "resultTitle": "Analyse de couverture : {{line}}",
+          "close": "Fermer l'analyse"
+        },
+        "form": {
+          "button": "Ouvrir le formulaire de souscription",
+          "menuTitle": "Formulaire de souscription pour",
+          "error": "Impossible d'ouvrir le formulaire : {{message}}"
+        }
       }
     },
     "policies": {
@@ -98,8 +113,7 @@
       }
     },
     "chat": {
-      "headingCustomer": "Chat contrats IA",
-      "headingProspect": "Coaching prospect",
+      "heading": "Chat IA",
       "selectCustomer": "Sélectionnez un client pour démarrer une conversation.",
       "emptyPlaceholder": "Posez une question ou choisissez une suggestion ci-dessous.",
       "messageLabel": "Message",
@@ -119,10 +133,16 @@
         "heading": "Police d'exemple pour {{name}}",
         "subtext": "Polices tierces fictives pour tester le flux d'envoi.",
         "notice": "Compagnies fictives. Aucune couverture réelle."
+      },
+      "sources": {
+        "label": "Sources",
+        "openFile": "Ouvrir {{title}} dans l'Explorateur de données (nouvel onglet du navigateur)",
+        "openWeb": "Ouvrir {{title}} (nouvel onglet du navigateur)"
       }
     },
     "prompts": {
       "customer": {
+        "meetingPrep": "Aide-moi à préparer mon rendez-vous avec ce client",
         "policies": "Quels contrats ai-je ?",
         "coverageGap": "Quelle lacune de couverture ai-je et comment y remédier ?",
         "premiumDelta": "Pourquoi votre prime est-elle plus élevée / plus basse que celle de la concurrence ?",
@@ -131,18 +151,24 @@
         "mentalHealthMaternity": "Couvrez-vous la santé mentale, la maternité ou les médecines alternatives ?",
         "outpatientDentalOptical": "Couvrez-vous les soins ambulatoires, dentaires et optiques ?",
         "dayOneCover": "Quelle est votre couverture dès le premier jour par rapport au délai de carence des autres ?",
-        "preExistingWaiting": "Quel est votre délai de carence pour les affections préexistantes par rapport à la concurrence ?"
+        "preExistingWaiting": "Quel est votre délai de carence pour les affections préexistantes par rapport à la concurrence ?",
+        "annualReview": "Prépare une revue annuelle pour ce client",
+        "outreach": "Rédige un e-mail pour ce client",
+        "marketPulse": "Quoi de neuf sur le marché de l'assurance cette semaine ?"
       },
       "prospect": {
+        "meetingPrep": "Aide-moi à préparer mon rendez-vous avec ce prospect",
         "firstProducts": "Quelle assurance ce prospect devrait-il considérer en premier ?",
         "discovery": "Aidez-moi à démarrer une conversation de découverte",
         "bestProducts": "Quels sont les meilleurs produits compte tenu de son profil ?",
-        "company": "Parlez-moi de Unicorn Insurance",
-        "whyUnicorn": "Pourquoi devrait-il choisir Unicorn plutôt que BigRival ?",
-        "qualifyQuestions": "Quelles questions dois-je poser pour qualifier ce prospect ?"
+        "company": "Parlez-moi de Awesome Insurance",
+        "whyAwesome": "Pourquoi devrait-il choisir Awesome plutôt que BigRival ?",
+        "qualifyQuestions": "Quelles questions dois-je poser pour qualifier ce prospect ?",
+        "outreach": "Rédige un premier e-mail de prise de contact pour ce prospect",
+        "marketPulse": "Quoi de neuf sur le marché de l'assurance cette semaine ?"
       },
-      "voice": {
-        "startTermLifeApplication": "Démarrer une demande d'assurance vie temporaire"
+      "application": {
+        "startTermLife": "Démarrer une demande d'assurance vie temporaire"
       }
     },
     "pages": {
@@ -151,8 +177,14 @@
       },
       "comparator": {
         "heading": "Comparateur",
-        "intro": "Comparez les produits d'assurance entre Unicorn Insurance et ses concurrents. Sélectionnez un type de produit, puis choisissez entre 2 et 4 produits à comparer.",
+        "intro": "Comparez les produits d'assurance entre Awesome Insurance et ses concurrents. Sélectionnez un type de produit, puis choisissez entre 2 et 4 produits à comparer.",
         "typeLabel": "Type de produit",
+        "line": {
+          "label": "Gamme de produits",
+          "life": "Vie",
+          "general": "Générale",
+          "health": "Santé"
+        },
         "typePlaceholder": "Sélectionnez un type de produit",
         "productsLabel": "Produits à comparer",
         "productsHelp": "Sélectionnez entre {{min}} et {{max}} produits.",
@@ -174,10 +206,46 @@
         "internalUseOnly": "Usage interne uniquement",
         "staleNotice": "Certaines données sources peuvent être obsolètes — vérifiez-les avant de les partager avec un client.",
         "productStale": "Données de plus de {{days}} jours",
-        "productUpdated": "Source mise à jour le {{date}}"
+        "productUpdated": "Source mise à jour le {{date}}",
+        "brochure": {
+          "title": "Ajouter une brochure concurrente (facultatif)",
+          "help": "Téléversez la brochure PDF d'un autre assureur pour l'inclure dans cette comparaison. Elle est lue une seule fois, n'est utilisée que pour cette comparaison et est supprimée automatiquement sous 48 heures.",
+          "choose": "Choisir un PDF",
+          "uploading": "Téléversement…",
+          "reading": "Lecture de la brochure…",
+          "remove": "Retirer",
+          "badge": "Brochure téléversée",
+          "notes": "{{count}} remarque(s) à la lecture de la brochure",
+          "pdfOnly": "Veuillez choisir un fichier PDF.",
+          "tooLarge": "Ce PDF dépasse 4,5 Mo. Utilisez un fichier plus petit.",
+          "noRoom": "Décochez un produit pour faire de la place (4 au maximum).",
+          "sampleLabel": "Pas de brochure sous la main ? Essayez un exemple :",
+          "sampleButton": "Télécharger {{name}} (PDF)"
+        },
+        "uploadedNotice": "{{name}} provient d'une brochure que vous avez téléversée. Elle a été lue automatiquement et n'a pas été vérifiée. Vérifiez les détails dans la brochure avant de vous y fier.",
+        "ratings": {
+          "title": "Solidité financière de l'assureur",
+          "outlook": "perspective",
+          "notStated": "Non indiqué",
+          "illustrativeNote": "Les notations des concurrents sont des données de démonstration à titre illustratif, pas des chiffres réels.",
+          "brochureNote": "Les notations de la brochure téléversée sont celles qu'elle indique et n'ont pas été vérifiées.",
+          "asOf": "Notations au {{date}}."
+        },
+        "pdf": {
+          "button": "Télécharger le PDF",
+          "hint": "Un PDF à remettre au client, sans la mention d'usage interne",
+          "preparing": "Préparation…",
+          "failed": "Impossible de créer le PDF : {{message}}",
+          "heading": "Comparaison de produits",
+          "prepared": "Préparé le {{date}}",
+          "advisor": "Conseiller : {{name}}",
+          "uploadedNote": "{{name}} a été lue dans une brochure fournie par votre conseiller et n'a pas été vérifiée.",
+          "customerDisclaimer": "Établi d'après la documentation produit au {{date}}. Cette comparaison est donnée à titre d'information. Elle ne constitue ni un devis ni une offre et peut ne pas présenter toutes les caractéristiques ou exclusions. Vérifiez les détails auprès de chaque assureur avant de décider."
+        },
+        "typesLoading": "Chargement des types de produit…"
       },
       "data": {
-        "heading": "Données",
+        "heading": "Explorateur de données",
         "intro": "Consultez les documents de référence qui étayent les réponses de l'assistant : portefeuille de produits, informations sur l'entreprise, positionnement concurrentiel, produits concurrents, promotions et schémas des formulaires de demande.",
         "searchPlaceholder": "Rechercher des fichiers...",
         "clearSearch": "Effacer la recherche",
@@ -208,7 +276,84 @@
           "competitive": "Positionnement concurrentiel",
           "competitors": "Produits concurrents",
           "promotion": "Promotions",
-          "forms": "Formulaires de demande"
+          "forms": "Formulaires de demande",
+          "pricing": "Grilles tarifaires",
+          "brochures": "Brochures",
+          "transcripts": "Transcriptions vocales"
+        },
+        "pdf": {
+          "download": "Télécharger le PDF",
+          "open": "Ouvrir dans un nouvel onglet",
+          "note": "Brochure d'une page à partager avec les clients. Elle n'indique aucun prix.",
+          "fallback": "Votre navigateur n'a pas pu afficher le PDF ici. Utilisez Télécharger le PDF ou Ouvrir dans un nouvel onglet."
+        },
+        "pricing": {
+          "ageBand": "Tranche d'âge",
+          "ratePerUnit": "Taux annuel pour {{unit}}",
+          "scaledNote": "Les montants correspondent à une garantie de {{amount}} et varient proportionnellement au capital choisi.",
+          "interpolatedNote": "Les montants intermédiaires sont interpolés.",
+          "monthlyBenefit": "Prestation mensuelle",
+          "baseAnnual": "Prime annuelle de base",
+          "geography": "Zone",
+          "perDay": "Par jour et par voyageur",
+          "annualMulti": "Annuel multivoyage, par voyageur",
+          "addonPct": "+{{pct}} % de la prime",
+          "addonFlat": "+{{amount}} par an",
+          "addonPerUnit": "+{{amount}} pour chaque tranche de {{per}} assurée",
+          "addonOnAmount": "+{{pct}} % du montant saisi",
+          "indicative": "À titre indicatif",
+          "effective": "En vigueur le {{date}}",
+          "basis": "Base de la prime : {{basis}}. Devise : {{currency}}.",
+          "dependsOn": "Ce dont dépend le prix",
+          "option": "Option",
+          "meaning": "Signification",
+          "allowed": "Valeurs admises",
+          "defaultCol": "Par défaut",
+          "required": "Obligatoire",
+          "fromProfile": "repris de la fiche client",
+          "baseRates": "Tarifs de base",
+          "factors": "Facteurs de tarification",
+          "factorsHelp": "Chaque facteur multiplie le tarif de base. Les facteurs sans objet pour les choix effectués sont ignorés.",
+          "addons": "Options",
+          "addon": "Option",
+          "effect": "Effet sur la prime",
+          "frequency": "Fréquence de paiement",
+          "paidEvery": "Paiement",
+          "loading": "Majoration",
+          "noLoading": "Aucune",
+          "examples": "Exemples chiffrés",
+          "example": "Exemple",
+          "choices": "Choix",
+          "annualPremium": "Prime annuelle",
+          "examplesNote": "Calculés avec ces tables : les assistants annoncent les mêmes chiffres.",
+          "affordabilityTitle": "Règle d'accessibilité financière",
+          "ofIncome": "du revenu annuel, toutes polices actives confondues"
+        },
+        "transcript": {
+          "inProgress": "En cours",
+          "ended": "Terminée",
+          "started": "Début {{time}}",
+          "refresh": "Actualiser",
+          "expires": "Expire automatiquement environ 24 à 48 heures après le dernier enregistrement ({{time}}). Tant que la session est ouverte, elle est enregistrée toutes les 30 secondes environ.",
+          "consent": "Le consentement à la transcription a été confirmé le {{time}}.",
+          "empty": "Rien n'a encore été enregistré dans cette session.",
+          "about": "À propos de {{name}}",
+          "aboutProspect": "À propos d'un prospect",
+          "advisor": "Conseiller",
+          "assistant": "Assistant",
+          "typed": "saisi",
+          "prospect": "Prospect",
+          "turnCount": "{{count}} interventions"
+        },
+        "collapseAll": "Tout réduire",
+        "expandAll": "Tout développer",
+        "collapseFolder": "Réduire {{folder}}",
+        "expandFolder": "Développer {{folder}}",
+        "ratings": {
+          "carrierCount": "{{count}} assureurs",
+          "agencyCount": "{{count}} agences de notation",
+          "carrier": "Assureur",
+          "illustrative": "Illustratif"
         }
       }
     },
@@ -230,15 +375,27 @@
         "speaking": "Parle"
       },
       "mute": "Couper la voix",
-      "unmute": "Réactiver la voix"
+      "unmute": "Réactiver la voix",
+      "consent": {
+        "question": "Avant l'enregistrement : {{name}} a-t-il accepté que cette conversation soit transcrite ?",
+        "theProspect": "le prospect",
+        "hint": "Rien n'est enregistré ni mémorisé, et aucun formulaire n'est rempli, tant que vous n'avez pas confirmé. Répondez à voix haute à l'assistant ou utilisez les boutons.",
+        "changed": "Le client a changé : le consentement doit être confirmé à nouveau.",
+        "confirm": "Confirmé",
+        "decline": "Refusé",
+        "confirmed": "Consentement confirmé à {{time}}. Cette conversation est transcrite et conservée 24 heures.",
+        "declinedMessage": "Consentement refusé. La session est terminée et rien n'a été enregistré.",
+        "startNew": "Démarrer une nouvelle session"
+      }
     },
     "recommendation": {
       "loading": "Analyse de la couverture et recherche de lacunes...",
       "noGaps": "Aucune lacune de couverture significative — le client est bien couvert pour son profil.",
-      "error": "Impossible de générer une recommandation: {{message}}"
+      "error": "Impossible de générer une recommandation: {{message}}",
+      "exposureLabel": "Exposition financière",
+      "exposureIllustrative": "Estimation indicative"
     },
     "form": {
-      "backToProfile": "Profil",
       "progress": "{{filled}} sur {{total}} champs obligatoires",
       "progressLabel": "Progression du formulaire",
       "pendingReview": "{{count}} à vérifier",
@@ -253,7 +410,128 @@
       "legendProfile": "Depuis le profil",
       "legendHeard": "Entendu dans la conversation",
       "legendConfirm": "À confirmer",
-      "legendManual": "Saisi par vous"
+      "legendManual": "Saisi par vous",
+      "downloadPdf": "Télécharger le PDF",
+      "yes": "Oui",
+      "no": "Non",
+      "pdf": {
+        "preparing": "Préparation…",
+        "failed": "Impossible de créer le PDF : {{message}}",
+        "prepared": "Préparé le {{date}}",
+        "advisor": "Conseiller : {{name}}",
+        "requiredNote": "* Obligatoire. Laissez vides les lignes pas encore renseignées et complétez-les à la main.",
+        "signatureApplicant": "Signature du demandeur",
+        "signatureAdvisor": "Signature du conseiller",
+        "date": "Date",
+        "disclaimer": "Brouillon préparé avec l'assistant conseiller d'Awesome Insurance. Il ne constitue pas une offre de garantie. La garantie ne débute que lorsqu'Awesome Insurance émet un contrat après souscription."
+      }
+    },
+    "notes": {
+      "heading": "Notes",
+      "add": "Ajouter une note",
+      "save": "Enregistrer la note",
+      "typeLabel": "Type",
+      "type": {
+        "life_event": "Événement de vie",
+        "interaction": "Échange"
+      },
+      "dateLabel": "Date de l'événement (facultatif)",
+      "textLabel": "Note",
+      "textPlaceholder": "ex. : attend un deuxième enfant en mars",
+      "empty": "Aucune note pour le moment.",
+      "eventOn": "Événement : {{date}}",
+      "addedOn": "ajoutée le {{date}}",
+      "byAssistant": "Ajoutée par l'assistant",
+      "byAssistantHint": "Enregistrée par l'assistant IA à la demande du conseiller",
+      "delete": "Supprimer la note",
+      "confirmDelete": "Supprimer",
+      "saveFailed": "Impossible d'enregistrer la note : {{message}}",
+      "deleteFailed": "Impossible de supprimer la note : {{message}}"
+    },
+    "cockpit": {
+      "heading": "Priorités du jour",
+      "summary": "{{needing}} clients sur {{total}} demandent votre attention, les plus urgents d'abord",
+      "refresh": "Actualiser",
+      "loading": "Chargement de vos priorités…",
+      "empty": "Rien ne demande votre attention pour le moment.",
+      "error": "Impossible de charger vos priorités : {{message}}",
+      "prospect": "Prospect",
+      "actions": {
+        "annual_review": "Revue annuelle",
+        "meeting_prep": "Préparer la réunion",
+        "outreach": "Rédiger un e-mail"
+      },
+      "rules": {
+        "review_overdue": "Profil révisé pour la dernière fois il y a {{days}} jours",
+        "life_event_upcoming": "Événement de vie dans {{days}} jours : {{text}}",
+        "life_event_passed": "Événement de vie il y a {{days}} jours, sans suivi : {{text}}",
+        "renewal_due": "{{policy}} ({{insurer}}) se renouvelle dans {{days}} jours",
+        "renewal_due_own": "{{policy}} se renouvelle dans {{days}} jours",
+        "renewal_passed": "{{policy}} ({{insurer}}) a dépassé sa date de renouvellement il y a {{days}} jours",
+        "renewal_passed_own": "{{policy}} a dépassé sa date de renouvellement il y a {{days}} jours",
+        "over_cap": "Les primes annuelles représentent {{percent}}% du revenu, au-dessus du repère de {{cap}}%",
+        "prospect_quiet": "Pas encore de contrat Awesome et aucun contact depuis {{days}} jours"
+      }
+    },
+    "meetingNote": {
+      "button": "Résumer en note",
+      "title": "Note de réunion",
+      "loading": "Rédaction d'une note à partir de cette conversation…",
+      "intro": "Vérifiez et modifiez le brouillon, puis enregistrez-le dans les notes du client. Rien n'est enregistré avant que vous n'appuyiez sur Enregistrer.",
+      "insufficient": "Cette conversation ne contient pas encore assez d'éléments pour rédiger une note.",
+      "error": "Impossible de rédiger la note : {{message}}",
+      "saved": "Note enregistrée dans le dossier du client.",
+      "trimmed": "Raccourcie pour respecter la limite de 1 000 caractères.",
+      "dateLabel": "Date de suivi (facultatif)"
+    },
+    "roleplay": {
+      "button": "S'entraîner",
+      "setupTitle": "S'entraîner avec {{name}}",
+      "setupIntro": "L'assistant joue ce client à partir de son dossier. Menez l'échange comme un vrai, puis terminez-le pour recevoir un retour.",
+      "difficulty": "Difficulté",
+      "level": {
+        "friendly": "Aimable",
+        "neutral": "Neutre",
+        "sceptical": "Sceptique"
+      },
+      "focusLabel": "Objection principale",
+      "focus": {
+        "any": "Laisser varier",
+        "cost": "C'est trop cher",
+        "work": "J'ai déjà une couverture par mon travail",
+        "young": "Je suis trop jeune pour en avoir besoin",
+        "compare": "Je veux comparer avec mon assureur",
+        "think": "J'ai besoin de réfléchir"
+      },
+      "privacy": "Rien d'une séance d'entraînement n'est enregistré ni sauvegardé, et rien n'est ajouté au dossier du client. Les données de santé ne sont pas transmises à l'assistant.",
+      "start": "Commencer l'entraînement",
+      "banner": "Séance d'entraînement : l'assistant joue {{name}}",
+      "bannerHint": "Activez le micro et le client vous salue. Dites \"end exercise\" pour arrêter plus tôt.",
+      "leave": "Quitter l'entraînement",
+      "endAndScore": "Terminer et noter",
+      "feedbackTitle": "Retour de coaching",
+      "scoring": "Analyse de la conversation…",
+      "scoreError": "Impossible de produire le retour : {{message}}",
+      "insufficient": "La conversation était trop courte pour donner un retour. Réessayez en en disant un peu plus.",
+      "claimsTitle": "Affirmations sur les produits vérifiées",
+      "verdict": {
+        "supported": "Conforme à la fiche",
+        "contradicted": "Diffère de la fiche",
+        "not_in_sheets": "Absent des fiches"
+      },
+      "nextTime": "La prochaine fois",
+      "coachingNote": "Retour de coaching pour votre propre entraînement, généré par IA. Ce n'est pas une évaluation de performance et il n'est pas enregistré.",
+      "finish": "Terminer",
+      "again": "S'entraîner à nouveau",
+      "criteria": {
+        "rapport": "Ouverture et relation",
+        "discovery": "Questions de découverte",
+        "needs_link": "Relier besoins et garanties",
+        "objections": "Traitement des objections",
+        "accuracy": "Exactitude",
+        "compliance": "Conformité",
+        "closing": "Conclusion"
+      }
     }
   }
 }

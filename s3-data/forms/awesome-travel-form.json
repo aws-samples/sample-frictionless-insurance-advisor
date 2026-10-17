@@ -1,0 +1,232 @@
+{
+  "form_id": "travel",
+  "product_type": "travel",
+  "product_name": "Awesome Travel",
+  "title": "Awesome Travel Application",
+  "sections": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "fields": [
+        {
+          "path": "applicant.full_name",
+          "label": "Full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.date_of_birth",
+          "label": "Date of birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "path": "applicant.occupation",
+          "label": "Occupation",
+          "type": "text"
+        },
+        {
+          "path": "applicant.annual_income",
+          "label": "Annual income",
+          "type": "currency"
+        },
+        {
+          "path": "applicant.email",
+          "label": "Email",
+          "type": "text"
+        },
+        {
+          "path": "applicant.phone",
+          "label": "Phone",
+          "type": "text"
+        },
+        {
+          "path": "applicant.address",
+          "label": "Address",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "trip",
+      "title": "Trip",
+      "fields": [
+        {
+          "path": "trip.destination",
+          "label": "Destination",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "trip.start_date",
+          "label": "Departure date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "path": "trip.end_date",
+          "label": "Return date",
+          "type": "date"
+        },
+        {
+          "path": "trip.travellers",
+          "label": "Number of travellers",
+          "type": "number",
+          "required": true
+        },
+        {
+          "path": "trip.prepaid_cost",
+          "label": "Prepaid, non-refundable trip cost",
+          "type": "currency"
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Coverage",
+      "fields": [
+        {
+          "path": "coverage.geographic",
+          "label": "Geographic cover",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "regional",
+              "label": "Regional"
+            },
+            {
+              "value": "continental",
+              "label": "Continental"
+            },
+            {
+              "value": "worldwide",
+              "label": "Worldwide"
+            }
+          ]
+        },
+        {
+          "path": "coverage.duration",
+          "label": "Trip type",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "single_trip",
+              "label": "Single trip (1 to 90 days)"
+            },
+            {
+              "value": "annual_multi_trip",
+              "label": "Annual multi-trip"
+            }
+          ]
+        },
+        {
+          "path": "coverage.max_trip_days",
+          "label": "Maximum days per trip (annual multi-trip)",
+          "type": "select",
+          "options": [
+            {
+              "value": "30",
+              "label": "30 days"
+            },
+            {
+              "value": "45",
+              "label": "45 days"
+            },
+            {
+              "value": "60",
+              "label": "60 days"
+            }
+          ]
+        },
+        {
+          "path": "coverage.level",
+          "label": "Coverage level",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "basic",
+              "label": "Basic"
+            },
+            {
+              "value": "standard",
+              "label": "Standard"
+            },
+            {
+              "value": "premium",
+              "label": "Premium"
+            },
+            {
+              "value": "elite",
+              "label": "Elite"
+            }
+          ]
+        },
+        {
+          "path": "coverage.medical",
+          "label": "Emergency medical cover",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "50000",
+              "label": "$50,000"
+            },
+            {
+              "value": "100000",
+              "label": "$100,000"
+            },
+            {
+              "value": "500000",
+              "label": "$500,000"
+            },
+            {
+              "value": "1000000",
+              "label": "$1,000,000"
+            },
+            {
+              "value": "unlimited",
+              "label": "Unlimited"
+            }
+          ]
+        },
+        {
+          "path": "coverage.trip_cancellation",
+          "label": "Trip cancellation cover",
+          "type": "currency",
+          "hint": "$1,500 to $25,000"
+        }
+      ]
+    },
+    {
+      "id": "addons",
+      "title": "Optional coverage",
+      "fields": [
+        {
+          "path": "addons.adventure_sports",
+          "label": "Adventure sports coverage",
+          "type": "boolean"
+        },
+        {
+          "path": "addons.rental_car",
+          "label": "Rental car protection",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "title": "Health",
+      "fields": [
+        {
+          "path": "health.existing_conditions",
+          "label": "Existing conditions",
+          "type": "text",
+          "hint": "Comma-separated, or 'none'"
+        }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,10 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
     aws_dynamodb as dynamodb,
+    aws_cloudwatch as cloudwatch,
+    aws_cloudwatch_actions as cw_actions,
+    aws_events as events,
+    aws_events_targets as event_targets,
     aws_iam as iam,
     aws_kms as kms,
     aws_logs as logs,
@@ -22,29 +26,50 @@ from aws_cdk import (
 from constructs import Construct
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .auth_stack import AuthStack
 
+# One model for every text task in this stack: Claude Haiku 5.5 through the US
+# cross-region inference profile. It rejects `temperature` (like Sonnet 5), so
+# none of the Lambdas send one; forced tool choice keeps the output on schema.
+TEXT_MODEL_ID = "us.anthropic.claude-haiku-5-5"
+_HAIKU55_REGIONS = ("us-east-1", "us-east-2", "us-west-2")
+
+
+def _text_model_arns(region: str, account: str) -> list[str]:
+    """IAM resources for TEXT_MODEL_ID: the profile plus the models it routes to."""
+    return [
+        f"arn:aws:bedrock:{region}:{account}:inference-profile/{TEXT_MODEL_ID}",
+        *[f"arn:aws:bedrock:{r}::foundation-model/anthropic.claude-haiku-5-5" for r in _HAIKU55_REGIONS],
+    ]
+
 
 def _seed_data_hash() -> str:
-    """Hash of the mock seed JSON files.
+    """Hash of the mock seed files (JSON data and the date anchors).
 
-    Used as the suffix on the MockDataPopulator custom resource's
-    physical_resource_id so any edit to profiles.json or policies.json
-    changes the resource identity, which triggers CloudFormation to run
-    `on_update` and re-seed the DynamoDB tables on the next deploy.
-
-    The mock_data Lambda uses put_item on every row, so re-running the
-    populator is idempotent — it overwrites matching primary keys and
-    adds any new ones. Rows deleted from the seed files are not removed
-    from DynamoDB; that requires a manual cleanup or stack destroy.
+    Part of the MockDataPopulator custom resource's physical_resource_id. A
+    deploy-time stamp is added to it as well (see ToolsStack), so the
+    populator runs on every deploy of this stack, not only when the seed
+    files change. The populator resets the demo to the seed: it upserts the
+    seed rows, deletes every other row, moves the seed dates to "today" and
+    clears AgentCore memory.
     """
     seed_dir = Path(__file__).resolve().parent.parent / "lambda" / "mock_data"
     sha = hashlib.sha256()
-    for filename in ("profiles.json", "policies.json", "catalog.json"):
+    for filename in ("profiles.json", "policies.json", "catalog.json", "seed_anchors.json"):
         sha.update((seed_dir / filename).read_bytes())
     return sha.hexdigest()[:12]
+
+
+# The one scope every API route accepts: the one a signed-in advisor's access token
+# carries. The gateway's machine token (insurance-advisor-api/api.access) is NOT
+# accepted on any route. A shared machine credential cannot say which advisor it
+# speaks for, so letting it in would make the caller's own claim the only check.
+# The assistants call this API with the advisor's token, which the AgentCore
+# Gateway's request interceptor swaps in after verifying it (lambda/gateway_interceptor).
+USER_TOKEN_SCOPE = "aws.cognito.signin.user.admin"
 
 
 class ToolsStack(Stack):
@@ -114,6 +139,48 @@ class ToolsStack(Stack):
             retain_on_delete=False
         )
 
+        # Indicative premium rate tables, one JSON file per Awesome product plus
+        # the affordability rule. A separate bucket (not the portfolio bucket)
+        # because the get_portfolio tool returns every object in the portfolio
+        # bucket to the model. The rates are reached only through the two
+        # pricing tools, which do the arithmetic in code.
+        self.pricing_bucket = s3.Bucket(
+            self, "PricingBucket",
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            server_access_logs_bucket=self.access_log_bucket,
+            server_access_logs_prefix="pricing-logs/",
+            enforce_ssl=True,
+        )
+        self.pricing_deployment = s3deploy.BucketDeployment(
+            self, "PricingDataDeployment",
+            sources=[s3deploy.Source.asset("s3-data/pricing")],
+            destination_bucket=self.pricing_bucket,
+            retain_on_delete=False
+        )
+        # One-page product brochures (PDF), committed to the repo and built by
+        # tools/brochures/build.py. A separate private bucket: no agent tool
+        # and no agent-facing Lambda role can read it (the portfolio bucket,
+        # by contrast, is returned to the model in full by get_portfolio). It
+        # holds the ten Awesome brochures under awesome/ and the sample
+        # competitor brochures under samples/. The Data tab and the Comparator
+        # reach it only through the data Lambda, which hands out short-lived
+        # presigned links.
+        self.brochures_bucket = s3.Bucket(
+            self, "BrochuresBucket",
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            server_access_logs_bucket=self.access_log_bucket,
+            server_access_logs_prefix="brochures-logs/",
+            enforce_ssl=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+        )
+        self.brochures_deployment = s3deploy.BucketDeployment(
+            self, "BrochuresDataDeployment",
+            sources=[s3deploy.Source.asset("s3-data/brochures")],
+            destination_bucket=self.brochures_bucket,
+            retain_on_delete=False
+        )
         # S3 Buckets for company, competitive, and competitors knowledge bases
         self.company_bucket = s3.Bucket(
             self, "CompanyBucket",
@@ -148,8 +215,8 @@ class ToolsStack(Stack):
         #   - block_public_access enforced
         #   - 24-hour lifecycle expiration on every object (uploads are
         #     ephemeral; the agent reads them once and then they auto-delete)
-        #   - server-side encryption (S3-managed for now; threat model
-        #     flagged that customer-managed KMS would be the production
+        #   - server-side encryption (S3-managed for now; a customer-managed KMS
+        #     key would be the production
         #     hardening)
         #   - server access logs enabled for audit
         # Bucket policy below additionally denies any principal except the
@@ -186,6 +253,32 @@ class ToolsStack(Stack):
             ],
         )
 
+        # Voice transcripts: one JSON object per voice session,
+        # written by the voice runtime only after the advisor has confirmed the
+        # customer's consent. Private, encrypted, HTTPS only, access-logged.
+        # Objects expire after 1 day: S3 lifecycle works in whole days and runs
+        # once a day, so an object goes between roughly 24 and 48 hours after
+        # its last write. Only the voice runtime can write (see voice_stack)
+        # and only the data Lambda can read, scoped to the signed-in advisor's
+        # own prefix. No agent tool and no other Lambda has any access.
+        self.transcripts_bucket = s3.Bucket(
+            self, "TranscriptsBucket",
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            server_access_logs_bucket=self.access_log_bucket,
+            server_access_logs_prefix="transcripts-logs/",
+            enforce_ssl=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    id="auto-expire-transcripts",
+                    enabled=True,
+                    expiration=Duration.days(1),
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                )
+            ],
+        )
         # Deploy company data to S3
         self.company_deployment = s3deploy.BucketDeployment(
             self, "CompanyDataDeployment",
@@ -256,7 +349,7 @@ class ToolsStack(Stack):
             # Demo hygiene: agent-created third-party policies (from the
             # PDF/markdown upload flow) set an `expires_at` epoch attribute so
             # DynamoDB TTL auto-deletes them ~2h later. Seed/mock rows and
-            # Unicorn-issued policies do NOT set this attribute, so TTL leaves
+            # Awesome-issued policies do NOT set this attribute, so TTL leaves
             # them untouched — only ephemeral demo uploads expire. TTL deletion
             # is best-effort and can lag up to ~48h past the timestamp.
             time_to_live_attribute="expires_at",
@@ -338,10 +431,27 @@ class ToolsStack(Stack):
             code=_lambda.Code.from_asset("lambda/policies"),
             environment={
                 "POLICIES_TABLE": self.policies_table.table_name,
+                "PROFILES_TABLE": self.profiles_table.table_name,
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
             },
             timeout=Duration.seconds(30),
             log_group=_log_group("PoliciesLambda"),
+        )
+
+        # Priorities ("what should I do today?"): rules over profiles, notes and
+        # policies, no model call. Used by the Cockpit and as the get_priorities tool.
+        self.priorities_lambda = _lambda.Function(
+            self, "PrioritiesLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/priorities"),
+            environment={
+                "PROFILES_TABLE": self.profiles_table.table_name,
+                "POLICIES_TABLE": self.policies_table.table_name,
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+            },
+            timeout=Duration.seconds(30),
+            log_group=_log_group("PrioritiesLambda"),
         )
 
         self.portfolio_lambda = _lambda.Function(
@@ -380,6 +490,42 @@ class ToolsStack(Stack):
             log_group=_log_group("FormSchemaLambda"),
         )
 
+        # Pricing tools (gateway Lambda targets). Two handlers from one code
+        # directory, so each MCP tool has its own function and its own, minimal
+        # permissions: the table reader needs only the rate files; the
+        # estimator also reads the customer's profile and policies.
+        self.pricing_table_lambda = _lambda.Function(
+            self, "PricingTableLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler_table",
+            code=_lambda.Code.from_asset("lambda/pricing"),
+            environment={"PRICING_BUCKET": self.pricing_bucket.bucket_name},
+            timeout=Duration.seconds(30),
+            log_group=_log_group("PricingTableLambda"),
+        )
+        self.pricing_estimate_lambda = _lambda.Function(
+            self, "PricingEstimateLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler_estimate",
+            code=_lambda.Code.from_asset("lambda/pricing"),
+            environment={
+                "PRICING_BUCKET": self.pricing_bucket.bucket_name,
+                "PROFILES_TABLE": self.profiles_table.table_name,
+                "POLICIES_TABLE": self.policies_table.table_name,
+            },
+            timeout=Duration.seconds(30),
+            log_group=_log_group("PricingEstimateLambda"),
+        )
+        # Savings-gap calculators (education, retirement): pure arithmetic, no data
+        # access, so the Lambda needs no permissions beyond logging.
+        self.calculators_lambda = _lambda.Function(
+            self, "CalculatorsLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/calculators"),
+            timeout=Duration.seconds(15),
+            log_group=_log_group("CalculatorsLambda"),
+        )
         self.company_lambda = _lambda.Function(
             self, "CompanyLambda",
             runtime=_lambda.Runtime.PYTHON_3_13,
@@ -450,6 +596,10 @@ class ToolsStack(Stack):
                 "COMPETITORS_BUCKET": self.competitors_bucket.bucket_name,
                 "PROMOTION_BUCKET": self.promotion_bucket.bucket_name,
                 "FORMS_BUCKET": self.forms_bucket.bucket_name,
+                "PRICING_BUCKET": self.pricing_bucket.bucket_name,
+                "BROCHURES_BUCKET": self.brochures_bucket.bucket_name,
+                "TRANSCRIPTS_BUCKET": self.transcripts_bucket.bucket_name,
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
             },
             timeout=Duration.seconds(30),
             log_group=_log_group("DataLambda"),
@@ -487,11 +637,22 @@ class ToolsStack(Stack):
                     bedrock.CfnGuardrail.ContentFilterConfigProperty(
                         type="INSULTS", input_strength="HIGH", output_strength="HIGH"
                     ),
+                    # LOW on purpose (demo decision, 2026-10-09). At HIGH this
+                    # filter blocked harmless lead-in sentences in the text
+                    # assistant's application-form flow ("I'll pull the profile
+                    # and open the application to pre-fill what we know").
                     bedrock.CfnGuardrail.ContentFilterConfigProperty(
-                        type="MISCONDUCT", input_strength="HIGH", output_strength="HIGH"
+                        type="MISCONDUCT", input_strength="LOW", output_strength="LOW"
                     ),
+                    # MEDIUM on purpose (demo decision, 2026-10-14). At HIGH this
+                    # filter blocked a plain reply in the application-form flow
+                    # ("death benefit is 2m, option a, premium frequency is
+                    # monthly") with a LOW-confidence prompt-attack detection,
+                    # because Bedrock reads the whole conversation, not the last
+                    # message. MEDIUM ignores LOW-confidence detections and still
+                    # blocks real injection attempts.
                     bedrock.CfnGuardrail.ContentFilterConfigProperty(
-                        type="PROMPT_ATTACK", input_strength="HIGH", output_strength="NONE"
+                        type="PROMPT_ATTACK", input_strength="MEDIUM", output_strength="NONE"
                     ),
                 ]
             ),
@@ -512,7 +673,7 @@ class ToolsStack(Stack):
                     # passport / driver / ITIN numbers to flow through the
                     # chat surface; if uploaded in a policy doc, the
                     # extracted fields will be redacted by the guardrail
-                    # before the agent reads them out. Threat model M12.
+                    # before the agent reads them out.
                     bedrock.CfnGuardrail.PiiEntityConfigProperty(type="US_PASSPORT_NUMBER", action="ANONYMIZE"),
                     bedrock.CfnGuardrail.PiiEntityConfigProperty(type="DRIVER_ID", action="ANONYMIZE"),
                     bedrock.CfnGuardrail.PiiEntityConfigProperty(type="US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER", action="ANONYMIZE"),
@@ -543,7 +704,13 @@ class ToolsStack(Stack):
             # leaking model output. Examples are intentionally specific to
             # insurance advisor edge cases (variable life sub-account
             # allocation -> investment advice; 1035 exchange tax treatment ->
-            # tax advice; "are you covered?" -> binding underwriting).
+            # tax advice).
+            #
+            # There is deliberately no underwriting/claims-promise topic. It
+            # fired on routine product questions ("what are the eligibility
+            # rules?") and on advisor narration ("for underwriting"), and this
+            # is a demo. The agents' system prompts still forbid promising
+            # approvals, rate classes or claim payouts.
             topic_policy_config=bedrock.CfnGuardrail.TopicPolicyConfigProperty(
                 topics_config=[
                     # NOTE on definitions: each definition is intentionally
@@ -578,19 +745,6 @@ class ToolsStack(Stack):
                         examples=[
                             "What percentage should I put into the equity sub-account?",
                             "Which mutual fund is best for my variable life policy?",
-                        ],
-                    ),
-                    bedrock.CfnGuardrail.TopicConfigProperty(
-                        name="UnderwritingDecisions",
-                        type="DENY",
-                        definition=(
-                            "Promising specific approvals, rate classes, or " +
-                            "claim payouts. General descriptions of underwriting " +
-                            "and claims processes are allowed."
-                        ),
-                        examples=[
-                            "Will I be approved for the term life policy at preferred rates?",
-                            "Is my heart-attack claim going to be paid out?",
                         ],
                     ),
                     bedrock.CfnGuardrail.TopicConfigProperty(
@@ -800,7 +954,7 @@ class ToolsStack(Stack):
         )
 
         # Comparator Lambda — fetches the selected products' markdown from
-        # S3 and calls Bedrock (Claude Sonnet 5) via the Converse API with
+        # S3 and calls Bedrock (Claude Haiku 5.5) via the Converse API with
         # a tool-forced JSON schema, returning a structured comparison.
         # Longer timeout (60s) accounts for LLM generation time.
         self.comparator_lambda = _lambda.Function(
@@ -812,21 +966,44 @@ class ToolsStack(Stack):
                 "CATALOG_TABLE": self.catalog_table.table_name,
                 "PORTFOLIO_BUCKET": self.portfolio_bucket.bucket_name,
                 "COMPETITORS_BUCKET": self.competitors_bucket.bucket_name,
-                # Use Claude Haiku 4.5 to keep total Lambda time well under
+                # An uploaded brochure is read back from the
+                # advisor's own ingest/ prefix in the documents bucket.
+                "DOCUMENTS_BUCKET": self.documents_bucket.bucket_name,
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                # Claude Haiku 5.5 keeps total Lambda time well under
                 # API Gateway's 29s integration timeout. The comparison is
                 # a forced-tool-use structured generation against grounded
-                # markdown — Haiku produces the same shape at ~3-5x lower
-                # latency than Sonnet for this workload.
-                "BEDROCK_MODEL_ID": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+                # markdown.
+                "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
             },
             timeout=Duration.seconds(60),
             memory_size=512,
             log_group=_log_group("ComparatorLambda"),
         )
+        # Comparator ingest: reads one uploaded competitor brochure into a fixed
+        # structure with Claude Haiku 5.5 (forced tool, shared guardrail, no
+        # `temperature`) and stores the cleaned result under ingest/<advisor>/
+        # in the documents bucket, which expires after a day. The model reads
+        # the PDF directly, as extract_policy does.
+        self.comparator_ingest_lambda = _lambda.Function(
+            self, "ComparatorIngestLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/comparator_ingest"),
+            environment={
+                "DOCUMENTS_BUCKET": self.documents_bucket.bucket_name,
+                "CATALOG_TABLE": self.catalog_table.table_name,
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
+            },
+            timeout=Duration.seconds(25),
+            memory_size=512,
+            log_group=_log_group("ComparatorIngestLambda"),
+        )
 
         # Recommend Lambda — produces a per-customer coverage-gap analysis +
-        # Unicorn product recommendations. Reads the customer's profile,
-        # full policy set, the Unicorn product catalog, and current
+        # Awesome product recommendations. Reads the customer's profile,
+        # full policy set, the Awesome product catalog, and current
         # promotions, then calls Bedrock Converse with a tool-forced JSON
         # schema. Same model + IAM shape as the comparator.
         self.recommend_lambda = _lambda.Function(
@@ -840,13 +1017,48 @@ class ToolsStack(Stack):
                 "CATALOG_TABLE": self.catalog_table.table_name,
                 "PROMOTION_BUCKET": self.promotion_bucket.bucket_name,
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
-                # Same Haiku model as the comparator — same latency
+                # Same model as the comparator — same latency
                 # constraints, same workload shape.
-                "BEDROCK_MODEL_ID": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+                "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
             },
             timeout=Duration.seconds(60),
             memory_size=512,
             log_group=_log_group("RecommendLambda"),
+        )
+
+        # Meeting summary: drafts a Summary / Concerns / Next actions note from a
+        # conversation. Drafts only; the advisor saves it through the notes route.
+        self.meeting_summary_lambda = _lambda.Function(
+            self, "MeetingSummaryLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/meeting_summary"),
+            environment={
+                "PROFILES_TABLE": self.profiles_table.table_name,
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
+            },
+            timeout=Duration.seconds(60),
+            memory_size=512,
+            log_group=_log_group("MeetingSummaryLambda"),
+        )
+
+        # Role-play score: coaching feedback on a practice conversation. Reads the
+        # product sheets to check the advisor's product statements. Stores nothing.
+        self.roleplay_score_lambda = _lambda.Function(
+            self, "RoleplayScoreLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="index.handler",
+            code=_lambda.Code.from_asset("lambda/roleplay_score"),
+            environment={
+                "PROFILES_TABLE": self.profiles_table.table_name,
+                "PORTFOLIO_BUCKET": self.portfolio_bucket.bucket_name,
+                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
+            },
+            timeout=Duration.seconds(90),
+            memory_size=512,
+            log_group=_log_group("RoleplayScoreLambda"),
         )
 
         # Documents Lambda — short-lived presigned-URL signer for the
@@ -868,7 +1080,7 @@ class ToolsStack(Stack):
 
         # Extract Policy Lambda — invoked by the AgentCore Gateway as an
         # MCP tool target. Reads the uploaded document from S3 and runs a
-        # Sonnet 5 Converse call with tool-forced JSON output to extract
+        # Haiku 5.5 Converse call with tool-forced JSON output to extract
         # structured policy fields the agent can hand straight to
         # create_third_party_policy. Longer timeout for vision / PDF parsing.
         self.extract_policy_lambda = _lambda.Function(
@@ -878,6 +1090,7 @@ class ToolsStack(Stack):
             code=_lambda.Code.from_asset("lambda/extract_policy"),
             environment={
                 "DOCUMENTS_BUCKET": self.documents_bucket.bucket_name,
+                "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
             },
             timeout=Duration.seconds(120),
             memory_size=512,
@@ -894,6 +1107,9 @@ class ToolsStack(Stack):
             self.comparator_lambda,
             self.recommend_lambda,
             self.extract_policy_lambda,
+            self.comparator_ingest_lambda,
+            self.meeting_summary_lambda,
+            self.roleplay_score_lambda,
         ):
             llm_lambda.add_environment(
                 "BEDROCK_GUARDRAIL_ID", self.guardrail.attr_guardrail_id
@@ -918,35 +1134,50 @@ class ToolsStack(Stack):
             # parameters in the namespace.
             self.guardrail_version_param.grant_read(llm_lambda)
 
-        # Sign-up Lambda — public endpoint that creates new Cognito users
-        # via admin_create_user + admin_set_user_password. Required because
-        # the user pool below is configured with AllowAdminCreateUserOnly,
-        # which blocks the SPA's self-service SignUp call. The
-        # admin_create_user + admin_set_user_password pattern is the
-        # supported workaround.
-        self.signup_lambda = _lambda.Function(
-            self, "SignupLambda",
-            runtime=_lambda.Runtime.PYTHON_3_13,
-            handler="index.handler",
-            code=_lambda.Code.from_asset("lambda/signup"),
-            environment={
-                "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
-            },
-            timeout=Duration.seconds(15),
-            log_group=_log_group("SignupLambda"),
-        )
-        self.signup_lambda.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "cognito-idp:AdminCreateUser",
-                    "cognito-idp:AdminSetUserPassword",
-                    "cognito-idp:AdminDeleteUser",
-                ],
-                resources=[auth_stack.user_pool.user_pool_arn],
+        # Public sign-up is OFF by default. Anyone who can reach the API could
+        # otherwise claim a demo account on a fresh deployment and use the
+        # model-backed assistants at the deployer's expense. The two demo users
+        # are created by `scripts/create-demo-users.sh` (run by deploy.sh) with a
+        # generated password. To turn the open sign-up route back on, deploy with
+        # `-c enable_public_signup=true` (and set `-c signup_allowed_emails=a@x,b@y`).
+        self.public_signup_enabled = str(
+            self.node.try_get_context("enable_public_signup") or "false"
+        ).lower() == "true"
+        self.signup_lambda = None
+        if self.public_signup_enabled:
+            # Sign-up Lambda: a public endpoint that creates Cognito users via
+            # admin_create_user + admin_set_user_password. Needed because the
+            # user pool is closed to self-service sign-up.
+            self.signup_lambda = _lambda.Function(
+                self, "SignupLambda",
+                runtime=_lambda.Runtime.PYTHON_3_13,
+                handler="index.handler",
+                code=_lambda.Code.from_asset("lambda/signup"),
+                environment={
+                    "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                    "ALLOWED_EMAILS": self.node.try_get_context("signup_allowed_emails") or "",
+                },
+                timeout=Duration.seconds(15),
+                log_group=_log_group("SignupLambda"),
             )
+            self.signup_lambda.add_to_role_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "cognito-idp:AdminCreateUser",
+                        "cognito-idp:AdminSetUserPassword",
+                        "cognito-idp:AdminDeleteUser",
+                    ],
+                    resources=[auth_stack.user_pool.user_pool_arn],
+                )
+            )
+        # Tells the front-end build whether to show the "Create account" tab.
+        ssm.StringParameter(
+            self, "SignupEnabledParam",
+            parameter_name="/insurance-advisor/frontend/signup-enabled",
+            string_value="true" if self.public_signup_enabled else "false",
+            description="Whether the public /signup route is deployed (read by react-frontend/scripts/setup-env.sh)",
         )
-
         # Profile Lambda needs read/write — the agent can create and update
         # prospect records through create_profile / update_profile tool calls.
         self.profiles_table.grant_read_write_data(self.profile_lambda)
@@ -955,6 +1186,11 @@ class ToolsStack(Stack):
         # advisor's customers. The lambda code enforces that only third-party
         # rows are mutated.
         self.policies_table.grant_read_write_data(self.policies_lambda)
+        # Read-only: the customer's income, for the totals the assistants ask for.
+        self.profiles_table.grant_read_data(self.policies_lambda)
+        # Priorities reads the advisor's profiles and policies through the advisor-id index. Read-only.
+        self.profiles_table.grant_read_data(self.priorities_lambda)
+        self.policies_table.grant_read_data(self.priorities_lambda)
 
         # Grant Cognito permissions to profile and policies Lambda for user lookup
         self.profile_lambda.add_to_role_policy(
@@ -976,9 +1212,22 @@ class ToolsStack(Stack):
                 resources=[auth_stack.user_pool.user_pool_arn]
             )
         )
+        self.priorities_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["cognito-idp:AdminGetUser"],
+                resources=[auth_stack.user_pool.user_pool_arn]
+            )
+        )
 
         # Grant read-only S3 permissions to Lambda functions
         self.forms_bucket.grant_read(self.formschema_lambda)
+        self.pricing_bucket.grant_read(self.pricing_table_lambda)
+        self.pricing_bucket.grant_read(self.pricing_estimate_lambda)
+        # The estimator reads one customer's profile and policies (the
+        # advisor-id-index query is scoped by the advisor the gateway forwards).
+        self.profiles_table.grant_read_data(self.pricing_estimate_lambda)
+        self.policies_table.grant_read_data(self.pricing_estimate_lambda)
         self.portfolio_bucket.grant_read(self.portfolio_lambda)
         self.promotion_bucket.grant_read(self.promotions_lambda)
         self.company_bucket.grant_read(self.company_lambda)
@@ -994,7 +1243,20 @@ class ToolsStack(Stack):
         self.competitors_bucket.grant_read(self.data_lambda)
         self.promotion_bucket.grant_read(self.data_lambda)
         self.forms_bucket.grant_read(self.data_lambda)
-
+        self.pricing_bucket.grant_read(self.data_lambda)
+        self.brochures_bucket.grant_read(self.data_lambda)
+        # Voice transcripts: read-only. The handler lists only the signed-in
+        # advisor's own prefix, which it learns by looking the caller up in
+        # Cognito, so it also needs AdminGetUser (as the other advisor-scoped
+        # Lambdas do).
+        self.transcripts_bucket.grant_read(self.data_lambda)
+        self.data_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["cognito-idp:AdminGetUser"],
+                resources=[auth_stack.user_pool.user_pool_arn],
+            )
+        )
         # Catalog Lambda: read-only DynamoDB access (table + GSI).
         self.catalog_table.grant_read_data(self.catalog_lambda)
 
@@ -1012,30 +1274,19 @@ class ToolsStack(Stack):
                     "bedrock:InvokeModel",
                     "bedrock:InvokeModelWithResponseStream",
                 ],
-                # Cross-region inference profiles for Claude Haiku 4.5.
-                # Comparator was on Sonnet originally but moved to Haiku
-                # to keep total Lambda time under API Gateway's 29s
-                # integration timeout. The us.anthropic.* profile fans
-                # out to us-east-1, us-east-2, and us-west-2 foundation
-                # models, so we authorise all three. Sonnet 5 stays in
-                # the allowlist as a fallback in case BEDROCK_MODEL_ID
-                # is overridden.
+                # Cross-region inference profile for Claude Haiku 5.5. The
+                # us.anthropic.* profile fans out to us-east-1, us-east-2
+                # and us-west-2, so all three foundation models are
+                # authorised, and nothing else.
                 resources=[
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-haiku-4-5-*",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-*",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-*",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-haiku-4-5-*",
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5",
+                    *_text_model_arns(self.region, self.account),
                 ]
             )
         )
 
         # Recommend Lambda needs:
         #  1. Read profiles + policies for the requested customer
-        #  2. Read the catalog (Unicorn products to recommend from)
+        #  2. Read the catalog (Awesome products to recommend from)
         #  3. Read the promotion bucket
         #  4. Look up Cognito user email -> advisor_id
         #  5. Call Bedrock Converse on the configured inference profile
@@ -1057,22 +1308,57 @@ class ToolsStack(Stack):
                     "bedrock:InvokeModel",
                     "bedrock:InvokeModelWithResponseStream",
                 ],
-                # Same shape as the comparator policy above. Recommend now
-                # runs on Haiku 4.5 too; Sonnet 5 stays in as a fallback
-                # via the BEDROCK_MODEL_ID env override.
+                # Same shape as the comparator policy above.
                 resources=[
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-haiku-4-5-*",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-*",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-*",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-haiku-4-5-*",
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5",
+                    *_text_model_arns(self.region, self.account),
                 ],
             )
         )
 
+        # Meeting summary: read the profile (to check the customer is the
+        # advisor's), resolve the advisor, call the model. No writes.
+        self.profiles_table.grant_read_data(self.meeting_summary_lambda)
+        self.meeting_summary_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["cognito-idp:AdminGetUser"],
+                resources=[auth_stack.user_pool.user_pool_arn],
+            )
+        )
+        self.meeting_summary_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                ],
+                resources=[
+                    *_text_model_arns(self.region, self.account),
+                ],
+            )
+        )
+        # Role-play score: read-only on the profile (ownership check) and the product sheets.
+        self.profiles_table.grant_read_data(self.roleplay_score_lambda)
+        self.portfolio_bucket.grant_read(self.roleplay_score_lambda)
+        self.roleplay_score_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["cognito-idp:AdminGetUser"],
+                resources=[auth_stack.user_pool.user_pool_arn],
+            )
+        )
+        self.roleplay_score_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                ],
+                resources=[
+                    *_text_model_arns(self.region, self.account),
+                ],
+            )
+        )
         # Documents Lambda needs:
         #   1. Look up Cognito user email -> advisor_id
         #   2. Mint presigned PUT URLs against the documents bucket
@@ -1089,9 +1375,35 @@ class ToolsStack(Stack):
 
         # Extract Policy Lambda needs:
         #   1. Read the uploaded document from the documents bucket
-        #   2. Call Bedrock Converse on the same Sonnet inference profile
+        #   2. Call Bedrock Converse on the same Haiku 5.5 inference profile
         #      used by the comparator and recommender
         self.documents_bucket.grant_read(self.extract_policy_lambda)
+        # Comparator ingest: read the advisor's upload; write the cleaned reading
+        # under ingest/ only. The comparator then reads from ingest/ only.
+        self.documents_bucket.grant_read(self.comparator_ingest_lambda)
+        self.documents_bucket.grant_put(self.comparator_ingest_lambda, "ingest/*")
+        self.documents_bucket.grant_read(self.comparator_lambda, "ingest/*")
+        self.catalog_table.grant_read_data(self.comparator_ingest_lambda)
+        for fn in (self.comparator_ingest_lambda, self.comparator_lambda):
+            fn.add_to_role_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["cognito-idp:AdminGetUser"],
+                    resources=[auth_stack.user_pool.user_pool_arn],
+                )
+            )
+        self.comparator_ingest_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                ],
+                resources=[
+                    *_text_model_arns(self.region, self.account),
+                ],
+            )
+        )
         self.extract_policy_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -1100,10 +1412,7 @@ class ToolsStack(Stack):
                     "bedrock:InvokeModelWithResponseStream",
                 ],
                 resources=[
-                    f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5",
-                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5",
+                    *_text_model_arns(self.region, self.account),
                 ],
             )
         )
@@ -1178,20 +1487,32 @@ class ToolsStack(Stack):
                 access_log_destination=apigateway.LogGroupLogDestination(self.api_log_group),
                 access_log_format=apigateway.AccessLogFormat.clf(),
                 logging_level=apigateway.MethodLoggingLevel.INFO,
-                # Threat model M4 — per-method throttling on the two
-                # LLM-backed routes. 5 rps steady-state with a 10-burst
+                # Per-method throttling on the model-backed
+                # routes. 5 rps steady-state with a 10-burst
                 # is plenty for an interactive advisor click cadence
                 # (the UI throttles user clicks anyway) and floors any
                 # cost-bomb attempt. The cap is API-wide on the route
                 # (not per-Cognito-user), but with only 2 allowlisted
-                # advisors the difference is academic; the M5 budget
+                # advisors the difference is academic; the budget
                 # alarm catches the rest.
                 method_options={
                     "/comparator/compare/POST": apigateway.MethodDeploymentOptions(
                         throttling_rate_limit=5,
                         throttling_burst_limit=10,
                     ),
+                    "/comparator/ingest/POST": apigateway.MethodDeploymentOptions(
+                        throttling_rate_limit=5,
+                        throttling_burst_limit=10,
+                    ),
                     "/recommend/POST": apigateway.MethodDeploymentOptions(
+                        throttling_rate_limit=5,
+                        throttling_burst_limit=10,
+                    ),
+                    "/meeting-summary/POST": apigateway.MethodDeploymentOptions(
+                        throttling_rate_limit=5,
+                        throttling_burst_limit=10,
+                    ),
+                    "/roleplay-score/POST": apigateway.MethodDeploymentOptions(
                         throttling_rate_limit=5,
                         throttling_burst_limit=10,
                     ),
@@ -1204,6 +1525,18 @@ class ToolsStack(Stack):
             ),
         )
 
+        # API Gateway serves the *deployment snapshot* the stage points to, not the
+        # live API definition. When a route is removed, CloudFormation creates the new
+        # snapshot before it deletes the old method, so the snapshot can still contain
+        # the removed route (it then answers 500 because its backend is gone). Tying the
+        # snapshot's identity to the sign-up setting makes it be recreated when that
+        # setting changes. After TURNING SIGN-UP OFF on an existing deployment, run
+        # `cdk deploy` a second time so the new snapshot is taken without the route.
+        # Bump DEPLOYMENT_REVISION to force a fresh snapshot for the same reason.
+        DEPLOYMENT_REVISION = 2
+        self.api.latest_deployment.add_to_logical_id(
+            {"public_signup": self.public_signup_enabled, "revision": DEPLOYMENT_REVISION}
+        )
         self.cognito_authorizer = apigateway.CognitoUserPoolsAuthorizer(
             self, "CognitoAuthorizer",
             cognito_user_pools=[auth_stack.user_pool]
@@ -1228,10 +1561,7 @@ class ToolsStack(Stack):
             profile_integration,
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",  # For M2M
-                "aws.cognito.signin.user.admin"      # For user access tokens
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
         profile_resource.add_method(
@@ -1239,10 +1569,7 @@ class ToolsStack(Stack):
             profile_integration,
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",
-                "aws.cognito.signin.user.admin"
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
         profile_resource.add_method(
@@ -1250,23 +1577,53 @@ class ToolsStack(Stack):
             profile_integration,
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",
-                "aws.cognito.signin.user.admin"
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
 
+        # Customer notes (life events and interactions), nested in the profile.
+        # POST is called by the browser and, when the advisor asks the assistant
+        # to record a note, by the AgentCore Gateway with the advisor's own token
+        # (the interceptor adds a marker header, so the note is labelled as the
+        # assistant's). DELETE is the same route family, but no gateway tool exists
+        # for it and the Lambda refuses any call carrying the marker.
+        notes_resource = profile_resource.add_resource("notes")
+        notes_resource.add_method(
+            "POST",
+            profile_integration,
+            authorizer=self.cognito_authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+            authorization_scopes=[USER_TOKEN_SCOPE],
+            request_validator=request_validator,
+        )
+        note_item_resource = notes_resource.add_resource("{note_id}")
+        note_item_resource.add_method(
+            "DELETE",
+            profile_integration,
+            authorizer=self.cognito_authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+            authorization_scopes=[USER_TOKEN_SCOPE],
+            request_validator=request_validator,
+            request_parameters={"method.request.querystring.customer_id": True},
+        )
+
+        # GET /priorities: the advisor's ranked to-do list (Cockpit and get_priorities tool).
+        priorities_resource = self.api.root.add_resource("priorities")
+        priorities_resource.add_method(
+            "GET",
+            apigateway.LambdaIntegration(self.priorities_lambda),
+            authorizer=self.cognito_authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+            authorization_scopes=[USER_TOKEN_SCOPE],
+            request_validator=request_validator,
+        )
         policy_resource = self.api.root.add_resource("policy") 
         policy_resource.add_method(
             "GET", 
             policies_integration,
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",  # For M2M
-                "aws.cognito.signin.user.admin"      # For user access tokens
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
         # POST/PUT/DELETE /policy operate ONLY on third-party policies. The
@@ -1277,10 +1634,7 @@ class ToolsStack(Stack):
             policies_integration,
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",
-                "aws.cognito.signin.user.admin",
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
         policy_resource.add_method(
@@ -1288,10 +1642,7 @@ class ToolsStack(Stack):
             policies_integration,
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",
-                "aws.cognito.signin.user.admin",
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
         policy_resource.add_method(
@@ -1299,10 +1650,7 @@ class ToolsStack(Stack):
             policies_integration,
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",
-                "aws.cognito.signin.user.admin",
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
 
@@ -1315,10 +1663,7 @@ class ToolsStack(Stack):
         catalog_auth_kwargs = dict(
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
-            authorization_scopes=[
-                "insurance-advisor-api/api.access",
-                "aws.cognito.signin.user.admin",
-            ],
+            authorization_scopes=[USER_TOKEN_SCOPE],
             request_validator=request_validator,
         )
 
@@ -1345,7 +1690,8 @@ class ToolsStack(Stack):
         data_files_resource.add_method("GET", data_integration, **catalog_auth_kwargs)
         data_file_resource = data_resource.add_resource("file")
         data_file_resource.add_method("GET", data_integration, **catalog_auth_kwargs)
-
+        data_samples_resource = data_resource.add_resource("samples")
+        data_samples_resource.add_method("GET", data_integration, **catalog_auth_kwargs)
         # Comparator route:
         #   POST /comparator/compare  with body { product_ids: [], locale }
         # `locale` is validated against SUPPORTED_LOCALES in the Lambda, which
@@ -1359,6 +1705,18 @@ class ToolsStack(Stack):
             **catalog_auth_kwargs,
         )
 
+        # Comparator ingest route:
+        #   POST /comparator/ingest  with body { document_id, product_type }
+        # Reads an uploaded competitor brochure. Same Cognito auth and the same
+        # per-method throttle as the other LLM-backed routes; the handler also
+        # needs the advisor's sign-in token (it refuses the machine token).
+        comparator_ingest_integration = apigateway.LambdaIntegration(self.comparator_ingest_lambda)
+        comparator_ingest_resource = comparator_resource.add_resource("ingest")
+        comparator_ingest_resource.add_method(
+            "POST",
+            comparator_ingest_integration,
+            **catalog_auth_kwargs,
+        )
         # Recommend route:
         #   POST /recommend  with body { customer_id, locale }
         # Returns a structured coverage-gap analysis. Same Cognito auth as
@@ -1371,20 +1729,38 @@ class ToolsStack(Stack):
             **catalog_auth_kwargs,
         )
 
-        # Sign-up route:
-        #   POST /signup  with body { email, password }
-        # Public, unauthenticated. The Lambda enforces a strong password
-        # and uses Cognito admin APIs to create + confirm the user. WAFv2
-        # protects this endpoint via the AWS managed common rule set.
-        signup_integration = apigateway.LambdaIntegration(self.signup_lambda)
-        signup_resource = self.api.root.add_resource("signup")
-        signup_resource.add_method(
+        # Meeting summary route:
+        #   POST /meeting-summary  with body { customer_id, turns, locale }
+        # Returns a draft note. Same Cognito auth as the other model routes.
+        meeting_summary_resource = self.api.root.add_resource("meeting-summary")
+        meeting_summary_resource.add_method(
             "POST",
-            signup_integration,
-            authorization_type=apigateway.AuthorizationType.NONE,
-            request_validator=request_validator,
+            apigateway.LambdaIntegration(self.meeting_summary_lambda),
+            **catalog_auth_kwargs,
         )
-
+        # Role-play score route:
+        #   POST /roleplay-score  with body { customer_id, turns, difficulty, focus, locale }
+        roleplay_score_resource = self.api.root.add_resource("roleplay-score")
+        roleplay_score_resource.add_method(
+            "POST",
+            apigateway.LambdaIntegration(self.roleplay_score_lambda),
+            **catalog_auth_kwargs,
+        )
+        # Sign-up route (opt-in, see `enable_public_signup`):
+        #   POST /signup  with body { email, password }
+        # Public and unauthenticated by design. The Lambda only accepts the
+        # addresses in `signup_allowed_emails`, enforces a strong password and uses
+        # the Cognito admin APIs to create and confirm the user. WAFv2 rate-limits
+        # the route.
+        if self.public_signup_enabled:
+            signup_integration = apigateway.LambdaIntegration(self.signup_lambda)
+            signup_resource = self.api.root.add_resource("signup")
+            signup_resource.add_method(
+                "POST",
+                signup_integration,
+                authorization_type=apigateway.AuthorizationType.NONE,
+                request_validator=request_validator,
+            )
         # Documents upload-init route:
         #   POST /documents/initiate  with body { filename, content_type, customer_id? }
         # Returns a presigned S3 PUT URL the SPA uses to upload the binary
@@ -1410,14 +1786,14 @@ class ToolsStack(Stack):
                 sampled_requests_enabled=True,
             ),
             rules=[
+                *([
                 # Rate limit POST /signup at the edge so a bot army cannot
                 # enumerate Cognito by spraying admin_create_user requests.
-                # Mitigation M2 from the threat model. We scope the rate
+                # Abuse protection for the sign-up route. We scope the rate
                 # limit to the signup URI so a sloppy IP that legitimately
                 # uses the signed-in API doesn't get throttled by mistake.
                 # 100 req / 5 min / source IP is roomy enough for retries
-                # and dev testing but hard floor for the bot scenarios in
-                # threats T3, T16.
+                # and dev testing but hard floor for bot traffic.
                 wafv2.CfnWebACL.RuleProperty(
                     name="RateLimitSignup",
                     priority=0,
@@ -1449,7 +1825,8 @@ class ToolsStack(Stack):
                         metric_name="RateLimitSignup",
                         sampled_requests_enabled=True,
                     ),
-                ),
+                )
+                ] if self.public_signup_enabled else []),
                 wafv2.CfnWebACL.RuleProperty(
                     name="AWSManagedRulesCommonRuleSet",
                     priority=1,
@@ -1477,7 +1854,7 @@ class ToolsStack(Stack):
         )
 
         # ---------------------------------------------------------------
-        # Threat model M5 — Cost-bomb defense.
+        # Cost-bomb defense.
         # AWS Budgets alarm on the per-month Bedrock + Lambda spend in this
         # account. The threat is T_chat_loop / T_recommend_loop: a single
         # authenticated advisor (or an OAuth credential leak) loops the
@@ -1528,6 +1905,14 @@ class ToolsStack(Stack):
         # AWS Budget scoped to Bedrock + Lambda spend in this account.
         # CostFilters on Service narrows the scope, so noisy other
         # services (CloudWatch, S3, etc.) don't trip the alarm.
+        #
+        # Billing splits Bedrock across several service names. Claude token
+        # usage is billed under "Amazon Bedrock Service" and the runtimes,
+        # gateway and memory under "Amazon Bedrock AgentCore"; plain
+        # "Amazon Bedrock" only carries Nova Sonic and guardrail units.
+        # Without the first two the alarm missed most of this app's spend.
+        # The filter is by service, not by project, so it counts the whole
+        # account's usage of these services.
         budgets.CfnBudget(
             self,
             "BedrockSpendBudget",
@@ -1542,6 +1927,8 @@ class ToolsStack(Stack):
                 cost_filters={
                     "Service": [
                         "Amazon Bedrock",
+                        "Amazon Bedrock Service",
+                        "Amazon Bedrock AgentCore",
                         "AWS Lambda",
                     ],
                 },
@@ -1570,15 +1957,18 @@ class ToolsStack(Stack):
             self, "MockDataPopulatorLambda",
             runtime=_lambda.Runtime.PYTHON_3_13,
             handler="index.lambda_handler",
-            timeout=Duration.minutes(2),
+            timeout=Duration.minutes(5),
             memory_size=256,
             code=_lambda.Code.from_asset("lambda/mock_data"),
             environment={
                 "PROFILES_TABLE": self.profiles_table.table_name,
                 "POLICIES_TABLE": self.policies_table.table_name,
                 "CATALOG_TABLE": self.catalog_table.table_name,
+                # Published by insadv-03-agentcore. Read at run time because that
+                # stack is deployed after this one.
+                "MEMORY_ID_PARAM": "/insurance-advisor/agentcore/ltm-memory-id",
             },
-            description="Lambda function for populating mock insurance data",
+            description="Resets the demo to its seed: tables, dates and AgentCore memory",
             log_group=_log_group("MockDataPopulatorLambda"),
         )
 
@@ -1587,15 +1977,31 @@ class ToolsStack(Stack):
         self.policies_table.grant_read_write_data(self.mock_data_lambda)
         self.catalog_table.grant_read_write_data(self.mock_data_lambda)
 
-        # AwsCustomResource to invoke the Lambda function
-        # Hash the seed files so the physical_resource_id changes whenever
-        # profiles.json or policies.json is edited. That change triggers
-        # CloudFormation to run on_update on the next deploy, which re-invokes
-        # the populator Lambda. The populator uses put_item (idempotent), so
-        # rerunning is safe — new rows are inserted, existing rows are
-        # overwritten.
+        # Clearing AgentCore long-term memory on reset: find the memory id in SSM,
+        # then list and delete its records. Memory ids are generated by the
+        # agentcore stack, so the memory resource is a wildcard.
+        self.mock_data_lambda.add_to_role_policy(iam.PolicyStatement(
+            actions=["ssm:GetParameter"],
+            resources=[f"arn:aws:ssm:{self.region}:{self.account}:parameter/insurance-advisor/agentcore/ltm-memory-id"],
+        ))
+        self.mock_data_lambda.add_to_role_policy(iam.PolicyStatement(
+            actions=[
+                "bedrock-agentcore:ListActors",
+                "bedrock-agentcore:ListSessions",
+                "bedrock-agentcore:ListMemoryRecords",
+                "bedrock-agentcore:BatchDeleteMemoryRecords",
+            ],
+            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:memory/*"],
+        ))
+        # AwsCustomResource to invoke the Lambda function.
+        # The physical_resource_id carries the seed hash and a deploy-time
+        # stamp, so CloudFormation runs on_update (and so the reset) on every
+        # deploy of this stack. The populator resets the demo to its seed, so
+        # running it again is safe; it also means `cdk diff` always shows this
+        # one resource as changed.
         seed_hash = _seed_data_hash()
-        populator_physical_id = cr.PhysicalResourceId.of(f"MockDataPopulator-{seed_hash}")
+        deploy_stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        populator_physical_id = cr.PhysicalResourceId.of(f"MockDataPopulator-{seed_hash}-{deploy_stamp}")
 
         invoke_sdk_call = cr.AwsSdkCall(
             service="Lambda",
@@ -1622,6 +2028,9 @@ class ToolsStack(Stack):
             self, "MockDataCustomResource",
             on_create=invoke_sdk_call,
             on_update=invoke_sdk_call,
+            # The wrapper's default limit is 2 minutes; the populator has up to 5
+            # (its own memory-clear budget is far shorter, see lambda/mock_data).
+            timeout=Duration.minutes(5),
             policy=cr.AwsCustomResourcePolicy.from_statements(
                 statements=[
                     iam.PolicyStatement(
@@ -1638,6 +2047,62 @@ class ToolsStack(Stack):
         self.mock_data_resource.node.add_dependency(self.policies_table)
         self.mock_data_resource.node.add_dependency(self.catalog_table)
         self.mock_data_resource.node.add_dependency(self.mock_data_lambda)
+
+        # ---------------------------------------------------------------
+        # Automatic reset: the demo goes back to its seed at least every 48
+        # hours (every second day of the month; the longest gap is two days,
+        # at month ends it is one). The hour is UTC, default 19:00 (03:00 in
+        # UTC+8) so a reset does not land in the middle of a demo. Override with
+        #   cdk deploy -c demo_reset_hour_utc=11   or  -c demo_reset_enabled=false
+        # ---------------------------------------------------------------
+        reset_hour = str(int(self.node.try_get_context("demo_reset_hour_utc") or 19))
+        reset_enabled = str(self.node.try_get_context("demo_reset_enabled") or "true").lower() != "false"
+        self.demo_reset_rule = events.Rule(
+            self, "DemoResetSchedule",
+            description="Resets the demo data to its seed at least every 48 hours",
+            enabled=reset_enabled,
+            schedule=events.Schedule.cron(minute="0", hour=reset_hour, day="1/2", month="*", year="*"),
+            targets=[event_targets.LambdaFunction(
+                self.mock_data_lambda,
+                event=events.RuleTargetInput.from_object({"mode": "scheduled"}),
+                retry_attempts=2,
+            )],
+        )
+        # Two alarms: a reset that failed, and a reset that did not happen at all
+        # (schedule disabled or deleted). Three days without a single run raises
+        # the second; a run is guaranteed every second day, and every deploy runs one.
+        self.demo_reset_failed_alarm = cloudwatch.Alarm(
+            self, "DemoResetFailedAlarm",
+            alarm_description="The demo reset Lambda failed",
+            metric=self.mock_data_lambda.metric_errors(period=Duration.hours(1), statistic="Sum"),
+            threshold=1,
+            evaluation_periods=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+        )
+        self.demo_reset_missing_alarm = cloudwatch.Alarm(
+            self, "DemoResetMissingAlarm",
+            alarm_description="The demo has not been reset for three days",
+            metric=self.mock_data_lambda.metric_invocations(period=Duration.days(1), statistic="Sum"),
+            threshold=1,
+            evaluation_periods=3,
+            datapoints_to_alarm=3,
+            comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.BREACHING,
+        )
+        # Notify through the existing (encrypted) alarm topic. CloudWatch needs
+        # permission to use the topic's key. The topic only emails someone when
+        # `-c bedrock_budget_alarm_email=...` was given at deploy time.
+        self.log_kms_key.add_to_resource_policy(iam.PolicyStatement(
+            sid="AllowCloudWatchAlarmsToPublishToEncryptedTopic",
+            effect=iam.Effect.ALLOW,
+            principals=[iam.ServicePrincipal("cloudwatch.amazonaws.com")],
+            actions=["kms:Decrypt", "kms:GenerateDataKey*"],
+            resources=["*"],
+            conditions={"StringEquals": {"aws:SourceAccount": self.account}},
+        ))
+        for alarm in (self.demo_reset_failed_alarm, self.demo_reset_missing_alarm):
+            alarm.add_alarm_action(cw_actions.SnsAction(self.budget_alarm_topic))
 
         # Store API Gateway URL in SSM so the React frontend can pick it
         # up via setup-env.sh on each deploy.

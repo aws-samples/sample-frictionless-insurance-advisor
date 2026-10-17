@@ -1,28 +1,28 @@
-# Unicorn Insurance - Advantages by Product Line
+# Awesome Insurance - Advantages by Product Line
 
-One-page "why us" summaries for each Unicorn Insurance product. Each section lists specific, concrete differentiators an advisor can reference during a sales conversation. These are positive statements about Unicorn - do not use them to criticize other carriers by name.
+One-page "why us" summaries for each Awesome Insurance product. Each section lists specific, concrete differentiators an advisor can reference during a sales conversation. These are positive statements about Awesome - do not use them to criticize other carriers by name.
 
-## HealingHorn Health (Health Insurance)
+## Awesome Health (Health Insurance)
 
-### Why HealingHorn Health
+### Why Awesome Health
 
 - **No premium increase after a claim.** Our premiums are based on portfolio-wide experience, not individual claims history. Competitors like BigRival load premiums by up to 30% after a major claim.
-- **Cashless claims at 800+ facilities** with eLOG issued in under 2 hours (planned) or 30 minutes (emergency). BigRival takes 4-6 hours. StarInsure doesn't offer cashless at all.
-- **96.2% claims settlement ratio** — significantly above industry average (94%) and well above BigRival (91.8%) and StarInsure (88.5%).
+- **Cashless claims at 800+ facilities** with eLOG issued in under 2 hours (planned) or 30 minutes (emergency). BigRival takes 4-6 hours. Brookmere doesn't offer cashless at all.
+- **96.2% claims settlement ratio** — significantly above industry average (94%) and well above BigRival (91.8%) and Brookmere (88.5%).
 - **Comprehensive outpatient coverage** including GP, specialist, diagnostic imaging, physiotherapy, and prescriptions from day 31 (Standard/Premium tiers).
 - **Dental and optical coverage included** in the Premium tier at no extra cost. BigRival charges extra for dental add-on (Premier tier only).
 - **Mental health parity**: Up to 20 outpatient psychology sessions/year and $15,000 inpatient psychiatric cover. BigRival caps at 15 sessions and excludes tele-therapy.
 - **Alternative medicine covered** (TCM, acupuncture, chiropractic) in Standard and Premium tiers. BigRival excludes all alternative treatments.
-- **Maternity add-on available across all tiers** with 12-month waiting. BigRival requires Premier tier and imposes 18-month waiting. StarInsure offers no maternity cover.
+- **Maternity add-on available across all tiers** with 12-month waiting. BigRival requires Premier tier and imposes 18-month waiting. Brookmere offers no maternity cover.
 - **10% no-claim loyalty discount** after just 2 claim-free years. BigRival offers only 5% after 5 years.
-- **Multi-policy bundle savings**: 10% off when combined with Rainbow Life or Unicorn Health Critical; 15% off with 3+ policies.
-- **Faster claims processing**: 5 business days (Unicorn) vs 10-15 business days (BigRival).
+- **Multi-policy bundle savings**: 10% off when combined with Awesome Term Life or Awesome Critical Illness; 15% off with 3+ policies.
+- **Faster claims processing**: 5 business days (Awesome) vs 10-15 business days (BigRival).
 - **Full digital experience**: Quote, buy, claim, and manage entirely through our mobile app. BigRival requires phone/in-person for pre-authorisation.
 - **Portability credit**: Customers switching from competitors receive credit for time served on waiting periods.
 
 ### Competitive Quick-Reference (Health)
 
-| Feature | Unicorn HealingHorn | BigRival PrimeCare | StarInsure |
+| Feature | Awesome Health | BigRival PrimeCare | Brookmere |
 |---------|--------------------|--------------------|-----------|
 | Premium (age 30) | $1,560/yr (Standard) | $2,040/yr (Enhanced) | N/A (no health product) |
 | Annual limit | $10K-$250K selectable | Up to $500K | N/A |
@@ -41,23 +41,23 @@ One-page "why us" summaries for each Unicorn Insurance product. Each section lis
 | Premium loading after claim | No | Up to 30% | N/A |
 | App-based everything | Yes | Partial (no pre-auth) | N/A |
 
-## Unicorn Health Critical (Critical Illness)
+## Awesome Critical Illness (Critical Illness)
 
-### Why Unicorn Health Critical
+### Why Awesome Critical Illness
 
-- **20+ conditions covered** in Comprehensive tier vs StarBasic Shield's 3 conditions (cancer, heart attack, stroke only).
-- **Multi-stage payout** (up to 300% of sum assured) vs StarBasic Shield's single payout after which the policy terminates.
-- **Coverage amounts up to $500,000** vs StarBasic Shield's maximum $50,000.
-- **Level premiums available** — lock in today's rate for the entire term. StarInsure only offers stepped premiums that increase with age.
-- **Pre-existing conditions covered after 12 months** — StarInsure permanently excludes all pre-existing conditions.
-- **Policy continues after early-stage claim** — coverage is not terminated. StarBasic Shield terminates the policy after any claim.
-- **Return of Premium option** — get all premiums back if no claim. StarInsure doesn't offer this.
+- **20+ conditions covered** in Comprehensive tier vs BasicCover Shield's 3 conditions (cancer, heart attack, stroke only).
+- **Multi-stage payout** (up to 300% of sum assured) vs BasicCover Shield's single payout after which the policy terminates.
+- **Coverage amounts up to $500,000** vs BasicCover Shield's maximum $50,000.
+- **Level premiums available** — lock in today's rate for the entire term. Brookmere only offers stepped premiums that increase with age.
+- **Pre-existing conditions covered after 12 months** — Brookmere permanently excludes all pre-existing conditions.
+- **Policy continues after early-stage claim** — coverage is not terminated. BasicCover Shield terminates the policy after any claim.
+- **Return of Premium option** — get all premiums back if no claim. Brookmere doesn't offer this.
 - **Child critical illness coverage** included at no additional premium in Comprehensive tier.
 - **Recovery Care benefit** provides ongoing monthly support during treatment (up to $5,000/month for 12 months).
 
 ### Competitive Quick-Reference (Critical Illness)
 
-| Feature | Unicorn Health Critical | BigRival (no standalone CI) | StarBasic Shield |
+| Feature | Awesome Critical Illness | BigRival (no standalone CI) | BasicCover Shield |
 |---------|------------------------|-----------------------------|-----------------|
 | Conditions covered | 20+ | N/A | 3 only |
 | Max coverage | $500,000 | N/A | $50,000 |
@@ -70,9 +70,9 @@ One-page "why us" summaries for each Unicorn Insurance product. Each section lis
 | Recovery care benefit | Yes ($5K/mo × 12 mo) | N/A | No |
 | Premium (age 30, $100K) | $600/yr (Standard) | N/A | ~$528/yr ($50K only) |
 
-## Rainbow Life (Term Life)
+## Awesome Term Life (Term Life)
 
-### Why Rainbow Life
+### Why Awesome Term Life
 
 - **Coverage range to $2,000,000** with term lengths from 10 to 30 years, suitable for young families, mortgage protection, and long-dated education funding needs.
 - **Conversion option to permanent life before age 70** without new medical underwriting. This is particularly valuable for customers whose health may change during the term.
@@ -81,9 +81,9 @@ One-page "why us" summaries for each Unicorn Insurance product. Each section lis
 - **Return of Premium option** refunds all premiums paid if no claim is made by the end of the term, turning an expense into a forced savings vehicle for customers who prefer that structure.
 - **Straightforward underwriting**: most applicants under age 50 and within standard health ranges can complete underwriting digitally without a medical exam.
 
-## EverAfter Whole Life (Whole Life)
+## Awesome Whole Life (Whole Life)
 
-### Why EverAfter Whole Life
+### Why Awesome Whole Life
 
 - **Permanent coverage up to $2,500,000** with a death benefit guaranteed for life as long as premiums are paid.
 - **Level premiums for life** (or accelerated 10-pay, 20-pay, paid-up at 65) so customers can choose between lower lifetime cost and faster path to a paid-up policy.
@@ -92,13 +92,13 @@ One-page "why us" summaries for each Unicorn Insurance product. Each section lis
 - **Paid-Up Additions rider** accelerates death benefit and cash value growth by letting customers make additional premium contributions that purchase small fully paid-up blocks of coverage.
 - **Guaranteed Insurability rider** allows additional permanent coverage at specified life events (marriage, birth of child, home purchase) with no new medical underwriting.
 
-## ShieldUnicorn Disability (Disability Insurance)
+## Awesome Disability (Disability Insurance)
 
-### Why ShieldUnicorn Disability
+### Why Awesome Disability
 
 - **Monthly income replacement** up to $15,000/month (vs lump-sum only products).
 - **Own Occupation definition** available — cannot work in YOUR specific job (not just "any job").
 - **Benefit periods up to retirement age** — long-term protection, not just 2-year caps.
 - **COLA rider** adjusts benefits for inflation during ongoing claims.
 - **Future Purchase option** to increase coverage as income grows without new underwriting.
-- The only Unicorn product that provides ongoing monthly income replacement — HealingHorn Health and Unicorn Health Critical provide lump-sum and hospital cash benefits instead.
+- The only Awesome product that provides ongoing monthly income replacement — Awesome Health and Awesome Critical Illness provide lump-sum and hospital cash benefits instead.

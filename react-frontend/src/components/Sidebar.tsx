@@ -1,4 +1,4 @@
-import { RefreshCw, UserPlus, Users } from 'lucide-react';
+import { Home, RefreshCw, UserPlus, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { useClearRecommendations } from '../hooks/useRecommendation';
@@ -11,6 +11,9 @@ interface SidebarProps {
   selectedId: string | null;
   loading: boolean;
   error: string | null;
+  /** True when no customer is open and no prospect is being onboarded (the Cockpit view). */
+  homeActive: boolean;
+  onHome: () => void;
   onSelect: (customerId: string | null) => void;
   onRefresh: () => void;
 }
@@ -20,6 +23,8 @@ export function Sidebar({
   selectedId,
   loading,
   error,
+  homeActive,
+  onHome,
   onSelect,
   onRefresh,
 }: SidebarProps) {
@@ -33,6 +38,24 @@ export function Sidebar({
 
   return (
     <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-background-elevated/50 backdrop-blur-sm">
+      {/* Back to the Cockpit (today's priorities) */}
+      <div className="pl-2 pr-5 pt-2">
+        <button
+          type="button"
+          onClick={onHome}
+          aria-current={homeActive ? 'page' : undefined}
+          className={cn(
+            'flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium transition-[background,box-shadow] duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+            homeActive
+              ? 'bg-gradient-to-r from-brand-2/15 via-brand-1/10 to-transparent shadow-[var(--shadow-sm)] ring-1 ring-brand-2/30'
+              : 'text-foreground-muted hover:bg-background-muted hover:text-foreground'
+          )}
+        >
+          <Home className="h-4 w-4" />
+          {t('assistant.sidebar.home')}
+        </button>
+      </div>
       {/* Heading + count */}
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
         <div className="inline-flex items-center gap-2">

@@ -8,15 +8,15 @@ Four tabs, switched from the top nav (no router — page state plus lazy-loaded 
 
 | Tab | Label | What it does |
 |---|---|---|
-| `assistant` | **Text Assistant** | Streaming chat with the AgentCore text runtime (Claude Haiku 4.5). Per-customer history and session id. "New Prospect" mode for onboarding someone not yet on file. |
-| `voice` | **Text+Voice Assistant** | Real-time voice over WebSocket to the voice runtime (Nova Sonic 2), with barge-in. Application forms open and fill themselves from the conversation. |
-| `comparator` | **Comparator** | Side-by-side table for 2-4 products, plus a per-customer coverage-gap recommender. Both pass the active locale so the model answers in the UI language. |
-| `data` | **Data** | Read-only explorer over the `s3-data` corpus that grounds the agent's answers. Searchable file list, rendered markdown, and a rendered/raw toggle for form-schema JSON. |
+| `assistant` | **Text Assistant** | Streaming chat with the AgentCore text runtime (Claude Haiku 5.5). Per-customer history and session id. "New Prospect" mode for onboarding someone not yet on file. A **Sources** footer on answers that use documents or the web, a one-click **meeting-prep** quick prompt, pricing estimates, and application forms that open beside the chat and fill from the conversation. |
+| `voice` | **Text+Voice Assistant** | Real-time voice over WebSocket to the voice runtime (Nova 2.5 Sonic), with barge-in. A recording-consent bar gates memory, forms and transcripts. Application forms open and fill themselves from the conversation. |
+| `comparator` | **Comparator** | Side-by-side table for 2-4 products with carrier financial-strength ratings and a customer handout PDF, an optional uploaded competitor brochure (or a sample one), plus a per-customer coverage-gap recommender with a dollar exposure per gap. Both pass the active locale so the model answers in the UI language. |
+| `data` | **Data** | Read-only explorer over the `s3-data` corpus that grounds the agent's answers: searchable file list, rendered markdown, rendered form schemas and rate cards, PDF brochures, and the advisor's own voice transcripts. |
 
 Across all tabs:
 
-- Sign in / sign up through a **custom auth UI** (`AuthGate`) backed by the Cognito user pool. Sign-up posts to the `/signup` Lambda, which is gated by a hard-coded allowlist.
-- Collapsible customer sidebar (scoped server-side via the DynamoDB `advisor-id-index` GSI), with profile, Unicorn policies, and third-party coverage.
+- Sign in / sign up through a **custom auth UI** (`AuthGate`) backed by the Cognito user pool. The "Create account" tab appears only if the backend was deployed with the opt-in public sign-up route; by default there is sign-in only, and the demo users are created once with `scripts/create-demo-users.sh`.
+- Collapsible customer sidebar (scoped server-side via the DynamoDB `advisor-id-index` GSI), with profile, Awesome policies, third-party coverage, and a **Notes** card (life events and interactions; add and delete by hand, notes added by the assistant are labelled).
 - Document upload (PDF / image / markdown / text) → structured policy extraction → field-by-field confirmation → save as a third-party policy.
 - Sample third-party policies downloadable as `.md` or `.pdf` so the upload flow can be exercised without external files.
 - Resizable split panes, with the divider position and sidebar state persisted per surface.
@@ -75,11 +75,11 @@ The runtime ARNs are baked in at build time, so a runtime replacement means rebu
 
 ## Auth flow
 
-Auth UI is hand-rolled (`src/components/AuthGate.tsx`), not Amplify's `<Authenticator>`. Two reasons: the Cognito user pool is configured with `AllowAdminCreateUserOnly`, which breaks Amplify's self-service sign-up; and the custom UI matches the rest of the design system. Only `aws-amplify/auth` functions (`signIn`, `signOut`, `getCurrentUser`, `fetchAuthSession`) are used — `@aws-amplify/ui-react` is not a dependency.
+Auth UI is hand-rolled (`src/components/AuthGate.tsx`), not Amplify's `<Authenticator>`. Two reasons: the user pool is closed to self-service sign-up (`AllowAdminCreateUserOnly`), which Amplify's component does not expect; and the custom UI matches the rest of the design system. Only `aws-amplify/auth` functions (`signIn`, `signOut`, `getCurrentUser`, `fetchAuthSession`) are used — `@aws-amplify/ui-react` is not a dependency.
 
-Sign-up posts to a backend `/signup` endpoint (`lambda/signup/`) which creates and confirms the user via Cognito admin APIs — guarded by a hard-coded allowlist (currently `john.doe@example.com`, `jane.doe@example.com`) and WAF rate-limited at 100 req / 5 min / source IP.
+Public sign-up is off by default. With `-c enable_public_signup=true` the backend adds a `/signup` endpoint (`lambda/signup/`) that creates and confirms users for the allowlisted addresses only, rate-limited by WAF; the build then sets `VITE_ENABLE_SIGNUP=true` (written by `scripts/setup-env.sh`) and the sign-in screen shows a "Create account" tab.
 
-Sign in with an allowlisted email and a 12+ char password (upper / lower / digit / symbol). The browser only ever holds a Cognito JWT; no AWS IAM credentials are present in the SPA. The same token authenticates both the direct AgentCore Runtime calls and the API Gateway calls.
+Sign in with a demo advisor (created once with `scripts/create-demo-users.sh`) and its password (upper / lower / digit / symbol). The browser only ever holds a Cognito JWT; no AWS IAM credentials are present in the SPA. The same token authenticates both the direct AgentCore Runtime calls and the API Gateway calls.
 
 ## Pages in detail
 
@@ -87,26 +87,45 @@ Sign in with an allowlisted email and a 12+ char password (upper / lower / digit
 
 `streamChat()` posts straight to `bedrock-agentcore.<region>.amazonaws.com/runtimes/<arn>/invocations` with `Accept: text/event-stream` and yields tokens as they arrive. `advisorId` is deliberately never sent — the runtime derives identity from the verified JWT, so the browser cannot impersonate another advisor. History and session id are kept per customer (`react-<customerId>-<uuid>`), and each turn is prefixed with a hidden customer-context block that isn't shown in the bubble.
 
+The runtime streams only text, tool use, stop reason, `app_event` objects and errors. `app_event` carries what the page renders beyond text:
+
+- `form_open` / `form_fill`: open an application form beside the chat and fill fields. The chat panel and the form panel share the `useApplicationForm` state with the voice page, with the same precedence (manual > conversation > profile).
+- `sources`: sent after the text. `SourcesFooter` shows one chip per source. Document chips open Data Explorer on that file in a **new browser tab** (`?page=data&folder=…&key=…`), because the chat lives inside the Assistant page and switching tabs would lose it; web chips open the page in a new tab.
+- A `pricing`-folder file named in an answer opens as a rate card in Data Explorer.
+
+The quick prompts include **meeting prep** ("Help me prepare for my meeting with this customer", or "…this prospect"). `useAgentChat.ts` folds these events into the message list.
+
 ### Text+Voice Assistant
 
 One WebSocket per session. Browsers can't set headers on a WebSocket, so the JWT travels base64url-encoded in the `Sec-WebSocket-Protocol` subprotocol. Mic capture runs through an audio worklet; assistant transcript chunks are held back until the matching audio actually plays so text and speech stay in sync. Switching customer mid-session sends a control message rather than reconnecting.
 
-The left panel hosts the **application form**. When the agent calls `open_application_form`, the schema is pushed down the socket and fields arrive individually as the conversation covers them. Per-field confidence drives the styling — ≥0.85 fills green, below that fills amber with a "Looks right" confirmation. Fields already known from the customer record are prefilled, the conversation can override them, and anything typed by hand is never overwritten.
+A **consent bar** sits above the chat (`ConsentBar`). When the advisor starts the microphone the assistant asks whether the customer has agreed to the conversation being transcribed. The advisor answers aloud or presses Confirmed / Declined. The page tracks `pending`, `confirmed` and `declined` from `consent` events the runtime sends; changing customer sends `voice_set_customer` and the state returns to pending. Declined closes the socket and clears the on-screen conversation. On the first confirmation per customer per session the browser writes a short "Recording consent confirmed" interaction note to the profile through the notes API.
+
+The left panel hosts the **application form**. When the agent calls `open_application_form`, the schema is pushed down the socket and fields arrive individually as the conversation covers them. Per-field confidence drives the styling — ≥0.85 fills green, below that fills amber with a "Looks right" confirmation. Fields already known from the customer record are prefilled, the conversation can override them, and anything typed by hand is never overwritten. **Download PDF** builds a printable application with the answers so far; the PDF libraries (`jspdf`, `html2canvas-pro`) are imported only when the button is used, so they stay out of the main bundle.
 
 ### Comparator
 
-Pick a product type, select 2-4 products, and the comparator Lambda returns a structured side-by-side table. The per-customer recommender returns a coverage-gap analysis. Both requests carry the active `locale`, so the generated prose comes back in the UI language rather than English.
+Pick a product type, select 2-4 products, and the comparator Lambda returns a structured side-by-side table. The per-customer recommender returns a coverage-gap analysis with the estimated dollar exposure for each gap. Both requests carry the active `locale`, so the generated prose comes back in the UI language rather than English.
+
+- **Carrier financial strength.** Every compared carrier shows its AM Best / S&P / Moody's ratings in a dedicated row, in the table and in the PDF, with an "as of" date. Competitor ratings are labelled as illustrative demonstration data.
+- **Customer PDF.** "Download PDF" produces an Awesome-branded handout (date, advisor, summary, ratings, tables, disclaimer) with no "Internal Use Only" marking. The on-screen badge stays. The printable view is mounted only while exporting.
+- **Competitor brochure.** `BrochureUpload` lets the advisor upload one PDF from another insurer, or pick one of ten sample brochures offered as downloads. The upload goes through the normal document-upload route; `POST /comparator/ingest` reads it into a fixed structure and returns a `temp_id`, and the comparison is requested with that id, never with brochure content. The uploaded product is shown last with an "Uploaded brochure" badge, a notice that it was read automatically and is unverified, and its own ratings labelled as stated in the brochure. The reading is kept for a day.
 
 ### Data
 
 Two panes over the reference corpus. The listing is fetched once on mount from `GET data/files` (metadata only); document bodies come from `GET data/file` lazily per selection and are cached for the session. Content is served by the `data` Lambda reading the S3 knowledge-base buckets — nothing is bundled into the SPA and the browser never touches S3 directly.
 
-Six folders are surfaced, allowlisted and ordered server-side: Product Portfolio, Company Info, Competitive Positioning, Competitor Products, Promotions, and Application Forms. `mock-policies` is deliberately excluded — those ship as static files for the download menu instead. Only `.md` and `.json` are browsable.
+Nine folders are surfaced: Product Portfolio, Company Info, Competitive Positioning, Competitor Products, Promotions, Application Forms, Pricing Tables, Brochures, and Voice transcripts. The first eight are allowlisted and ordered server-side; `transcripts` is per advisor and never listed for anyone else. `mock-policies` is deliberately excluded — those ship as static files for the download menu instead. Text folders show only `.md` and `.json`; `brochures` holds PDFs.
 
 - **Search** filters case-insensitively across filename, sub-path, folder id, and the translated folder label, with a live match count.
 - **Markdown** renders through the shared `MarkdownMessage` component in its `doc` variant (full document type scale rather than chat scale). Front matter is stripped server-side and surfaced as a "Last updated" line.
 - **Form-schema JSON** gets a proper rendered view: title, product name, form id, section/field/required counts, then one card per section listing each field's label, type, required flag, dotted path, hint, and select options. A Rendered/Raw pill toggles to the pretty-printed source. JSON that isn't a form schema falls back to source only, so the toggle never offers an empty form.
-- Documents from the `competitive` and `competitors` folders carry an **Internal Use Only** badge, so an advisor doesn't screen-share a battlecard to a customer.
+- **Carrier ratings** (`competitors/carrier_ratings.json`) render as a table (`CarrierRatingsView`): a row per carrier, a column per agency, rating with label and outlook, an "Illustrative" tag on the fictitious competitors, and the as-of date. The Raw toggle shows the JSON.
+- **Folders fold.** Every folder header in the list is a button with a chevron (`aria-expanded`), and Collapse all / Expand all sits beside the file count. The folded set is kept in `localStorage` (`insadv.data.collapsedFolders.v1`). While a search is active all matches show, and opening a document from outside the list (a Sources link) reopens its folder.
+- **Pricing tables** render as a rate card (`PricingCardView`): age bands, rates per unit of cover, factors, add-ons, what the price depends on, and an "Indicative only" label with the effective date. The Raw toggle shows the JSON.
+- **Brochures** open in an in-page PDF viewer with Open in new tab and Download PDF. The PDFs come from 2-minute presigned S3 links returned by `GET data/file`, so no binary goes through API Gateway.
+- **Voice transcripts** (`TranscriptView`) list only the signed-in advisor's sessions, newest first, with date and time, customer or Prospect, turn count and an "in progress" marker. The viewer is a chat-style transcript with times, a "typed" marker for typed turns, the customer for each stretch, and a banner with the expiry rule, last-saved time and consent time. Refresh reloads a session that is still running; Raw shows the JSON. Transcripts are kept for 24 hours.
+- Only `competitive` and `competitors` documents carry the **Internal Use Only** badge, so an advisor doesn't screen-share a battlecard to a customer. Pricing tables, brochures and transcripts do not.
 
 ## Localization
 
@@ -124,7 +143,7 @@ Nine locales ship today, in switcher order:
 | `th` | ไทย |
 | `id` | Bahasa Indonesia |
 
-All nine are at full key parity (273 keys each) — there are no partial locales. The switcher sits in the top-right nav cluster and enumerates `SUPPORTED_LOCALES` directly, so its order is the array order.
+All nine are at full key parity (422 keys each) — there are no partial locales. The switcher sits in the top-right nav cluster and enumerates `SUPPORTED_LOCALES` directly, so its order is the array order.
 
 Language is detected from `localStorage` then `navigator`, cached to `localStorage` under `i18nextLng`, and restored on the next visit. Region variants are stripped before matching (`en-US` → `en`), with `en` as the fallback.
 
@@ -154,7 +173,7 @@ Namespaces:
 
 - `common` — generic UI (nav, buttons, states, errors)
 - `auth` — sign-in / sign-up strings for the custom `AuthGate`. These must be complete: Amplify ships no translations for our own UI.
-- `assistant` — page strings for all four tabs, chat UI, quick-question prompts, the advisor-vs-competitor section, the Data explorer, and the application form
+- `assistant` — page strings for all four tabs, chat UI, quick-question prompts, the advisor-vs-competitor section, the Data explorer (folders, rate cards, brochures, transcripts), the application form and its PDF, notes, recording consent, the Sources footer, and the Comparator's ratings and brochure upload
 - `domain` — enum value translations (customer status, policy status, policy type, marital status, premium frequency)
 
 Formatting (dates, numbers, currency) lives in `src/lib/format.ts` and is driven by the active locale via `Intl.*`.
@@ -177,5 +196,6 @@ No component changes are needed.
 
 - **Vite 8** (Rolldown-based). Code splitting is configured through `build.rollupOptions.output.codeSplitting.groups` with regex matchers, because Vite 8 dropped the object form of `manualChunks`. `aws-amplify` and `i18n` are pulled into their own vendor chunks.
 - **Tailwind CSS 4** via `@tailwindcss/vite`. There is no `tailwind.config.js` or `postcss.config.js` — v4 uses CSS-first config in `src/index.css`.
+- **PDF export is lazy.** `src/lib/pdf.ts` imports `html2canvas-pro` and `jspdf` on first use, so neither is in the entry or tab chunks. Both the comparator handout and the form PDF go through it.
 - All four pages are lazy-loaded. Auth, nav, and the context providers ship in the main chunk; each tab is fetched on first visit.
 - `react-markdown` + `remark-gfm` for tables, task lists, strikethrough, and autolinks. Raw HTML is deliberately not enabled. Links get `target="_blank"` and `rel="noopener noreferrer"`. The renderer is memoized on content because streaming re-renders on every token.

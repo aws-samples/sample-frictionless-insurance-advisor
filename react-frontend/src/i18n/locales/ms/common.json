@@ -7,7 +7,7 @@
       "assistant": "Pembantu Teks",
       "voice": "Pembantu Teks+Suara",
       "comparator": "Pembanding",
-      "data": "Data",
+      "data": "Penjelajah Data",
       "signOut": "Log keluar",
       "language": "Bahasa",
       "pitchDeck": "Buka dek pembentangan"
@@ -16,7 +16,9 @@
       "send": "Hantar",
       "clear": "Kosongkan",
       "refresh": "Muat semula",
-      "cancel": "Batal"
+      "cancel": "Batal",
+      "close": "Tutup",
+      "retry": "Cuba lagi"
     },
     "states": {
       "loading": "Sedang memuatkan...",
@@ -31,7 +33,7 @@
       "reload": "Muat semula"
     },
     "brand": {
-      "nameAccent": "Unicorn",
+      "nameAccent": "Awesome",
       "nameSuffix": "Insurance"
     }
   }

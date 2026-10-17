@@ -56,6 +56,16 @@
       "Option A (level face)": "方案 A（固定保额）",
       "Option B (face + cash value)": "方案 B（保额 + 现金价值）",
       "Option C (face + return of premium)": "方案 C（保额 + 保费返还）"
+    },
+    "gender": {
+      "male": "男",
+      "female": "女"
+    },
+    "productLine": {
+      "life": "人寿产品",
+      "general": "财产产品",
+      "health": "健康产品",
+      "all": "全部产品"
     }
   }
 }

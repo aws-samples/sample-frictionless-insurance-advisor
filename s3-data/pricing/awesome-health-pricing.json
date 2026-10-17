@@ -1,0 +1,340 @@
+{
+  "product_type": "health",
+  "product_name": "Awesome Health",
+  "premium_basis": "per year",
+  "notes": [
+    "Table values are the published rates and are the male reference. A female applicant's premium is the table value times the female factor for her age band (Gender factor). The gender factors are illustrative placeholders until the pricing factors are confirmed. Basis: individual non-smoker (product sheet), $50,000 annual limit, $500 deductible and standard network.",
+    "Rates exclude multi-policy and no-claim discounts, which are decided at sale.",
+    "Ages outside 18 to 65 have no published rate."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 18,
+      "max": 65,
+      "required": true,
+      "source": "profile",
+      "description": "Age last birthday"
+    },
+    "gender": {
+      "type": "choice",
+      "choices": [
+        "male",
+        "female"
+      ],
+      "required": true,
+      "source": "profile",
+      "description": "Used with the age band to apply the gender factor. Taken from the customer's profile; if it is missing (for example a new prospect), ask the advisor."
+    },
+    "smoker": {
+      "type": "boolean",
+      "required": true,
+      "source": "profile",
+      "description": "Whether the person smokes or has used tobacco in the last 12 months."
+    },
+    "tier": {
+      "type": "choice",
+      "choices": [
+        "essential",
+        "standard",
+        "premium"
+      ],
+      "required": true,
+      "description": "essential: hospital and emergency; standard: adds outpatient and specialists; premium: adds dental, vision and mental health."
+    },
+    "annual_limit": {
+      "type": "choice",
+      "choices": [
+        "10000",
+        "25000",
+        "50000",
+        "100000",
+        "250000"
+      ],
+      "default": "50000",
+      "description": "Annual maximum benefit in USD."
+    },
+    "deductible": {
+      "type": "choice",
+      "choices": [
+        "0",
+        "250",
+        "500",
+        "1000",
+        "2500"
+      ],
+      "default": "500",
+      "description": "Annual deductible in USD."
+    },
+    "network": {
+      "type": "choice",
+      "choices": [
+        "standard",
+        "extended",
+        "open_access"
+      ],
+      "default": "standard",
+      "description": "Hospital network."
+    },
+    "reimbursement": {
+      "type": "choice",
+      "choices": [
+        "direct_billing",
+        "reimbursement"
+      ],
+      "default": "direct_billing",
+      "description": "Insurer pays the provider directly, or the policyholder claims back."
+    },
+    "international": {
+      "type": "boolean",
+      "default": false,
+      "description": "International coverage add-on."
+    },
+    "chronic": {
+      "type": "boolean",
+      "default": false,
+      "description": "Chronic condition management add-on."
+    },
+    "maternity": {
+      "type": "boolean",
+      "default": false,
+      "description": "Maternity add-on (12-month waiting period)."
+    },
+    "hospital_cash": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hospital cash benefit add-on."
+    },
+    "hospital_cash_daily": {
+      "type": "number",
+      "min": 100,
+      "max": 500,
+      "default": 100,
+      "description": "Hospital cash per day in USD, 100 to 500. Only used when hospital_cash is true."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "age_column",
+    "amount_input": null,
+    "column_input": "tier",
+    "age_bands": [
+      {
+        "min": 18,
+        "max": 25
+      },
+      {
+        "min": 26,
+        "max": 35
+      },
+      {
+        "min": 36,
+        "max": 45
+      },
+      {
+        "min": 46,
+        "max": 55
+      },
+      {
+        "min": 56,
+        "max": 65
+      }
+    ],
+    "columns": {
+      "essential": [
+        780,
+        960,
+        1440,
+        2160,
+        3240
+      ],
+      "standard": [
+        1200,
+        1560,
+        2280,
+        3480,
+        5160
+      ],
+      "premium": [
+        1800,
+        2400,
+        3600,
+        5400,
+        7800
+      ]
+    },
+    "label": "Annual premium, individual non-smoker (product sheet)"
+  },
+  "factors": [
+    {
+      "input": "smoker",
+      "label": "Smoker",
+      "map": {
+        "true": 1.15,
+        "false": 1.0
+      }
+    },
+    {
+      "input": "age",
+      "label": "Gender factor (female, by age band; male = 1.0)",
+      "when": {
+        "gender": "female"
+      },
+      "bands": [
+        {
+          "max": 25,
+          "mult": 1.1
+        },
+        {
+          "min": 26,
+          "max": 35,
+          "mult": 1.15
+        },
+        {
+          "min": 36,
+          "max": 45,
+          "mult": 1.08
+        },
+        {
+          "min": 46,
+          "max": 55,
+          "mult": 1.0
+        },
+        {
+          "min": 56,
+          "max": 65,
+          "mult": 0.95
+        }
+      ]
+    },
+    {
+      "input": "annual_limit",
+      "label": "Annual limit",
+      "map": {
+        "10000": 0.8,
+        "25000": 0.9,
+        "50000": 1.0,
+        "100000": 1.15,
+        "250000": 1.35
+      }
+    },
+    {
+      "input": "deductible",
+      "label": "Deductible",
+      "map": {
+        "0": 1.15,
+        "250": 1.07,
+        "500": 1.0,
+        "1000": 0.92,
+        "2500": 0.8
+      }
+    },
+    {
+      "input": "network",
+      "label": "Hospital network",
+      "map": {
+        "standard": 1.0,
+        "extended": 1.12,
+        "open_access": 1.25
+      }
+    },
+    {
+      "input": "reimbursement",
+      "label": "Reimbursement model",
+      "map": {
+        "direct_billing": 1.0,
+        "reimbursement": 0.95
+      }
+    }
+  ],
+  "addons": [
+    {
+      "input": "international",
+      "label": "International coverage",
+      "pct": 0.18
+    },
+    {
+      "input": "chronic",
+      "label": "Chronic condition management",
+      "pct": 0.1
+    },
+    {
+      "input": "maternity",
+      "label": "Maternity",
+      "flat": 1500
+    },
+    {
+      "input": "hospital_cash",
+      "label": "Hospital cash benefit",
+      "flat_per_unit": {
+        "input": "hospital_cash_daily",
+        "per": 100,
+        "amount": 90
+      }
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "Age 30, male, non-smoker, standard tier, default choices",
+      "options": {
+        "age": 30,
+        "gender": "male",
+        "smoker": false,
+        "tier": "standard"
+      },
+      "annual_premium": 1560
+    },
+    {
+      "label": "Age 45, male, non-smoker, essential tier, $25,000 limit, $1,000 deductible",
+      "options": {
+        "age": 45,
+        "gender": "male",
+        "smoker": false,
+        "tier": "essential",
+        "annual_limit": "25000",
+        "deductible": "1000"
+      },
+      "annual_premium": 1192
+    },
+    {
+      "label": "Age 36, male, non-smoker, premium tier, maternity add-on",
+      "options": {
+        "age": 36,
+        "gender": "male",
+        "smoker": false,
+        "tier": "premium",
+        "maternity": true
+      },
+      "annual_premium": 5100
+    },
+    {
+      "label": "Age 30, female, non-smoker, standard tier, default choices",
+      "options": {
+        "age": 30,
+        "gender": "female",
+        "smoker": false,
+        "tier": "standard"
+      },
+      "annual_premium": 1794
+    }
+  ]
+}

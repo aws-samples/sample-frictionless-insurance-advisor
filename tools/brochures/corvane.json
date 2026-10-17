@@ -1,0 +1,310 @@
+{
+  "carrier": {
+    "name": "Corvane Assurance",
+    "note": "Corvane Assurance is a fictitious carrier created for demonstration. Nothing here describes a real company or product.",
+    "ratings": [
+      {"agency": "AM Best", "rating": "A-", "label": "Excellent", "outlook": "Stable"},
+      {"agency": "S&P Global Ratings", "rating": "A", "label": "Strong", "outlook": "Stable"},
+      {"agency": "Moody's", "rating": "A3", "label": "Good", "outlook": "Stable"}
+    ],
+    "contact": [
+      "Customer service: hello@corvaneassurance.example",
+      "Claims: claims@corvaneassurance.example, 24-hour claims line",
+      "Find a Corvane adviser: advisers@corvaneassurance.example"
+    ]
+  },
+  "products": [
+    {
+      "file": "term-life",
+      "catalog_type": "Term Life Insurance",
+      "name": "Corvane TermSecure 20",
+      "tagline": "Straightforward term cover for families who want a fixed price and a clear end date.",
+      "left_title": "Key benefits",
+      "left": [
+        "Death benefit from $100,000 to $1,500,000",
+        "Terms of 10, 15, 20 or 25 years; level premiums for the whole term",
+        "Terminal illness benefit pays up to 50% of the cover early",
+        "Convert to a permanent Corvane policy before age 60 without a new medical",
+        "Optional waiver of premium if you cannot work"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Ages 20 to 60 at start",
+        "Simplified underwriting up to $500,000; medical exam above that",
+        "Smoker rates apply if tobacco used in the last 24 months",
+        "30-day grace period for late premiums",
+        "Suicide exclusion in the first 2 years"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $39 a month for $500,000 over 20 years, age 35, non-smoker",
+        "From $92 a month for the same cover, age 35, smoker",
+        "Monthly payment adds no extra charge"
+      ]
+    },
+    {
+      "file": "whole-life",
+      "catalog_type": "Whole Life Insurance",
+      "name": "Corvane LifeAnchor",
+      "tagline": "Lifelong cover with a modest guaranteed cash value.",
+      "left_title": "Key benefits",
+      "left": [
+        "Death benefit from $50,000 to $1,000,000, guaranteed for life",
+        "Guaranteed cash value after year 3, growing at a fixed 2% a year",
+        "Premiums stay level for life",
+        "Policy loans up to 85% of cash value",
+        "Optional paid-up additions rider"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Ages 18 to 70 at start",
+        "Premium payment: lifetime pay or paid up at 65",
+        "Dividends are not guaranteed and can be taken as cash or used to reduce premiums",
+        "Surrender charges apply in the first 10 years",
+        "Medical questions required; exam above $250,000"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $210 a month for $250,000, age 40, non-smoker, lifetime pay",
+        "Paid up at 65 costs about 35% more each month"
+      ]
+    },
+    {
+      "file": "universal-life",
+      "catalog_type": "Universal Life Insurance",
+      "name": "Corvane FlexiLife",
+      "tagline": "Permanent cover with premiums you can adjust as your life changes.",
+      "left_title": "Key benefits",
+      "left": [
+        "Death benefit from $100,000 to $3,000,000, adjustable after year 5",
+        "Choose level or increasing death benefit",
+        "Cash value earns a declared rate with a 1.5% guaranteed floor",
+        "Skip or reduce premiums if the cash value can cover the charges",
+        "Optional long-term care acceleration rider"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Ages 18 to 65 at start",
+        "No-lapse guarantee available for the first 10 years at a higher premium",
+        "Monthly cost-of-insurance charges rise with age",
+        "Underwriting: medical exam above $500,000"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $145 a month for $500,000, age 40, non-smoker, target premium",
+        "Minimum premium to keep the policy in force is about 60% of target"
+      ]
+    },
+    {
+      "file": "variable-life",
+      "catalog_type": "Variable Life Insurance",
+      "name": "Corvane GrowthShield",
+      "tagline": "Permanent cover with cash value you invest in sub-accounts.",
+      "left_title": "Key benefits",
+      "left": [
+        "Death benefit from $250,000 to $5,000,000",
+        "Choice of 12 sub-accounts across equity, bond and money-market funds",
+        "Two death benefit options: level, or face amount plus account value",
+        "Free switching between sub-accounts, up to 12 times a year",
+        "Optional guaranteed minimum death benefit rider"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Ages 18 to 65 at start",
+        "Investment risk is borne by the policyholder; account values can fall",
+        "More premium may be needed to keep the policy in force after poor returns",
+        "Fund charges and a 0.75% annual administration fee apply",
+        "Prospectus provided before sale"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $190 a month for $500,000, age 40, non-smoker, target premium"
+      ]
+    },
+    {
+      "file": "critical-illness",
+      "catalog_type": "Critical Illness Insurance",
+      "name": "Corvane ShieldPlus Critical Cover",
+      "tagline": "A lump sum on diagnosis of a serious illness.",
+      "left_title": "Key benefits",
+      "left": [
+        "Lump sum from $20,000 to $300,000, paid once on diagnosis",
+        "Covers 12 conditions including cancer, heart attack, stroke and kidney failure",
+        "Cover ends after a claim is paid",
+        "Optional return of premium at the end of the term if no claim",
+        "Children are covered for 3 conditions at no extra cost"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Ages 18 to 60 at start; renewable to age 70",
+        "90-day waiting period for all illnesses; 14-day survival period",
+        "Pre-existing conditions are permanently excluded",
+        "Premiums step up every 5 years",
+        "Early-stage conditions are not covered"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $48 a month for $100,000, age 35, non-smoker",
+        "From $79 a month for $100,000, age 45, non-smoker"
+      ]
+    },
+    {
+      "file": "health",
+      "catalog_type": "Health Insurance",
+      "name": "Corvane ClearCare Health",
+      "tagline": "Hospital and doctor cover with three plan levels.",
+      "left_title": "Key benefits",
+      "left": [
+        "Plans: Core (hospital), Plus (adds outpatient) and Complete (adds dental and vision)",
+        "Annual limit of $25,000, $75,000 or $200,000",
+        "Network of 1,800 hospitals and clinics; out-of-network cover at 60%",
+        "24-hour nurse advice line",
+        "Optional maternity add-on"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Ages 18 to 64 at start",
+        "Deductible of $500 or $1,500",
+        "Maternity add-on has a 12-month waiting period",
+        "Pre-existing conditions covered after 24 months",
+        "Premiums reviewed each year; recent increases averaged 6%"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "Plus plan from $118 a month, age 30, non-smoker, $75,000 limit, $500 deductible",
+        "Complete plan from $176 a month on the same basis"
+      ]
+    },
+    {
+      "file": "home",
+      "catalog_type": "Home Insurance",
+      "name": "Corvane HomeGuard",
+      "tagline": "Cover for the house, its contents and your liability.",
+      "left_title": "Key benefits",
+      "left": [
+        "Rebuilding cover from $150,000 to $1,500,000",
+        "Contents cover at 60% or 100% of the building amount",
+        "Personal liability of $250,000 or $500,000",
+        "Alternative accommodation for up to 18 months",
+        "Optional accidental damage and home emergency add-ons"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Owner-occupied single-family homes and condominiums",
+        "Deductible of $1,000 or $2,500",
+        "Flood damage is excluded; flood cover is not available",
+        "Homes unoccupied for more than 45 days need prior approval",
+        "Claims settled within 10 business days on average"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $135 a month for a $500,000 single-family home, $1,000 deductible"
+      ]
+    },
+    {
+      "file": "auto",
+      "catalog_type": "Auto Insurance",
+      "name": "Corvane RoadSure Motor",
+      "tagline": "Motor cover with a pay-as-you-drive option.",
+      "left_title": "Key benefits",
+      "left": [
+        "Third party, third party fire and theft, or comprehensive",
+        "Liability limits up to $100,000 / $300,000",
+        "Optional roadside assistance with 24-hour towing",
+        "Pay-as-you-drive discount of up to 20% using a plug-in device",
+        "Courtesy car for up to 7 days after an accident"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Drivers aged 21 to 75 with at least 2 years of licence history",
+        "Deductible of $500 or $1,000",
+        "New vehicle replacement is not offered",
+        "Business use needs a separate policy",
+        "At-fault claims raise the premium at renewal"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "Comprehensive from $82 a month, age 40, clean record, $25,000 vehicle, $500 deductible"
+      ]
+    },
+    {
+      "file": "travel",
+      "catalog_type": "Travel Insurance",
+      "name": "Corvane GlobeTrek Travel",
+      "tagline": "Trip cover for holidays and short breaks.",
+      "left_title": "Key benefits",
+      "left": [
+        "Emergency medical cover up to $250,000",
+        "Trip cancellation up to $10,000 for prepaid costs",
+        "Baggage and delay cover",
+        "24-hour assistance line and medical evacuation",
+        "Annual multi-trip policy with trips up to 31 days"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Single trips up to 60 days; travellers up to age 75",
+        "Adventure sports are excluded",
+        "Pre-existing conditions need a medical screening call",
+        "Rental car excess cover is not offered"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "Single trip, Europe, 10 days, age 35: from $29",
+        "Annual multi-trip, worldwide excluding USA, age 35: from $119 a year"
+      ]
+    },
+    {
+      "file": "disability",
+      "catalog_type": "Disability Insurance",
+      "name": "Corvane IncomeShield",
+      "tagline": "Monthly income if illness or injury stops you working.",
+      "left_title": "Key benefits",
+      "left": [
+        "Monthly benefit from $1,500 to $10,000, up to 60% of earnings",
+        "Benefit period of 2 or 5 years, or to age 65",
+        "Own-occupation definition for the first 24 months, then any-occupation",
+        "Rehabilitation benefit for retraining costs",
+        "Optional inflation protection on claims"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Ages 21 to 55 at start; employed or self-employed for 12 months",
+        "Waiting period of 60, 90 or 180 days",
+        "Mental health claims are limited to 24 months",
+        "Partial disability benefit is not offered",
+        "Medical underwriting and income proof required"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $78 a month for $5,000 a month, age 35, office worker, 90-day wait, to age 65"
+      ]
+    },
+    {
+      "file": "renters",
+      "catalog_type": "Renters Insurance",
+      "name": "Corvane HomeNest Renters",
+      "tagline": "Cover for your belongings, your liability and a place to stay if your rental becomes unliveable.",
+      "left_title": "Key benefits",
+      "left": [
+        "Personal property cover from $15,000 to $100,000, paid at replacement cost",
+        "Personal liability of $100,000 or $300,000",
+        "Extra living costs for up to 12 months after a covered loss",
+        "Theft away from home covered up to 10% of the property limit",
+        "Optional add-ons for high-value items, identity recovery and water backup"
+      ],
+      "right_title": "Eligibility and terms",
+      "right": [
+        "Tenants of apartments, condominiums and houses; one policy per household",
+        "Deductible of $250, $500 or $1,000",
+        "Flood and earthquake damage are excluded",
+        "Roommates are covered only if named on the policy",
+        "Claims settled within 7 business days on average"
+      ],
+      "extra_title": "Indicative pricing",
+      "extra": [
+        "From $14 a month for $30,000 of personal property and $100,000 liability, $500 deductible",
+        "Paperless billing discount of 5%"
+      ]
+    }
+  ]
+}

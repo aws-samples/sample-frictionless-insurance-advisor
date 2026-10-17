@@ -1,0 +1,274 @@
+{
+  "product_type": "critical_illness",
+  "product_name": "Awesome Critical Illness",
+  "premium_basis": "per year",
+  "notes": [
+    "Table values are the published rates and are the male reference. A female applicant's premium is the table value times the female factor for her age band (Gender factor). The gender factors are illustrative placeholders until the pricing factors are confirmed. Basis: non-smoker with $100,000 cover; other cover amounts scale in proportion.",
+    "Ages outside 25 to 65 have no published rate."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 25,
+      "max": 65,
+      "required": true,
+      "source": "profile",
+      "description": "Age last birthday"
+    },
+    "gender": {
+      "type": "choice",
+      "choices": [
+        "male",
+        "female"
+      ],
+      "required": true,
+      "source": "profile",
+      "description": "Used with the age band to apply the gender factor. Taken from the customer's profile; if it is missing (for example a new prospect), ask the advisor."
+    },
+    "smoker": {
+      "type": "boolean",
+      "required": true,
+      "source": "profile",
+      "description": "Whether the person smokes or has used tobacco in the last 12 months."
+    },
+    "lump_sum": {
+      "type": "choice",
+      "choices": [
+        "25000",
+        "50000",
+        "100000",
+        "250000",
+        "500000"
+      ],
+      "required": true,
+      "description": "Lump-sum amount per stage, in USD."
+    },
+    "illness_tier": {
+      "type": "choice",
+      "choices": [
+        "basic",
+        "standard",
+        "comprehensive"
+      ],
+      "required": true,
+      "description": "basic: 3 conditions; standard: 8 conditions; comprehensive: 20+ conditions."
+    },
+    "cover_term": {
+      "type": "choice",
+      "choices": [
+        "10",
+        "15",
+        "20",
+        "30",
+        "to_65",
+        "to_75"
+      ],
+      "default": "20",
+      "description": "Coverage term in years, or to age 65 or 75."
+    },
+    "premium_structure": {
+      "type": "choice",
+      "choices": [
+        "level",
+        "stepped"
+      ],
+      "default": "level",
+      "description": "Level premiums fixed for the term, or stepped premiums that start lower and rise with age."
+    },
+    "return_of_premium": {
+      "type": "boolean",
+      "default": false,
+      "description": "Get all premiums back at the end of the term if no claim is made (adds about 40%)."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "age_column",
+    "amount_input": "lump_sum",
+    "per": 100000,
+    "column_input": "illness_tier",
+    "age_bands": [
+      {
+        "min": 25,
+        "max": 30
+      },
+      {
+        "min": 31,
+        "max": 35
+      },
+      {
+        "min": 36,
+        "max": 45
+      },
+      {
+        "min": 46,
+        "max": 55
+      },
+      {
+        "min": 56,
+        "max": 65
+      }
+    ],
+    "columns": {
+      "basic": [
+        240,
+        360,
+        600,
+        1080,
+        1680
+      ],
+      "standard": [
+        420,
+        600,
+        1020,
+        1800,
+        2760
+      ],
+      "comprehensive": [
+        660,
+        960,
+        1620,
+        2880,
+        4320
+      ]
+    },
+    "label": "Annual premium for $100,000 of cover, non-smoker (product sheet)"
+  },
+  "factors": [
+    {
+      "input": "smoker",
+      "label": "Smoker",
+      "map": {
+        "true": 1.6,
+        "false": 1.0
+      }
+    },
+    {
+      "input": "age",
+      "label": "Gender factor (female, by age band; male = 1.0)",
+      "when": {
+        "gender": "female"
+      },
+      "bands": [
+        {
+          "max": 30,
+          "mult": 1.15
+        },
+        {
+          "min": 31,
+          "max": 35,
+          "mult": 1.12
+        },
+        {
+          "min": 36,
+          "max": 45,
+          "mult": 1.08
+        },
+        {
+          "min": 46,
+          "max": 55,
+          "mult": 1.0
+        },
+        {
+          "min": 56,
+          "max": 65,
+          "mult": 0.92
+        }
+      ]
+    },
+    {
+      "input": "cover_term",
+      "label": "Coverage term",
+      "map": {
+        "10": 0.9,
+        "15": 0.95,
+        "20": 1.0,
+        "30": 1.1,
+        "to_65": 1.0,
+        "to_75": 1.15
+      }
+    },
+    {
+      "input": "premium_structure",
+      "label": "Premium structure",
+      "map": {
+        "level": 1.0,
+        "stepped": 0.85
+      }
+    },
+    {
+      "input": "return_of_premium",
+      "label": "Return of premium",
+      "map": {
+        "true": 1.4,
+        "false": 1.0
+      }
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "Age 33, male, non-smoker, $100,000, standard tier",
+      "options": {
+        "age": 33,
+        "gender": "male",
+        "smoker": false,
+        "lump_sum": "100000",
+        "illness_tier": "standard"
+      },
+      "annual_premium": 600
+    },
+    {
+      "label": "Age 41, male, non-smoker, $250,000, comprehensive tier",
+      "options": {
+        "age": 41,
+        "gender": "male",
+        "smoker": false,
+        "lump_sum": "250000",
+        "illness_tier": "comprehensive"
+      },
+      "annual_premium": 4050
+    },
+    {
+      "label": "Age 41, male, smoker, $250,000, comprehensive tier, return of premium",
+      "options": {
+        "age": 41,
+        "gender": "male",
+        "smoker": true,
+        "lump_sum": "250000",
+        "illness_tier": "comprehensive",
+        "return_of_premium": true
+      },
+      "annual_premium": 9072
+    },
+    {
+      "label": "Age 41, female, non-smoker, $250,000, comprehensive tier",
+      "options": {
+        "age": 41,
+        "gender": "female",
+        "smoker": false,
+        "lump_sum": "250000",
+        "illness_tier": "comprehensive"
+      },
+      "annual_premium": 4374
+    }
+  ]
+}

@@ -2,10 +2,11 @@
   {
     "customer_id": "1",
     "name": "Sarah Johnson",
-    "email": "sarah.johnson@email.com",
+    "email": "sarah.johnson@example.com",
     "phone": "(555) 123-4567",
     "address": "123 Oak Street, Springfield, IL 62701",
     "date_of_birth": "1985-04-12",
+    "gender": "female",
     "marital_status": "Married",
     "dependents": 2,
     "occupation": "Marketing Manager",
@@ -17,15 +18,35 @@
     "join_date": "2022-03-15",
     "last_reviewed": "2026-07-30",
     "status": "Active",
-    "advisor_id": "john.doe@example.com"
+    "advisor_id": "life@example.com",
+    "notes": [
+      {
+        "note_id": "seed-1-1",
+        "type": "interaction",
+        "text": "Annual review call. Sarah asked whether her employer's disability cover is enough for the family; follow up with a comparison.",
+        "created_at": "2026-07-30T15:10:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui"
+      },
+      {
+        "note_id": "seed-1-2",
+        "type": "life_event",
+        "text": "Older child will start university soon; she wants to start putting money aside for tuition.",
+        "created_at": "2026-07-30T15:20:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-09-01"
+      }
+    ]
   },
   {
     "customer_id": "2",
     "name": "Emily Rodriguez",
-    "email": "emily.r@gmail.com",
+    "email": "emily.r@example.com",
     "phone": "(555) 456-7890",
     "address": "789 Maple Drive, Austin, TX 73301",
     "date_of_birth": "1992-09-28",
+    "gender": "female",
     "marital_status": "Single",
     "dependents": 0,
     "occupation": "UX Designer",
@@ -35,17 +56,37 @@
     "smoking": false,
     "medical_conditions": "Seasonal allergies",
     "join_date": "2023-01-10",
-    "last_reviewed": "2026-02-11",
+    "last_reviewed": "2026-09-10",
     "status": "Active",
-    "advisor_id": "john.doe@example.com"
+    "advisor_id": "life@example.com",
+    "notes": [
+      {
+        "note_id": "seed-2-1",
+        "type": "life_event",
+        "text": "Saving for a deposit to buy her first apartment.",
+        "created_at": "2026-06-12T10:00:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-02-01"
+      },
+      {
+        "note_id": "seed-2-2",
+        "type": "interaction",
+        "text": "Asked what a term life policy would cost now that she is planning to buy an apartment.",
+        "created_at": "2026-09-02T09:30:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui"
+      }
+    ]
   },
   {
     "customer_id": "3",
     "name": "Robert Williams",
-    "email": "r.williams@email.com",
+    "email": "r.williams@example.com",
     "phone": "(555) 234-5678",
     "address": "321 Cedar Lane, Denver, CO 80202",
     "date_of_birth": "1978-11-03",
+    "gender": "male",
     "marital_status": "Married",
     "dependents": 3,
     "occupation": "Financial Advisor",
@@ -57,15 +98,35 @@
     "join_date": "2021-11-05",
     "last_reviewed": "2025-09-15",
     "status": "Active",
-    "advisor_id": "john.doe@example.com"
+    "advisor_id": "life@example.com",
+    "notes": [
+      {
+        "note_id": "seed-3-1",
+        "type": "life_event",
+        "text": "Expanding his practice: two associates are about to join.",
+        "created_at": "2026-08-20T14:00:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-10-14"
+      },
+      {
+        "note_id": "seed-3-2",
+        "type": "interaction",
+        "text": "Mentioned his doctor reduced his blood pressure medication after the last check-up.",
+        "created_at": "2026-08-20T14:15:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui"
+      }
+    ]
   },
   {
     "customer_id": "4",
     "name": "Lisa Thompson",
-    "email": "lisa.t@company.com",
+    "email": "lisa.t@example.com",
     "phone": "(555) 345-6789",
     "address": "654 Birch Street, Seattle, WA 98101",
     "date_of_birth": "1990-07-15",
+    "gender": "female",
     "marital_status": "Married",
     "dependents": 2,
     "occupation": "Registered Nurse",
@@ -77,15 +138,36 @@
     "join_date": "2023-06-20",
     "last_reviewed": "2026-08-01",
     "status": "Active",
-    "advisor_id": "john.doe@example.com"
+    "advisor_id": "general@example.com",
+    "notes": [
+      {
+        "note_id": "seed-4-1",
+        "type": "life_event",
+        "text": "Expecting her third child.",
+        "created_at": "2026-09-10T11:00:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-03-15"
+      },
+      {
+        "note_id": "seed-4-2",
+        "type": "life_event",
+        "text": "About to move to night shifts at the hospital, so she will be driving to work every day; wants to compare car cover.",
+        "created_at": "2026-09-10T11:10:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-11-02"
+      }
+    ]
   },
   {
     "customer_id": "5",
     "name": "Michael Chen",
-    "email": "m.chen@techcorp.com",
+    "email": "m.chen@example.com",
     "phone": "(555) 987-6543",
     "address": "456 Pine Avenue, Chicago, IL 60601",
     "date_of_birth": "1983-02-19",
+    "gender": "male",
     "marital_status": "Married",
     "dependents": 1,
     "occupation": "Software Engineer",
@@ -97,15 +179,35 @@
     "join_date": "2021-08-22",
     "last_reviewed": "2026-01-20",
     "status": "Active",
-    "advisor_id": "jane.doe@example.com"
+    "advisor_id": "general@example.com",
+    "notes": [
+      {
+        "note_id": "seed-5-1",
+        "type": "life_event",
+        "text": "Promoted to Staff Engineer; income rising to about $160,000.",
+        "created_at": "2026-08-05T16:00:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-08-01"
+      },
+      {
+        "note_id": "seed-5-2",
+        "type": "interaction",
+        "text": "Refinanced the mortgage on his Chicago house; the home itself is not insured with us yet.",
+        "created_at": "2026-08-05T16:10:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui"
+      }
+    ]
   },
   {
     "customer_id": "6",
     "name": "Amanda Davis",
-    "email": "amanda.davis@startup.io",
+    "email": "amanda.davis@example.com",
     "phone": "(555) 567-8901",
     "address": "987 Elm Boulevard, Miami, FL 33101",
     "date_of_birth": "1995-12-08",
+    "gender": "female",
     "marital_status": "Single",
     "dependents": 1,
     "occupation": "Startup Founder",
@@ -117,15 +219,35 @@
     "join_date": "2022-12-03",
     "last_reviewed": "2025-12-03",
     "status": "Active",
-    "advisor_id": "jane.doe@example.com"
+    "advisor_id": "life@example.com",
+    "notes": [
+      {
+        "note_id": "seed-6-1",
+        "type": "life_event",
+        "text": "Her startup recently closed a seed round; she now draws a regular salary.",
+        "created_at": "2026-09-22T13:00:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-09-15"
+      },
+      {
+        "note_id": "seed-6-2",
+        "type": "interaction",
+        "text": "Asked how her controlled asthma affects life insurance applications.",
+        "created_at": "2026-09-12T13:05:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui"
+      }
+    ]
   },
   {
     "customer_id": "7",
     "name": "Daniel Park",
-    "email": "daniel.park@email.com",
+    "email": "daniel.park@example.com",
     "phone": "(555) 678-9012",
     "address": "412 Willow Court, Portland, OR 97201",
     "date_of_birth": "1996-05-22",
+    "gender": "male",
     "marital_status": "Single",
     "dependents": 0,
     "occupation": "Junior Data Analyst",
@@ -135,17 +257,37 @@
     "smoking": false,
     "medical_conditions": "None",
     "join_date": "2024-09-18",
-    "last_reviewed": "2026-06-15",
+    "last_reviewed": "2026-08-13",
     "status": "Active",
-    "advisor_id": "john.doe@example.com"
+    "advisor_id": "general@example.com",
+    "notes": [
+      {
+        "note_id": "seed-7-1",
+        "type": "life_event",
+        "text": "Recently bought his first car.",
+        "created_at": "2026-06-15T17:30:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-06-10"
+      },
+      {
+        "note_id": "seed-7-2",
+        "type": "interaction",
+        "text": "Prefers contact by email, ideally after 6pm.",
+        "created_at": "2026-06-15T17:35:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui"
+      }
+    ]
   },
   {
     "customer_id": "8",
     "name": "Jessica Martinez",
-    "email": "jessica.martinez@email.com",
+    "email": "jessica.martinez@example.com",
     "phone": "(555) 789-0123",
     "address": "256 Sunset Ridge, San Diego, CA 92101",
     "date_of_birth": "1987-08-14",
+    "gender": "female",
     "marital_status": "Married",
     "dependents": 1,
     "occupation": "Project Manager",
@@ -155,8 +297,466 @@
     "smoking": false,
     "medical_conditions": "None",
     "join_date": "2024-11-02",
-    "last_reviewed": "2026-03-10",
+    "last_reviewed": "2026-08-28",
     "status": "Active",
-    "advisor_id": "jane.doe@example.com"
+    "advisor_id": "general@example.com",
+    "notes": [
+      {
+        "note_id": "seed-8-1",
+        "type": "life_event",
+        "text": "Renovating the kitchen; expects the home's rebuild value to rise by about $60,000.",
+        "created_at": "2026-07-18T10:45:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui"
+      },
+      {
+        "note_id": "seed-8-2",
+        "type": "interaction",
+        "text": "Asked about adding her mother as a named driver on the car policy.",
+        "created_at": "2026-07-18T10:50:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "9",
+    "name": "David Okafor",
+    "email": "d.okafor@example.com",
+    "phone": "(555) 321-7788",
+    "address": "88 Lakeview Drive, Minneapolis, MN 55401",
+    "date_of_birth": "1973-06-30",
+    "gender": "male",
+    "marital_status": "Married",
+    "dependents": 2,
+    "occupation": "Operations Director",
+    "employment_status": "employed",
+    "annual_income": 168000,
+    "home_owner": true,
+    "smoking": false,
+    "medical_conditions": "Pre-diabetes (diet-controlled)",
+    "join_date": "2022-01-20",
+    "last_reviewed": "2026-04-02",
+    "status": "Active",
+    "advisor_id": "life@example.com",
+    "notes": [
+      {
+        "note_id": "seed-9-1",
+        "type": "life_event",
+        "text": "Eldest daughter starts university next autumn; he wants the family protected through the tuition years.",
+        "created_at": "2026-09-05T15:00:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-09-01"
+      },
+      {
+        "note_id": "seed-9-2",
+        "type": "interaction",
+        "text": "Asked about a critical illness top-up after a colleague's diagnosis.",
+        "created_at": "2026-09-05T15:10:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "10",
+    "name": "Priya Patel",
+    "email": "priya.patel@example.com",
+    "phone": "(555) 246-8130",
+    "address": "1520 Aspen Court, Denver, CO 80206",
+    "date_of_birth": "1982-09-09",
+    "gender": "female",
+    "marital_status": "Married",
+    "dependents": 2,
+    "occupation": "Pharmacist",
+    "employment_status": "employed",
+    "annual_income": 118000,
+    "home_owner": true,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2023-12-20",
+    "last_reviewed": "2026-08-30",
+    "status": "Active",
+    "advisor_id": "general@example.com",
+    "notes": [
+      {
+        "note_id": "seed-10-1",
+        "type": "life_event",
+        "text": "Family trip to Portugal planned for the school holidays.",
+        "created_at": "2026-09-08T17:00:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-12-18"
+      },
+      {
+        "note_id": "seed-10-2",
+        "type": "interaction",
+        "text": "Is adding a second car to the household and wants one quote for both vehicles.",
+        "created_at": "2026-09-08T17:10:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "11",
+    "name": "Marcus Bennett",
+    "email": "m.bennett@example.com",
+    "phone": "(555) 410-2290",
+    "address": "27 Birchwood Lane, Columbus, OH 43215",
+    "date_of_birth": "1979-03-14",
+    "gender": "male",
+    "marital_status": "Married",
+    "dependents": 3,
+    "occupation": "Civil Engineer",
+    "employment_status": "employed",
+    "annual_income": 152000,
+    "home_owner": true,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2022-05-16",
+    "last_reviewed": "2026-09-01",
+    "status": "Active",
+    "advisor_id": "john.doe@example.com",
+    "notes": [
+      {
+        "note_id": "seed-11-1",
+        "type": "life_event",
+        "text": "Planning a family holiday abroad next summer and wants travel cover for five.",
+        "created_at": "2026-09-04T14:00:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-07-10"
+      },
+      {
+        "note_id": "seed-11-2",
+        "type": "interaction",
+        "text": "Asked whether his life cover and health plan still fit now that the third child has arrived.",
+        "created_at": "2026-09-04T14:10:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "12",
+    "name": "Hannah Lee",
+    "email": "hannah.lee@example.com",
+    "phone": "(555) 733-5042",
+    "address": "910 Harbor Street, Seattle, WA 98101",
+    "date_of_birth": "1991-11-22",
+    "gender": "female",
+    "marital_status": "Single",
+    "dependents": 0,
+    "occupation": "Data Scientist",
+    "employment_status": "employed",
+    "annual_income": 98000,
+    "home_owner": false,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2023-03-08",
+    "last_reviewed": "2026-05-12",
+    "status": "Active",
+    "advisor_id": "john.doe@example.com",
+    "notes": [
+      {
+        "note_id": "seed-12-1",
+        "type": "life_event",
+        "text": "Moving to a larger apartment closer to the office next month.",
+        "created_at": "2026-09-10T16:30:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-10-30"
+      },
+      {
+        "note_id": "seed-12-2",
+        "type": "interaction",
+        "text": "Likes the idea of investment-linked cover; wants a plain-language comparison with a whole life policy.",
+        "created_at": "2026-09-10T16:40:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "13",
+    "name": "Carlos Mendez",
+    "email": "carlos.mendez@example.com",
+    "phone": "(555) 861-9904",
+    "address": "5 Mesquite Road, San Antonio, TX 78205",
+    "date_of_birth": "1976-07-08",
+    "gender": "male",
+    "marital_status": "Married",
+    "dependents": 2,
+    "occupation": "Restaurant Owner",
+    "employment_status": "self-employed",
+    "annual_income": 124000,
+    "home_owner": true,
+    "smoking": true,
+    "medical_conditions": "High cholesterol (medicated)",
+    "join_date": "2021-02-18",
+    "last_reviewed": "2026-03-20",
+    "status": "Active",
+    "advisor_id": "john.doe@example.com",
+    "notes": [
+      {
+        "note_id": "seed-13-1",
+        "type": "life_event",
+        "text": "Opening a second restaurant this spring; income will be tied to the business for a while.",
+        "created_at": "2026-09-02T11:00:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-03-15"
+      },
+      {
+        "note_id": "seed-13-2",
+        "type": "interaction",
+        "text": "Says he is trying to quit smoking and asked how that changes his premiums.",
+        "created_at": "2026-09-02T11:10:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "14",
+    "name": "Olivia Grant",
+    "email": "olivia.grant@example.com",
+    "phone": "(555) 204-7718",
+    "address": "81 Maple Ridge Drive, Denver, CO 80202",
+    "date_of_birth": "1987-06-03",
+    "gender": "female",
+    "marital_status": "Married",
+    "dependents": 2,
+    "occupation": "Product Manager",
+    "employment_status": "employed",
+    "annual_income": 138000,
+    "home_owner": true,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2024-02-12",
+    "last_reviewed": "2026-04-02",
+    "status": "Active",
+    "advisor_id": "john.doe@example.com",
+    "notes": [
+      {
+        "note_id": "seed-14-1",
+        "type": "life_event",
+        "text": "Closed on a new house last month; the mortgage is about $520,000.",
+        "created_at": "2026-09-08T10:00:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-08-20"
+      },
+      {
+        "note_id": "seed-14-2",
+        "type": "interaction",
+        "text": "Has not looked at life cover since the mortgage; asked what would happen to the family if something happened to her or her husband.",
+        "created_at": "2026-09-08T10:12:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "15",
+    "name": "Ethan Brooks",
+    "email": "ethan.brooks@example.com",
+    "phone": "(555) 318-4402",
+    "address": "14 Cedar Hollow Road, Raleigh, NC 27601",
+    "date_of_birth": "1981-10-17",
+    "gender": "male",
+    "marital_status": "Married",
+    "dependents": 3,
+    "occupation": "Sales Director",
+    "employment_status": "employed",
+    "annual_income": 165000,
+    "home_owner": true,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2023-06-05",
+    "last_reviewed": "2026-09-10",
+    "status": "Active",
+    "advisor_id": "john.doe@example.com",
+    "notes": [
+      {
+        "note_id": "seed-15-1",
+        "type": "life_event",
+        "text": "His eldest starts university in the autumn.",
+        "created_at": "2026-09-10T15:00:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-10-20"
+      },
+      {
+        "note_id": "seed-15-2",
+        "type": "interaction",
+        "text": "His life policy dates from when the children were small; not sure it still covers the mortgage and tuition.",
+        "created_at": "2026-09-10T15:12:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui"
+      }
+    ]
+  },
+  {
+    "customer_id": "16",
+    "name": "Sophie Laurent",
+    "email": "sophie.laurent@example.com",
+    "phone": "(555) 622-0915",
+    "address": "300 Lakeview Terrace, Chicago, IL 60601",
+    "date_of_birth": "1996-02-09",
+    "gender": "female",
+    "marital_status": "Single",
+    "dependents": 0,
+    "occupation": "Marketing Manager",
+    "employment_status": "employed",
+    "annual_income": 74000,
+    "home_owner": false,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2026-07-20",
+    "last_reviewed": "2026-07-20",
+    "status": "Active",
+    "advisor_id": "john.doe@example.com",
+    "notes": [
+      {
+        "note_id": "seed-16-1",
+        "type": "interaction",
+        "text": "Met at a networking event; asked about a first life policy and travel cover.",
+        "created_at": "2026-08-03T18:30:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui"
+      },
+      {
+        "note_id": "seed-16-2",
+        "type": "life_event",
+        "text": "Planning a move to a bigger flat in the spring.",
+        "created_at": "2026-08-03T18:40:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-04-01"
+      }
+    ]
+  },
+  {
+    "customer_id": "17",
+    "name": "Tom Nguyen",
+    "email": "tom.nguyen@example.com",
+    "phone": "(555) 740-3366",
+    "address": "92 Orchard Lane, Austin, TX 78701",
+    "date_of_birth": "1974-12-01",
+    "gender": "male",
+    "marital_status": "Married",
+    "dependents": 2,
+    "occupation": "Architect",
+    "employment_status": "self-employed",
+    "annual_income": 132000,
+    "home_owner": true,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2026-06-15",
+    "last_reviewed": "2026-06-15",
+    "status": "Active",
+    "advisor_id": "john.doe@example.com",
+    "notes": [
+      {
+        "note_id": "seed-17-1",
+        "type": "interaction",
+        "text": "Holds a term life policy with BigRival that renews next year; open to a comparison.",
+        "created_at": "2026-08-10T09:00:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui"
+      },
+      {
+        "note_id": "seed-17-2",
+        "type": "life_event",
+        "text": "Renovating the house this winter.",
+        "created_at": "2026-08-10T09:10:00+00:00",
+        "created_by": "john.doe@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-11-15"
+      }
+    ]
+  },
+  {
+    "customer_id": "18",
+    "name": "Nadia Haddad",
+    "email": "nadia.haddad@example.com",
+    "phone": "(555) 457-8820",
+    "address": "58 Juniper Street, Boston, MA 02108",
+    "date_of_birth": "1992-04-25",
+    "gender": "female",
+    "marital_status": "Married",
+    "dependents": 0,
+    "occupation": "Nurse Practitioner",
+    "employment_status": "employed",
+    "annual_income": 91000,
+    "home_owner": false,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2026-08-01",
+    "last_reviewed": "2026-08-01",
+    "status": "Active",
+    "advisor_id": "life@example.com",
+    "notes": [
+      {
+        "note_id": "seed-18-1",
+        "type": "interaction",
+        "text": "Referred by Sarah Johnson; wants to look at life and health cover before the baby arrives.",
+        "created_at": "2026-08-12T12:00:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui"
+      },
+      {
+        "note_id": "seed-18-2",
+        "type": "life_event",
+        "text": "First baby due in March.",
+        "created_at": "2026-08-12T12:10:00+00:00",
+        "created_by": "life@example.com",
+        "source": "advisor_ui",
+        "event_date": "2027-03-10"
+      }
+    ]
+  },
+  {
+    "customer_id": "19",
+    "name": "Leo Schmidt",
+    "email": "leo.schmidt@example.com",
+    "phone": "(555) 913-2047",
+    "address": "7 Quarry Road, Minneapolis, MN 55401",
+    "date_of_birth": "1985-09-30",
+    "gender": "male",
+    "marital_status": "Single",
+    "dependents": 0,
+    "occupation": "Electrician",
+    "employment_status": "self-employed",
+    "annual_income": 88000,
+    "home_owner": true,
+    "smoking": false,
+    "medical_conditions": "None",
+    "join_date": "2026-07-05",
+    "last_reviewed": "2026-07-05",
+    "status": "Active",
+    "advisor_id": "general@example.com",
+    "notes": [
+      {
+        "note_id": "seed-19-1",
+        "type": "interaction",
+        "text": "Insures his house with QuickSafe; says the renewal quote went up and asked what else is out there.",
+        "created_at": "2026-08-01T16:00:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui"
+      },
+      {
+        "note_id": "seed-19-2",
+        "type": "life_event",
+        "text": "Bought a work van for the business.",
+        "created_at": "2026-08-01T16:10:00+00:00",
+        "created_by": "general@example.com",
+        "source": "advisor_ui",
+        "event_date": "2026-07-28"
+      }
+    ]
   }
 ]

@@ -1,0 +1,200 @@
+{
+  "product_type": "universal_life",
+  "product_name": "Awesome Universal Life",
+  "premium_basis": "per year",
+  "notes": [
+    "Rates are for the target premium. Cash value depends on the declared interest rate and is not projected here."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 18,
+      "max": 70,
+      "required": true,
+      "source": "profile",
+      "description": "Age last birthday"
+    },
+    "gender": {
+      "type": "choice",
+      "choices": [
+        "male",
+        "female"
+      ],
+      "required": true,
+      "source": "profile",
+      "description": "Used to apply the gender factor. Taken from the customer's profile; if it is missing (for example a new prospect), ask the advisor."
+    },
+    "smoker": {
+      "type": "boolean",
+      "required": true,
+      "source": "profile",
+      "description": "Whether the person smokes or has used tobacco in the last 12 months."
+    },
+    "sum_assured": {
+      "type": "number",
+      "min": 250000,
+      "max": 5000000,
+      "required": true,
+      "description": "Death benefit in USD."
+    },
+    "death_benefit_option": {
+      "type": "choice",
+      "choices": [
+        "option_a",
+        "option_b"
+      ],
+      "required": true,
+      "description": "option_a is a level face amount; option_b is face amount plus cash value."
+    },
+    "premium_level": {
+      "type": "choice",
+      "choices": [
+        "minimum",
+        "target",
+        "overfund"
+      ],
+      "default": "target",
+      "description": "Minimum to keep the policy in force, the target premium, or overfunding to build cash value faster."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "age_rate",
+    "amount_input": "sum_assured",
+    "unit": 1000,
+    "age_bands": [
+      {
+        "min": 18,
+        "max": 25
+      },
+      {
+        "min": 26,
+        "max": 30
+      },
+      {
+        "min": 31,
+        "max": 35
+      },
+      {
+        "min": 36,
+        "max": 40
+      },
+      {
+        "min": 41,
+        "max": 45
+      },
+      {
+        "min": 46,
+        "max": 50
+      },
+      {
+        "min": 51,
+        "max": 55
+      },
+      {
+        "min": 56,
+        "max": 60
+      },
+      {
+        "min": 61,
+        "max": 65
+      },
+      {
+        "min": 66,
+        "max": 70
+      }
+    ],
+    "rates": [
+      2.2,
+      2.6,
+      3.2,
+      4.0,
+      5.0,
+      6.3,
+      8.0,
+      10.5,
+      14.0,
+      19.0
+    ],
+    "label": "Annual rate per $1,000 of cover, male non-smoker, at the reference choices"
+  },
+  "factors": [
+    {
+      "input": "gender",
+      "label": "Gender",
+      "map": {
+        "male": 1.0,
+        "female": 0.88
+      }
+    },
+    {
+      "input": "smoker",
+      "label": "Smoker",
+      "map": {
+        "true": 1.9,
+        "false": 1.0
+      }
+    },
+    {
+      "input": "death_benefit_option",
+      "label": "Death benefit option",
+      "map": {
+        "option_a": 1.0,
+        "option_b": 1.18
+      }
+    },
+    {
+      "input": "premium_level",
+      "label": "Premium level",
+      "map": {
+        "minimum": 0.6,
+        "target": 1.0,
+        "overfund": 1.6
+      }
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "Age 43, male, non-smoker, $2,000,000, level death benefit, target premium",
+      "options": {
+        "age": 43,
+        "gender": "male",
+        "smoker": false,
+        "sum_assured": 2000000,
+        "death_benefit_option": "option_a"
+      },
+      "annual_premium": 10000
+    },
+    {
+      "label": "Same, minimum premium",
+      "options": {
+        "age": 43,
+        "gender": "male",
+        "smoker": false,
+        "sum_assured": 2000000,
+        "death_benefit_option": "option_a",
+        "premium_level": "minimum"
+      },
+      "annual_premium": 6000
+    }
+  ]
+}

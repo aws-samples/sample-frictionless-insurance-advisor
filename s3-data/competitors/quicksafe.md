@@ -41,21 +41,32 @@ These are factual gaps advisors can reference when a prospect raises specific co
 - **No in-person inspection network.** Complex claims that would benefit from in-person adjuster review (large property losses, disputed auto total losses) are handled remotely, which can slow resolution on high-value or disputed claims.
 - **Life-stage coverage gaps.** As customers' needs expand into health, life, critical illness, or disability, the QuickSafe portfolio cannot cover those lines, forcing the customer to maintain relationships with multiple insurers.
 
-## What Unicorn Insurance offers that QuickSafe does not
+## What Awesome Insurance offers that QuickSafe does not
 
-When a prospect is comparing Unicorn Insurance to a QuickSafe-style insurtech, lead with breadth and depth while matching on digital experience:
+When a prospect is comparing Awesome Insurance to a QuickSafe-style insurtech, lead with breadth and depth while matching on digital experience:
 
-- **Seven product lines versus four.** Unicorn covers Rainbow Life, HealingHorn Health, FastUnicorn Motor, GlitterBarn Home Insurance, ShieldUnicorn Disability, JetSetUnicorn Travel, and Unicorn Health Critical. QuickSafe does not offer life, health, critical illness, or disability coverage at all.
-- **Deeper coverage on shared lines.** Unicorn's FastUnicorn Motor offers liability coverage up to $250,000/$500,000 bodily injury/property damage, compared to QuickSafe Drive's approximate $300,000/$250,000 cap. GlitterBarn Home Insurance covers properties worth $2,000,000+, while QuickSafe Nest Home typically caps dwelling coverage near $1,000,000.
-- **Dedicated travel insurance line.** JetSetUnicorn Travel is a full travel insurance product with Single Trip (up to 90 days) and Annual Multi-Trip (up to 60 days per trip) options, geographic coverage up to Worldwide, and medical coverage up to unlimited. Adventure Sports and Rental Car Protection are available as riders. QuickSafe Go is a limited single-trip product with a fixed medical cap and no multi-trip or adventure options.
-- **Critical illness as a dedicated line.** Unicorn Health Critical pays a lump-sum benefit on diagnosis of covered illnesses, with tiered illness categories (Basic, Standard, Comprehensive) and optional Recovery Care Benefit and Child Critical Illness Coverage. QuickSafe does not offer a critical illness product.
-- **Disability as a dedicated line.** ShieldUnicorn Disability replaces a percentage of monthly income if the policyholder cannot work, with configurable benefit periods, waiting periods, monthly benefit amounts, and own-occupation vs any-occupation definitions. QuickSafe does not offer disability coverage, which is a significant gap for self-employed professionals and primary household earners.
-- **Dedicated health insurance line.** HealingHorn Health covers hospitalisation, outpatient, specialist consultations, diagnostics, and prescription medications, with annual benefit limits up to $250,000 and tiered coverage (Essential, Standard, Premium). QuickSafe does not offer health insurance.
-- **Dedicated life insurance line.** Rainbow Life offers term life coverage up to $2,000,000 with configurable term lengths, level or return-of-premium options, and conversion to permanent coverage. QuickSafe does not offer life insurance.
-- **Multi-line bundling.** Customers combining motor, home, life, health, critical illness, disability, and travel with Unicorn access broader bundle discounts than QuickSafe can structurally offer with three lines.
-- **Advisor access alongside digital.** Unicorn matches QuickSafe on modern app experience while also offering human advisor access for customers who want guided coverage selection, particularly across complex lines such as life, disability, and critical illness.
-- **Complex claims support.** Unicorn handles both simple in-app claims and complex claims through a dedicated support path, including 24/7 claims availability and escalation options for high-value or disputed events.
+- **Seven product lines versus four.** Awesome covers Awesome Term Life, Awesome Health, Awesome Motor, Awesome Home Insurance, Awesome Disability, Awesome Travel, and Awesome Critical Illness. QuickSafe does not offer life, health, critical illness, or disability coverage at all.
+- **Deeper coverage on shared lines.** Awesome's Awesome Motor offers liability coverage up to $250,000/$500,000 bodily injury/property damage, compared to QuickSafe Drive's approximate $300,000/$250,000 cap. Awesome Home Insurance covers properties worth $2,000,000+, while QuickSafe Nest Home typically caps dwelling coverage near $1,000,000.
+- **Dedicated travel insurance line.** Awesome Travel is a full travel insurance product with Single Trip (up to 90 days) and Annual Multi-Trip (up to 60 days per trip) options, geographic coverage up to Worldwide, and medical coverage up to unlimited. Adventure Sports and Rental Car Protection are available as riders. QuickSafe Go is a limited single-trip product with a fixed medical cap and no multi-trip or adventure options.
+- **Critical illness as a dedicated line.** Awesome Critical Illness pays a lump-sum benefit on diagnosis of covered illnesses, with tiered illness categories (Basic, Standard, Comprehensive) and optional Recovery Care Benefit and Child Critical Illness Coverage. QuickSafe does not offer a critical illness product.
+- **Disability as a dedicated line.** Awesome Disability replaces a percentage of monthly income if the policyholder cannot work, with configurable benefit periods, waiting periods, monthly benefit amounts, and own-occupation vs any-occupation definitions. QuickSafe does not offer disability coverage, which is a significant gap for self-employed professionals and primary household earners.
+- **Dedicated health insurance line.** Awesome Health covers hospitalisation, outpatient, specialist consultations, diagnostics, and prescription medications, with annual benefit limits up to $250,000 and tiered coverage (Essential, Standard, Premium). QuickSafe does not offer health insurance.
+- **Dedicated life insurance line.** Awesome Term Life offers term life coverage up to $2,000,000 with configurable term lengths, level or return-of-premium options, and conversion to permanent coverage. QuickSafe does not offer life insurance.
+- **Multi-line bundling.** Customers combining motor, home, life, health, critical illness, disability, and travel with Awesome access broader bundle discounts than QuickSafe can structurally offer with three lines.
+- **Advisor access alongside digital.** Awesome matches QuickSafe on modern app experience while also offering human advisor access for customers who want guided coverage selection, particularly across complex lines such as life, disability, and critical illness.
+- **Complex claims support.** Awesome handles both simple in-app claims and complex claims through a dedicated support path, including 24/7 claims availability and escalation options for high-value or disputed events.
+
+## Financial-strength ratings
+> These ratings are illustrative mock data for a fictional carrier. Do not quote them as facts about any real insurer.
+
+- **AM Best:** A- (Excellent), outlook Stable
+- **S&P Global Ratings:** A- (Strong), outlook Positive
+- **Moody's:** not rated
+
+Rating drivers: strong capitalisation, held back by a short operating history and limited large-loss claims experience.
+
+For reference, Awesome Insurance is rated **A+ (Superior)** by AM Best, **AA-** by S&P Global Ratings and **Aa3** by Moody's, all with a stable outlook.
 
 ## Positioning guidance for advisors
 
-When a prospect is using a QuickSafe-style insurtech, do not compete on app design — acknowledge that QuickSafe's experience is strong and that Unicorn's digital experience is comparable. Shift the conversation to breadth of need. Most customers who use a QuickSafe-style insurer for auto and home eventually need life, health, disability, or critical illness coverage, and they either stay with QuickSafe and remain uncovered in those areas, or they add another insurer and maintain multiple relationships. Unicorn is positioned to consolidate those needs under one roof with the same quality of digital experience. Lead the conversation with what the customer's full risk picture looks like — not what the competitor's app looks like.
+When a prospect is using a QuickSafe-style insurtech, do not compete on app design — acknowledge that QuickSafe's experience is strong and that Awesome's digital experience is comparable. Shift the conversation to breadth of need. Most customers who use a QuickSafe-style insurer for auto and home eventually need life, health, disability, or critical illness coverage, and they either stay with QuickSafe and remain uncovered in those areas, or they add another insurer and maintain multiple relationships. Awesome is positioned to consolidate those needs under one roof with the same quality of digital experience. Lead the conversation with what the customer's full risk picture looks like — not what the competitor's app looks like.

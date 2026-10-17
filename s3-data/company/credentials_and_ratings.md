@@ -1,4 +1,4 @@
-# Unicorn Insurance Credentials and Ratings
+# Awesome Insurance Credentials and Ratings
 
 This document summarizes our regulatory status, financial-strength ratings, and industry certifications. Advisors can use it to answer questions about whether we are regulated, how financially sound we are, and what standards we operate to. All figures and ratings are current as of the last annual review.
 
@@ -8,24 +8,24 @@ We operate as a group of licensed insurance entities, each authorized by the rel
 
 ### Asia-Pacific
 
-- **Unicorn Insurance (Singapore) Pte. Ltd.** — the group's primary operating entity, licensed by the Monetary Authority of Singapore (MAS) as a direct insurer for both life and general business. Acts as group supervisor under the MAS consolidated supervision framework.
-- **Unicorn Insurance (Hong Kong) Limited** — authorized by the Insurance Authority of Hong Kong.
-- **Unicorn Insurance Australia Pty Ltd** — authorized by the Australian Prudential Regulation Authority (APRA) and holds an Australian Financial Services Licence from ASIC.
-- **Unicorn Insurance (UAE) PJSC** — licensed by the UAE Central Bank (insurance supervision).
+- **Awesome Insurance (Singapore) Pte. Ltd.** — the group's primary operating entity, licensed by the Monetary Authority of Singapore (MAS) as a direct insurer for both life and general business. Acts as group supervisor under the MAS consolidated supervision framework.
+- **Awesome Insurance (Hong Kong) Limited** — authorized by the Insurance Authority of Hong Kong.
+- **Awesome Insurance Australia Pty Ltd** — authorized by the Australian Prudential Regulation Authority (APRA) and holds an Australian Financial Services Licence from ASIC.
+- **Awesome Insurance (UAE) PJSC** — licensed by the UAE Central Bank (insurance supervision).
 
 ### European Economic Area
 
-- **Unicorn Insurance Europe dac** — authorized and regulated by the Central Bank of Ireland. Passported under Solvency II into all EEA member states where we write business. Reference number available on the Central Bank's public register.
-- **Unicorn Insurance UK Limited** — authorized by the Prudential Regulation Authority (PRA) and regulated by the PRA and the Financial Conduct Authority (FCA) in the United Kingdom.
+- **Awesome Insurance Europe dac** — authorized and regulated by the Central Bank of Ireland. Passported under Solvency II into all EEA member states where we write business. Reference number available on the Central Bank's public register.
+- **Awesome Insurance UK Limited** — authorized by the Prudential Regulation Authority (PRA) and regulated by the PRA and the Financial Conduct Authority (FCA) in the United Kingdom.
 
 ### Americas
 
-- **Unicorn Insurance Canada** — federally incorporated and regulated by the Office of the Superintendent of Financial Institutions (OSFI), with provincial market-conduct oversight.
-- **Unicorn Insurance USA, Inc.** — domiciled in Delaware and licensed as an admitted carrier in 14 U.S. states. Subject to state-level supervision by each state's Department of Insurance and to group supervision under the NAIC framework.
+- **Awesome Insurance Canada** — federally incorporated and regulated by the Office of the Superintendent of Financial Institutions (OSFI), with provincial market-conduct oversight.
+- **Awesome Insurance USA, Inc.** — domiciled in Delaware and licensed as an admitted carrier in 14 U.S. states. Subject to state-level supervision by each state's Department of Insurance and to group supervision under the NAIC framework.
 
 ### Distribution licensing
 
-Advisors representing Unicorn Insurance must hold the intermediary license required in their own jurisdiction (for example, IDD-aligned registration in the EEA, FCA authorization in the UK, MAS representative status in Singapore, or state producer licensing in the U.S.). We verify advisor credentials at onboarding and on an annual refresh.
+Advisors representing Awesome Insurance must hold the intermediary license required in their own jurisdiction (for example, IDD-aligned registration in the EEA, FCA authorization in the UK, MAS representative status in Singapore, or state producer licensing in the U.S.). We verify advisor credentials at onboarding and on an annual refresh.
 
 ## Financial-Strength Ratings
 

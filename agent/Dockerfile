@@ -7,11 +7,11 @@ RUN apk add --no-cache gcc musl-dev
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt constraints.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 # Copy application code
-COPY app.py .
+COPY app.py form_tools.py sources.py note_guard.py identity_guard.py ./
 
 # Create non-root user and switch to it
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

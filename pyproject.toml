@@ -1,7 +1,8 @@
 [project]
-name = "gitlab"
+name = "frictionless-insurance-advisor"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI co-pilot for insurance advisors on Amazon Bedrock AgentCore (CDK app and tooling)"
+license = "MIT-0"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -10,12 +11,16 @@ dependencies = [
     # is gone: it forced an exact version pairing with aws-cdk-lib and is
     # slated for removal in CDK v3.
     #
-    # aws-cdk-lib stays exactly pinned because the installed CDK CLI (2.1122.0)
-    # only understands cloud-assembly schema <= 53; 2.266.0 emits 54 and breaks
-    # every synth. Bump this only together with the CLI.
-    "aws-cdk-lib==2.253.0",
+    # aws-cdk-lib stays exactly pinned and is bumped only together with the
+    # CDK CLI: an older CLI cannot read the cloud-assembly schema a newer
+    # aws-cdk-lib emits (CLI 2.1122.0 stops at schema 53; aws-cdk-lib 2.266.0
+    # already emits 54). The matching CLI version is pinned in deploy.sh and
+    # destroy.sh (CDK_CLI_VERSION) so the pair always moves together.
+    "aws-cdk-lib==2.272.0",
     "boto3>=1.42.21",
-    "cdk-nag>=2.37.55",
+    # cdk-nag 3.x removed NagSuppressions, which app.py uses for every
+    # suppression. Stay on 2.x until the suppressions are migrated.
+    "cdk-nag>=2.37.55,<3",
     "constructs>=10.5.0",
     "requests>=2.33.0",
     "urllib3>=2.7.0",

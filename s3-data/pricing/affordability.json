@@ -1,0 +1,7 @@
+{
+  "rule": "affordability_cap",
+  "cap_percent_of_annual_income": 10,
+  "description": "Total annual premium across all of a customer's active policies, including other insurers' policies and the proposed one, should not exceed 10% of annual income.",
+  "applies_to": "all products",
+  "if_income_missing": "Ask the advisor for the customer's annual income. Do not guess it."
+}

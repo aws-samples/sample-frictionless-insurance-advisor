@@ -10,11 +10,11 @@ This endpoint is intentionally unauthenticated. WAFv2 is associated with
 the API Gateway and provides the AWS managed common rule set, which gives
 us baseline protection against common abuse.
 
-Email allowlist: this is a public demo, so we only let the two pre-baked
-demo identities (john.doe@example.com and jane.doe@example.com) sign up.
-Any other email is rejected with 403 even before we hit Cognito. Existing
-accounts in the pool keep working — the allowlist only gates new
-registrations. To extend access, edit ALLOWED_EMAILS below.
+This Lambda is NOT deployed by default. It exists only when the stack is
+deployed with `-c enable_public_signup=true`. It accepts only the addresses in
+the ALLOWED_EMAILS environment variable and rejects any other email with 403
+before it touches Cognito. Existing accounts keep working: the allowlist only
+gates new registrations.
 """
 import json
 import os
@@ -29,17 +29,13 @@ USER_POOL_ID = os.environ["USER_POOL_ID"]
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 MIN_PASSWORD_LEN = 12
 
-# Demo allowlist. New sign-ups for any email outside this set are rejected
-# with 403. Match is case-insensitive (we lowercase the inbound email
-# before checking). To allow a new tester, append their email here and
-# redeploy this Lambda — pre-existing accounts in the pool are not
-# affected by this filter.
+# Allowlist, from the ALLOWED_EMAILS environment variable (a comma-separated
+# list set at deploy time with `-c signup_allowed_emails=a@x.example,b@y.example`).
+# New sign-ups for any address outside the set are rejected with 403. Match is
+# case-insensitive. An empty list rejects everyone (fail closed). Accounts that
+# already exist in the pool are not affected by this filter.
 ALLOWED_EMAILS = frozenset(
-    e.lower()
-    for e in (
-        "john.doe@example.com",
-        "jane.doe@example.com",
-    )
+    e.strip().lower() for e in os.environ.get("ALLOWED_EMAILS", "").split(",") if e.strip()
 )
 
 CORS_HEADERS = {
