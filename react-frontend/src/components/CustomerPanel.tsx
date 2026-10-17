@@ -10,27 +10,36 @@ import {
   Phone,
   Shield,
   ShieldCheck,
-  Sparkles,
   Users as UsersIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { fmtDate } from '../lib/format';
 import { Avatar, Badge, Card } from '../ui';
-import type { Customer } from '../types';
+import type { Customer, CustomerNote, FormSchema, PriorityAction } from '../types';
+import { Cockpit } from './Cockpit';
 
+import { NotesCard } from './NotesCard';
 import { PoliciesList } from './PoliciesList';
-import { RecommendationSection } from './RecommendationSection';
+import { ProfileActions } from './ProfileActions';
+
+// Stable reference for customers without notes, so NotesCard's resync effect
+// only fires when the notes actually change.
+const NO_NOTES: CustomerNote[] = [];
 
 interface CustomerPanelProps {
   customer: Customer | null;
   totalCustomers: number;
   totalPolicies: number;
+  /** Cockpit: open a customer and start a prompt. */
+  onOpenCustomer?: (customerId: string, action: PriorityAction) => void;
+  /** Opens an application form for the customer (the left panel switches to it). */
+  onOpenForm: (productType: string, schema: FormSchema) => void;
 }
 
-// BR-GAP-006: prompt the advisor to re-verify a client's details when the
+// Data freshness: prompt the advisor to re-verify a client's details when the
 // profile hasn't been reviewed recently, so the coverage-gap analysis isn't
-// trusted against stale inputs. Threshold stated by the BRD.
+// trusted against stale inputs. The threshold is 90 days.
 const STALE_AFTER_DAYS = 90;
 
 /** Whole days between an ISO date and now, or null if missing/invalid. */
@@ -60,59 +69,31 @@ function InfoRow({ icon, label, value }: InfoRowProps) {
   );
 }
 
-export function CustomerPanel({ customer, totalCustomers, totalPolicies }: CustomerPanelProps) {
+export function CustomerPanel({ customer, totalCustomers, totalPolicies, onOpenCustomer, onOpenForm }: CustomerPanelProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? i18n.language;
 
   // Pre-compute partition before the early return — Rules of Hooks.
   const policies = customer?.policies ?? [];
-  const { unicornPolicies, thirdPartyPolicies } = useMemo(() => {
-    const unicorn: typeof policies = [];
+  const { awesomePolicies, thirdPartyPolicies } = useMemo(() => {
+    const awesome: typeof policies = [];
     const thirdParty: typeof policies = [];
     for (const p of policies) {
       if (p.third_party) thirdParty.push(p);
-      else unicorn.push(p);
+      else awesome.push(p);
     }
-    return { unicornPolicies: unicorn, thirdPartyPolicies: thirdParty };
+    return { awesomePolicies: awesome, thirdPartyPolicies: thirdParty };
   }, [policies]);
 
   if (!customer) {
     return (
-      <div className="p-6 sm:p-8">
-        <div className="flex items-start gap-4">
-          <Sparkles className="mt-1 h-6 w-6 text-brand-2" />
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              <span className="text-brand-gradient">{t('assistant.welcome.heading')}</span>
-            </h2>
-            <p className="mt-1 max-w-prose text-sm text-foreground-muted">
-              {t('assistant.welcome.body')}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Card feature className="p-5">
-            <div className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
-              {t('assistant.welcome.totalCustomers')}
-            </div>
-            <div className="mt-2 text-3xl font-bold tabular-nums">
-              <span className="text-brand-gradient">{totalCustomers}</span>
-            </div>
-          </Card>
-          <Card feature className="p-5">
-            <div className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
-              {t('assistant.welcome.activePolicies')}
-            </div>
-            <div className="mt-2 text-3xl font-bold tabular-nums">
-              <span className="text-brand-gradient">{totalPolicies}</span>
-            </div>
-          </Card>
-        </div>
-      </div>
+      <Cockpit
+        totalCustomers={totalCustomers}
+        totalPolicies={totalPolicies}
+        onOpen={(id, action) => onOpenCustomer?.(id, action)}
+      />
     );
   }
-
   const isProspect = customer.policies.every((p) => p.third_party);
   const badgeVariant = isProspect
     ? 'info'
@@ -122,6 +103,9 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies }: Custo
   const statusKey = isProspect ? 'Prospect' : customer.status;
   const badgeText = t(`domain.customerStatus.${statusKey}`, { defaultValue: statusKey });
 
+  const genderLabel = customer.gender
+    ? t(`domain.gender.${customer.gender}`, { defaultValue: customer.gender })
+    : null;
   const maritalStatusLabel = customer.marital_status
     ? t(`domain.maritalStatus.${customer.marital_status}`, { defaultValue: customer.marital_status })
     : null;
@@ -132,6 +116,9 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies }: Custo
 
   return (
     <div className="space-y-6 p-6 sm:p-8">
+      {/* Actions: gap analysis and application form. Keyed so a new customer starts clean. */}
+      <ProfileActions key={customer.customer_id} customerId={customer.customer_id} onOpenForm={onOpenForm} />
+
       {/* Header */}
       <Card feature className="p-5 sm:p-6">
         <div className="flex items-start gap-4">
@@ -191,6 +178,11 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies }: Custo
           />
           <InfoRow
             icon={<UsersIcon className="h-4 w-4" />}
+            label={t('assistant.customer.fields.gender')}
+            value={genderLabel}
+          />
+          <InfoRow
+            icon={<UsersIcon className="h-4 w-4" />}
             label={t('assistant.customer.fields.maritalStatus')}
             value={maritalStatusLabel}
           />
@@ -202,10 +194,10 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies }: Custo
         </div>
       </Card>
 
-      {/* Recommendation */}
-      <RecommendationSection customerId={customer.customer_id} />
+      {/* Notes: life events and interactions */}
+      <NotesCard customerId={customer.customer_id} notes={customer.notes ?? NO_NOTES} />
 
-      {/* Unicorn policies */}
+      {/* Awesome policies */}
       <section>
         <header className="mb-3 flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-brand-2" />
@@ -213,7 +205,7 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies }: Custo
             {t('assistant.customer.policiesSection')}
           </h3>
         </header>
-        <PoliciesList policies={unicornPolicies} />
+        <PoliciesList policies={awesomePolicies} />
       </section>
 
       {/* Third-party policies — only when present */}

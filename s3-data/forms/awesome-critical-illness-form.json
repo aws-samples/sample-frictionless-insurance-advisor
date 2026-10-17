@@ -1,0 +1,244 @@
+{
+  "form_id": "critical_illness",
+  "product_type": "critical_illness",
+  "product_name": "Awesome Critical Illness",
+  "title": "Awesome Critical Illness Application",
+  "sections": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "fields": [
+        {
+          "path": "applicant.full_name",
+          "label": "Full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.date_of_birth",
+          "label": "Date of birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "path": "applicant.gender",
+          "label": "Gender",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "male",
+              "label": "Male"
+            },
+            {
+              "value": "female",
+              "label": "Female"
+            }
+          ]
+        },
+        {
+          "path": "applicant.occupation",
+          "label": "Occupation",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.annual_income",
+          "label": "Annual income",
+          "type": "currency",
+          "required": true
+        },
+        {
+          "path": "applicant.email",
+          "label": "Email",
+          "type": "text"
+        },
+        {
+          "path": "applicant.phone",
+          "label": "Phone",
+          "type": "text"
+        },
+        {
+          "path": "applicant.address",
+          "label": "Address",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Coverage",
+      "fields": [
+        {
+          "path": "coverage.lump_sum",
+          "label": "Lump-sum amount (per stage)",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "25000",
+              "label": "$25,000"
+            },
+            {
+              "value": "50000",
+              "label": "$50,000"
+            },
+            {
+              "value": "100000",
+              "label": "$100,000"
+            },
+            {
+              "value": "250000",
+              "label": "$250,000"
+            },
+            {
+              "value": "500000",
+              "label": "$500,000"
+            }
+          ]
+        },
+        {
+          "path": "coverage.illness_tier",
+          "label": "Illness categories",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "basic",
+              "label": "Basic (3 conditions)"
+            },
+            {
+              "value": "standard",
+              "label": "Standard (8 conditions)"
+            },
+            {
+              "value": "comprehensive",
+              "label": "Comprehensive (20+ conditions)"
+            }
+          ]
+        },
+        {
+          "path": "coverage.cover_term",
+          "label": "Coverage term",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "10",
+              "label": "10 years"
+            },
+            {
+              "value": "15",
+              "label": "15 years"
+            },
+            {
+              "value": "20",
+              "label": "20 years"
+            },
+            {
+              "value": "30",
+              "label": "30 years"
+            },
+            {
+              "value": "to_65",
+              "label": "Until age 65"
+            },
+            {
+              "value": "to_75",
+              "label": "Until age 75"
+            }
+          ]
+        },
+        {
+          "path": "coverage.premium_structure",
+          "label": "Premium structure",
+          "type": "select",
+          "options": [
+            {
+              "value": "level",
+              "label": "Level"
+            },
+            {
+              "value": "stepped",
+              "label": "Stepped"
+            }
+          ]
+        },
+        {
+          "path": "coverage.return_of_premium",
+          "label": "Return of premium option",
+          "type": "boolean"
+        },
+        {
+          "path": "coverage.premium_frequency",
+          "label": "Premium frequency",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "monthly",
+              "label": "Monthly"
+            },
+            {
+              "value": "quarterly",
+              "label": "Quarterly"
+            },
+            {
+              "value": "semi_annual",
+              "label": "Semi-annual"
+            },
+            {
+              "value": "annual",
+              "label": "Annual"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "title": "Health",
+      "fields": [
+        {
+          "path": "health.smoker",
+          "label": "Smoker",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "path": "health.height_cm",
+          "label": "Height (cm)",
+          "type": "number"
+        },
+        {
+          "path": "health.weight_kg",
+          "label": "Weight (kg)",
+          "type": "number"
+        },
+        {
+          "path": "health.existing_conditions",
+          "label": "Existing conditions",
+          "type": "text",
+          "hint": "Comma-separated, or 'none'"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "title": "Family history",
+      "fields": [
+        {
+          "path": "history.family_serious_illness",
+          "label": "Serious illness in close family",
+          "type": "boolean"
+        },
+        {
+          "path": "history.family_details",
+          "label": "Details",
+          "type": "text",
+          "hint": "Relationship and condition, if any"
+        }
+      ]
+    }
+  ]
+}

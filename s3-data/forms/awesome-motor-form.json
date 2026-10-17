@@ -1,0 +1,291 @@
+{
+  "form_id": "auto",
+  "product_type": "auto",
+  "product_name": "Awesome Motor",
+  "title": "Awesome Motor Application",
+  "sections": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "fields": [
+        {
+          "path": "applicant.full_name",
+          "label": "Full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.date_of_birth",
+          "label": "Date of birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "path": "applicant.occupation",
+          "label": "Occupation",
+          "type": "text"
+        },
+        {
+          "path": "applicant.annual_income",
+          "label": "Annual income",
+          "type": "currency"
+        },
+        {
+          "path": "applicant.email",
+          "label": "Email",
+          "type": "text"
+        },
+        {
+          "path": "applicant.phone",
+          "label": "Phone",
+          "type": "text"
+        },
+        {
+          "path": "applicant.address",
+          "label": "Address",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "driver",
+      "title": "Driver",
+      "fields": [
+        {
+          "path": "driver.years_licensed",
+          "label": "Years licensed",
+          "type": "number",
+          "required": true
+        },
+        {
+          "path": "driver.accidents_5y",
+          "label": "At-fault accidents in the last 5 years",
+          "type": "number"
+        },
+        {
+          "path": "driver.violations_5y",
+          "label": "Traffic violations in the last 5 years",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "vehicle",
+      "title": "Vehicle",
+      "fields": [
+        {
+          "path": "vehicle.make",
+          "label": "Make",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "vehicle.model",
+          "label": "Model",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "vehicle.year",
+          "label": "Year",
+          "type": "number",
+          "required": true
+        },
+        {
+          "path": "vehicle.value",
+          "label": "Vehicle value",
+          "type": "currency"
+        },
+        {
+          "path": "vehicle.registration",
+          "label": "Registration number",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Coverage",
+      "fields": [
+        {
+          "path": "coverage.type",
+          "label": "Coverage type",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "third_party",
+              "label": "Third party only"
+            },
+            {
+              "value": "third_party_fire_theft",
+              "label": "Third party, fire and theft"
+            },
+            {
+              "value": "comprehensive",
+              "label": "Comprehensive"
+            }
+          ]
+        },
+        {
+          "path": "coverage.deductible",
+          "label": "Deductible",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "250",
+              "label": "$250"
+            },
+            {
+              "value": "500",
+              "label": "$500"
+            },
+            {
+              "value": "1000",
+              "label": "$1,000"
+            },
+            {
+              "value": "2000",
+              "label": "$2,000"
+            }
+          ]
+        },
+        {
+          "path": "coverage.liability_limits",
+          "label": "Liability limits (injury / property)",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "25k_50k",
+              "label": "$25,000 / $50,000"
+            },
+            {
+              "value": "50k_100k",
+              "label": "$50,000 / $100,000"
+            },
+            {
+              "value": "100k_300k",
+              "label": "$100,000 / $300,000"
+            },
+            {
+              "value": "250k_500k",
+              "label": "$250,000 / $500,000"
+            }
+          ]
+        },
+        {
+          "path": "coverage.usage",
+          "label": "Vehicle usage",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "personal",
+              "label": "Personal"
+            },
+            {
+              "value": "commuting",
+              "label": "Commuting"
+            },
+            {
+              "value": "business",
+              "label": "Business"
+            },
+            {
+              "value": "commercial",
+              "label": "Commercial"
+            }
+          ]
+        },
+        {
+          "path": "coverage.annual_mileage",
+          "label": "Annual mileage",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "under_5000",
+              "label": "Under 5,000"
+            },
+            {
+              "value": "5000_10000",
+              "label": "5,000 to 10,000"
+            },
+            {
+              "value": "10000_15000",
+              "label": "10,000 to 15,000"
+            },
+            {
+              "value": "over_15000",
+              "label": "15,000+"
+            }
+          ]
+        },
+        {
+          "path": "coverage.driver_cover",
+          "label": "Who can drive",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "named_drivers",
+              "label": "Named drivers only"
+            },
+            {
+              "value": "any_driver",
+              "label": "Any driver over a set age"
+            }
+          ]
+        },
+        {
+          "path": "coverage.min_driver_age",
+          "label": "Minimum age of any driver",
+          "type": "number",
+          "hint": "Only if any driver is allowed"
+        },
+        {
+          "path": "coverage.premium_frequency",
+          "label": "Premium frequency",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "monthly",
+              "label": "Monthly"
+            },
+            {
+              "value": "quarterly",
+              "label": "Quarterly"
+            },
+            {
+              "value": "semi_annual",
+              "label": "Semi-annual"
+            },
+            {
+              "value": "annual",
+              "label": "Annual"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "addons",
+      "title": "Optional coverage",
+      "fields": [
+        {
+          "path": "addons.roadside",
+          "label": "Roadside assistance",
+          "type": "boolean"
+        },
+        {
+          "path": "addons.new_vehicle_replacement",
+          "label": "New vehicle replacement",
+          "type": "boolean"
+        }
+      ]
+    }
+  ]
+}

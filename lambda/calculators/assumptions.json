@@ -1,0 +1,17 @@
+{
+  "_comment": "Illustrative planning assumptions used when the advisor does not give their own. Every run reports the assumptions it used. These are not forecasts and not Awesome product returns.",
+  "education": {
+    "start_age": 18,
+    "years_of_study": 4,
+    "education_cost_inflation_percent": 5.0,
+    "investment_return_percent": 4.0
+  },
+  "retirement": {
+    "retirement_age": 65,
+    "life_expectancy": 90,
+    "income_replacement_percent": 70.0,
+    "inflation_percent": 3.0,
+    "return_before_retirement_percent": 5.0,
+    "return_in_retirement_percent": 3.0
+  }
+}

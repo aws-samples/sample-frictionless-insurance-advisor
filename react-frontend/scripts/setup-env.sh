@@ -19,6 +19,8 @@ CLIENT_ID=$(get_param /insurance-advisor/cognito/app-client-id)
 API_URL=$(get_param /insurance-advisor/api/gateway-url)
 RUNTIME_ARN=$(get_param /insurance-advisor/agentcore/runtime-arn)
 VOICE_RUNTIME_ARN=$(get_param /insurance-advisor/voice/runtime-arn 2>/dev/null || echo "")
+# "true" only when the stack was deployed with -c enable_public_signup=true
+SIGNUP_ENABLED=$(get_param /insurance-advisor/frontend/signup-enabled 2>/dev/null || echo "false")
 
 cat >"$OUT" <<EOF
 VITE_AWS_REGION=$REGION
@@ -27,6 +29,7 @@ VITE_COGNITO_CLIENT_ID=$CLIENT_ID
 VITE_API_BASE_URL=$API_URL
 VITE_AGENT_RUNTIME_ARN=$RUNTIME_ARN
 VITE_VOICE_RUNTIME_ARN=$VOICE_RUNTIME_ARN
+VITE_ENABLE_SIGNUP=$SIGNUP_ENABLED
 EOF
 
 echo "Wrote $OUT"

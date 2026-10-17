@@ -1,13 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
-
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
+import { useApplicationForm } from '../hooks/useApplicationForm';
 import { useCustomers } from '../hooks/useCustomers';
-import { useFormFill, type FormPrefill } from '../hooks/useFormFill';
-import type { VoiceFormHandlers } from '../hooks/useVoiceChat';
+import type { VoiceConsentHandlers, VoiceFormHandlers } from '../hooks/useVoiceChat';
+import { addNote } from '../lib/api';
 import { Alert } from '../ui';
-import type { Customer, FormSchema } from '../types';
-
 import { CustomerPanel } from './CustomerPanel';
 import { FormPanel } from './FormPanel';
 import { Sidebar } from './Sidebar';
@@ -18,45 +15,6 @@ import { VoicePanel } from './VoicePanel';
 interface VoicePageProps {
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
-}
-
-/**
- * Fallback schema shape used only while no form is open, so the fill hook has
- * something to compute progress against. Replaced by the real schema the
- * agent fetches from `get_form_schema` the moment an application starts.
- */
-const EMPTY_SCHEMA: FormSchema = {
-  form_id: 'none',
-  product_type: 'none',
-  product_name: '',
-  title: '',
-  sections: [],
-};
-
-/**
- * Seed the form with what the CRM already knows about the customer, so the
- * advisor never dictates details we hold on file. Only the fields the profile
- * can actually answer — the rest come from the conversation.
- */
-function prefillFromCustomer(customer: Customer | null): FormPrefill {
-  if (!customer) return {};
-  const prefill: FormPrefill = {};
-  const put = (path: string, value: string | number | boolean | undefined | null) => {
-    if (value === undefined || value === null || value === '') return;
-    prefill[path] = String(value);
-  };
-
-  put('applicant.full_name', customer.name);
-  put('applicant.date_of_birth', customer.date_of_birth);
-  put('applicant.occupation', customer.occupation);
-  put('applicant.annual_income', customer.annual_income);
-  put('applicant.email', customer.email);
-  put('applicant.phone', customer.phone);
-  put('applicant.address', customer.address);
-  put('health.smoker', customer.smoking);
-  put('health.existing_conditions', customer.medical_conditions);
-
-  return prefill;
 }
 
 /**
@@ -79,9 +37,10 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
   const { customers, loading, error, refresh } = useCustomers();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [prospectMode, setProspectMode] = useState<boolean>(false);
-  // Set when the agent calls its `open_application_form` tool.
-  const [activeForm, setActiveForm] = useState<FormSchema | null>(null);
-
+  const handleHome = () => {
+    setSelectedId(null);
+    setProspectMode(false);
+  };
   const handleSelect = (customerId: string | null) => {
     if (customerId === null) {
       setSelectedId(null);
@@ -97,17 +56,8 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
     [customers, selectedId]
   );
 
-  const prefill = useMemo(() => prefillFromCustomer(selectedCustomer), [selectedCustomer]);
-
-  const {
-    fields,
-    progress,
-    applyFill,
-    setFieldManually,
-    confirmField,
-    carriedOver,
-    noteSchemaChange,
-  } = useFormFill(activeForm ?? EMPTY_SCHEMA, prefill);
+  const form = useApplicationForm(selectedCustomer, prospectMode);
+  const { activeForm, prefill } = form;
 
   const totalPolicies = useMemo(
     () => customers.reduce((sum, c) => sum + c.policies.length, 0),
@@ -115,23 +65,27 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
   );
 
   const formHandlers = useMemo<VoiceFormHandlers>(
-    () => ({
-      onFormOpen: (_productType, schema) => {
-        // Deliberately does NOT clear existing answers. If the conversation
-        // moves from term life to whole life, the applicant, health and
-        // beneficiary questions are the same — making the advisor cover them
-        // again would be the wrong behaviour. Only product-specific fields
-        // start empty.
-        noteSchemaChange(schema);
-        setActiveForm(schema);
-      },
-      onFormFill: applyFill,
-    }),
-    [applyFill, noteSchemaChange]
+    () => ({ onFormOpen: form.openForm, onFormFill: form.fillField }),
+    [form.openForm, form.fillField]
   );
 
-  const closeForm = useCallback(() => setActiveForm(null), []);
-
+  // Log the advisor's consent confirmation as a note on the customer, through
+  // the notes API. A failure is shown nowhere else: the consent itself
+  // stands in the transcript header, and the note can be added by hand.
+  const consentHandlers = useMemo<VoiceConsentHandlers>(
+    () => ({
+      onConsentConfirmed: (customerId, at) => {
+        const when = at.replace('T', ' ').replace(/(:\d\d)?(\+00:00|Z)$/, '') + ' UTC';
+        void addNote(customerId, {
+          type: 'interaction',
+          text: `Recording consent confirmed ${when} (voice session). The customer agreed to the conversation being transcribed.`,
+        })
+          .then(() => refresh())
+          .catch((err: unknown) => console.error('[consent-note]', err));
+      },
+    }),
+    [refresh]
+  );
   return (
     <div className="relative flex flex-1 w-full overflow-hidden min-h-0">
       {sidebarCollapsed ? null : (
@@ -140,6 +94,8 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
           selectedId={selectedId}
           loading={loading}
           error={error}
+          homeActive={selectedId === null && !prospectMode}
+          onHome={handleHome}
           onSelect={handleSelect}
           onRefresh={refresh}
         />
@@ -161,18 +117,23 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
             activeForm ? (
               <FormPanel
                 schema={activeForm}
-                fields={fields}
-                progress={progress}
-                carriedOver={carriedOver}
-                onFieldChange={setFieldManually}
-                onConfirmField={confirmField}
-                onClose={closeForm}
+                fields={form.fields}
+                progress={form.progress}
+                carriedOver={form.carriedOver}
+                onFieldChange={form.setFieldManually}
+                onConfirmField={form.confirmField}
+                onClose={form.closeForm}
+                customerName={selectedCustomer?.name}
               />
             ) : (
               <CustomerPanel
                 customer={selectedCustomer}
                 totalCustomers={customers.length}
                 totalPolicies={totalPolicies}
+                // On the Voice page the Cockpit just opens the customer; the starter
+                // prompts are for the text chat.
+                onOpenCustomer={(id) => handleSelect(id)}
+                onOpenForm={form.openForm}
               />
             )
           }
@@ -182,9 +143,17 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
                 customer={selectedCustomer}
                 formHandlers={formHandlers}
                 formPrefill={prefill}
+                consentHandlers={consentHandlers}
+                onNoteSaved={refresh}
               />
             ) : prospectMode ? (
-              <VoicePanel customer={null} formHandlers={formHandlers} formPrefill={prefill} />
+              <VoicePanel
+                customer={null}
+                formHandlers={formHandlers}
+                formPrefill={prefill}
+                consentHandlers={consentHandlers}
+                onNoteSaved={refresh}
+              />
             ) : (
               <div className="p-6">
                 <Alert variant="info">{t('assistant.chat.selectCustomer')}</Alert>

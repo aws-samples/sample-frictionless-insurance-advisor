@@ -1,0 +1,70 @@
+{
+  "samples": [
+    {
+      "key": "samples/corvane-term-life.pdf",
+      "product_type": "Term Life Insurance",
+      "product_name": "Corvane TermSecure 20",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-whole-life.pdf",
+      "product_type": "Whole Life Insurance",
+      "product_name": "Corvane LifeAnchor",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-universal-life.pdf",
+      "product_type": "Universal Life Insurance",
+      "product_name": "Corvane FlexiLife",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-variable-life.pdf",
+      "product_type": "Variable Life Insurance",
+      "product_name": "Corvane GrowthShield",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-critical-illness.pdf",
+      "product_type": "Critical Illness Insurance",
+      "product_name": "Corvane ShieldPlus Critical Cover",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-health.pdf",
+      "product_type": "Health Insurance",
+      "product_name": "Corvane ClearCare Health",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-home.pdf",
+      "product_type": "Home Insurance",
+      "product_name": "Corvane HomeGuard",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-auto.pdf",
+      "product_type": "Auto Insurance",
+      "product_name": "Corvane RoadSure Motor",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-travel.pdf",
+      "product_type": "Travel Insurance",
+      "product_name": "Corvane GlobeTrek Travel",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-disability.pdf",
+      "product_type": "Disability Insurance",
+      "product_name": "Corvane IncomeShield",
+      "carrier_name": "Corvane Assurance"
+    },
+    {
+      "key": "samples/corvane-renters.pdf",
+      "product_type": "Renters Insurance",
+      "product_name": "Corvane HomeNest Renters",
+      "carrier_name": "Corvane Assurance"
+    }
+  ]
+}

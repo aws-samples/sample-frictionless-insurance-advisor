@@ -1,5 +1,5 @@
 """
-Company information Lambda — returns Unicorn Insurance company details
+Company information Lambda — returns Awesome Insurance company details
 concatenated from S3 markdown files
 """
 import json

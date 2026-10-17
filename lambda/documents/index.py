@@ -19,7 +19,7 @@ Why presigned URLs (not multipart upload through API GW):
   cost on the actual file transfer).
 
 Security model (matches the rest of the system):
-- Cognito JWT required at API Gateway (api.access scope or user-admin scope)
+- Cognito JWT required at API Gateway (the sign-in scope); the advisor is taken from its verified claims only
 - S3 key is `{advisor_id}/{customer_id_or_unassigned}/{document_id}.{ext}`
   so a stolen presigned URL can only PUT to the calling advisor's
   namespace; the extract_policy Lambda re-derives advisor_id from the
@@ -83,23 +83,21 @@ def _response(status: int, body) -> dict:
 
 
 def _extract_advisor_id(event: dict) -> str | None:
-    """Resolve the caller's advisor email — same pattern the profile and
-    policies Lambdas use. JWT claims first, query string fallback for M2M.
+    """The signed-in advisor's email, taken ONLY from the verified sign-in token.
+
+    API Gateway's Cognito authorizer has already checked the token; its claims are
+    all this trusts. The query string and body are never used to pick the advisor,
+    because the advisor's id is also the folder the upload lands in.
     """
+    claims = ((event.get("requestContext") or {}).get("authorizer") or {}).get("claims") or {}
+    username = claims.get("username")
+    if not username or not USER_POOL_ID:
+        return None
     try:
-        username = event["requestContext"]["authorizer"]["claims"]["username"]
-        if not USER_POOL_ID:
-            return None
         response = cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=username)
         for attr in response["UserAttributes"]:
             if attr["Name"] == "email":
                 return attr["Value"]
-    except (KeyError, TypeError):
-        try:
-            qs = event.get("queryStringParameters") or {}
-            return qs.get("advisor_id")
-        except (KeyError, TypeError):
-            pass
     except Exception as e:  # noqa: BLE001
         print(f"Cognito lookup error: {e}")
     return None

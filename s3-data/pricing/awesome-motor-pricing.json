@@ -1,0 +1,274 @@
+{
+  "product_type": "auto",
+  "product_name": "Awesome Motor",
+  "premium_basis": "per year",
+  "notes": [
+    "Invented demo rates sized to the demo customers' existing motor policies ($850 to $1,400 a year)."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 18,
+      "max": 90,
+      "required": true,
+      "source": "profile",
+      "description": "Age of the main driver"
+    },
+    "cover_type": {
+      "type": "choice",
+      "choices": [
+        "third_party",
+        "third_party_fire_theft",
+        "comprehensive"
+      ],
+      "required": true,
+      "description": "Third party only, third party fire and theft, or comprehensive."
+    },
+    "vehicle_value": {
+      "type": "number",
+      "min": 1000,
+      "max": 300000,
+      "required": true,
+      "description": "Vehicle value in USD."
+    },
+    "deductible": {
+      "type": "choice",
+      "choices": [
+        "250",
+        "500",
+        "1000",
+        "2000"
+      ],
+      "default": "500",
+      "description": "Deductible in USD."
+    },
+    "liability_limits": {
+      "type": "choice",
+      "choices": [
+        "25k_50k",
+        "50k_100k",
+        "100k_300k",
+        "250k_500k"
+      ],
+      "default": "50k_100k",
+      "description": "Bodily injury / property damage limits."
+    },
+    "usage": {
+      "type": "choice",
+      "choices": [
+        "personal",
+        "commuting",
+        "business",
+        "commercial"
+      ],
+      "default": "personal",
+      "description": "Vehicle usage."
+    },
+    "annual_mileage": {
+      "type": "choice",
+      "choices": [
+        "under_5000",
+        "5000_10000",
+        "10000_15000",
+        "over_15000"
+      ],
+      "default": "5000_10000",
+      "description": "Estimated annual mileage."
+    },
+    "driver_cover": {
+      "type": "choice",
+      "choices": [
+        "named_drivers",
+        "any_driver"
+      ],
+      "default": "named_drivers",
+      "description": "Named drivers only, or any driver over a set age."
+    },
+    "accidents_5y": {
+      "type": "number",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "description": "At-fault accidents in the last 5 years."
+    },
+    "roadside": {
+      "type": "boolean",
+      "default": false,
+      "description": "Roadside assistance."
+    },
+    "new_vehicle_replacement": {
+      "type": "boolean",
+      "default": false,
+      "description": "New vehicle replacement (vehicle under 2 years old)."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "flat_by_choice",
+    "choice_input": "cover_type",
+    "values": {
+      "third_party": 520,
+      "third_party_fire_theft": 760,
+      "comprehensive": 1100
+    },
+    "label": "Annual base premium by cover type, at the default choices"
+  },
+  "factors": [
+    {
+      "input": "vehicle_value",
+      "label": "Vehicle value",
+      "bands": [
+        {
+          "max": 14999,
+          "mult": 0.85
+        },
+        {
+          "min": 15000,
+          "max": 29999,
+          "mult": 1.0
+        },
+        {
+          "min": 30000,
+          "max": 49999,
+          "mult": 1.25
+        },
+        {
+          "min": 50000,
+          "mult": 1.5
+        }
+      ]
+    },
+    {
+      "input": "age",
+      "label": "Driver age",
+      "bands": [
+        {
+          "max": 24,
+          "mult": 1.6
+        },
+        {
+          "min": 25,
+          "max": 29,
+          "mult": 1.15
+        },
+        {
+          "min": 30,
+          "max": 64,
+          "mult": 1.0
+        },
+        {
+          "min": 65,
+          "mult": 1.15
+        }
+      ]
+    },
+    {
+      "input": "deductible",
+      "label": "Deductible",
+      "map": {
+        "250": 1.12,
+        "500": 1.0,
+        "1000": 0.9,
+        "2000": 0.82
+      }
+    },
+    {
+      "input": "liability_limits",
+      "label": "Liability limits",
+      "map": {
+        "25k_50k": 0.9,
+        "50k_100k": 1.0,
+        "100k_300k": 1.12,
+        "250k_500k": 1.3
+      }
+    },
+    {
+      "input": "usage",
+      "label": "Usage",
+      "map": {
+        "personal": 1.0,
+        "commuting": 1.1,
+        "business": 1.25,
+        "commercial": 1.5
+      }
+    },
+    {
+      "input": "annual_mileage",
+      "label": "Annual mileage",
+      "map": {
+        "under_5000": 0.9,
+        "5000_10000": 1.0,
+        "10000_15000": 1.1,
+        "over_15000": 1.2
+      }
+    },
+    {
+      "input": "driver_cover",
+      "label": "Driver cover",
+      "map": {
+        "named_drivers": 1.0,
+        "any_driver": 1.15
+      }
+    },
+    {
+      "input": "accidents_5y",
+      "label": "Accident history",
+      "map": {
+        "0": 1.0,
+        "1": 1.25,
+        "2+": 1.6
+      }
+    }
+  ],
+  "addons": [
+    {
+      "input": "roadside",
+      "label": "Roadside assistance",
+      "flat": 60
+    },
+    {
+      "input": "new_vehicle_replacement",
+      "label": "New vehicle replacement",
+      "flat": 140
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "Age 41, comprehensive, $25,000 vehicle, default choices",
+      "options": {
+        "age": 41,
+        "cover_type": "comprehensive",
+        "vehicle_value": 25000
+      },
+      "annual_premium": 1100
+    },
+    {
+      "label": "Age 24, third party only, $8,000 vehicle",
+      "options": {
+        "age": 24,
+        "cover_type": "third_party",
+        "vehicle_value": 8000
+      },
+      "annual_premium": 707
+    }
+  ]
+}

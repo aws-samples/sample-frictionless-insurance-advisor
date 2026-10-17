@@ -1,8 +1,8 @@
-# Unicorn Insurance Company Overview
+# Awesome Insurance Company Overview
 
 ## About Us
 
-Unicorn Insurance is a multi-line insurance carrier offering life, health, motor, home, travel, disability, and critical illness cover to individuals and families. We distribute through independent advisors, tied agents, employee benefits brokers, and a direct digital channel. Our model pairs underwriting discipline with modern technology, and we operate as a single international group under a common brand.
+Awesome Insurance is a multi-line insurance carrier offering life, health, motor, home, travel, disability, and critical illness cover to individuals and families. We distribute through independent advisors, tied agents, employee benefits brokers, and a direct digital channel. Our model pairs underwriting discipline with modern technology, and we operate as a single international group under a common brand.
 
 This document covers who we are, where we operate, and what we stand for. Product details sit in our portfolio documentation.
 
@@ -10,7 +10,7 @@ This document covers who we are, where we operate, and what we stand for. Produc
 
 ### Founding
 
-Unicorn Insurance was founded in 2008 in Singapore by a group of former reinsurance and technology executives. The founders set out to build a digitally native carrier at a time when most incumbents still ran on mainframe policy systems. The first product line, motor insurance, launched in Singapore in late 2008.
+Awesome Insurance was founded in 2008 in Singapore by a group of former reinsurance and technology executives. The founders set out to build a digitally native carrier at a time when most incumbents still ran on mainframe policy systems. The first product line, motor insurance, launched in Singapore in late 2008.
 
 ### Key milestones
 
@@ -97,7 +97,7 @@ Group, regional, and country teams operate under a shared playbook. Advisors wor
 
 ## Governance and Ownership
 
-Unicorn Insurance is a private group. The group holding company, Unicorn Insurance Holdings Limited, is majority-owned by a consortium of long-term institutional investors, with a minority stake held by current and former employees through an employee share plan. We are not listed on a public exchange.
+Awesome Insurance is a private group. The group holding company, Awesome Insurance Holdings Limited, is majority-owned by a consortium of long-term institutional investors, with a minority stake held by current and former employees through an employee share plan. We are not listed on a public exchange.
 
 The group is overseen by a board of directors that includes the Group CEO, the Group CFO, the Chief Risk Officer, and seven non-executive directors. Board committees cover audit, risk, remuneration, and customer outcomes.
 

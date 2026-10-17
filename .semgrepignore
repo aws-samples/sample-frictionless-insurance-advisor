@@ -18,5 +18,3 @@ react-frontend/src/i18n/locales/
 # Static asset documents (slide deck reveal.js, etc.)
 react-frontend/public/
 
-# Security scan outputs themselves
-security-scans/

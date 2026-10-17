@@ -56,6 +56,16 @@
       "Option A (level face)": "Opsi A (nilai pertanggungan tetap)",
       "Option B (face + cash value)": "Opsi B (nilai pertanggungan + nilai tunai)",
       "Option C (face + return of premium)": "Opsi C (nilai pertanggungan + pengembalian premi)"
+    },
+    "gender": {
+      "male": "Laki-laki",
+      "female": "Perempuan"
+    },
+    "productLine": {
+      "life": "Produk jiwa",
+      "general": "Produk umum",
+      "health": "Produk kesehatan",
+      "all": "Semua produk"
     }
   }
 }

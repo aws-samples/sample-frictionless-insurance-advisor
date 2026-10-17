@@ -1,20 +1,27 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
-import { ChevronDown, MessageCircle, Send, Sparkles, Sprout, Trash2 } from 'lucide-react';
+import { ChevronDown, MessageCircle, Send, Sparkles, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { useAgentChat } from '../hooks/useAgentChat';
+import { useAgentChat, type ChatFormBridge } from '../hooks/useAgentChat';
 import { uploadDocument } from '../lib/api';
 import { cn } from '../lib/cn';
 import { Alert, Button, IconButton, Spinner } from '../ui';
-import type { Customer, UploadedDocument } from '../types';
+import type { Customer, PriorityAction, UploadedDocument } from '../types';
 
 import { DocumentAttachment } from './DocumentAttachment';
+import { stripSourcesLine } from '../lib/sources';
 import { MarkdownMessage } from './MarkdownMessage';
 import { SamplePoliciesMenu } from './SamplePoliciesMenu';
+import { SourcesFooter } from './SourcesFooter';
 
 interface ChatPanelProps {
   customer: Customer | null;
+  /** Connects the chat to the application form shown beside it. */
+  formBridge?: ChatFormBridge;
+  /** From the Cockpit: send this starter prompt once, for this customer. */
+  pendingStart?: { customerId: string; action: PriorityAction } | null;
+  onPendingStartDone?: () => void;
 }
 
 // Static key tables — declared as literal arrays so the typed `t()` can
@@ -26,7 +33,17 @@ interface ChatPanelProps {
 // vs lump-sum). Anything else from the brief lives in the collapsible
 // "more questions" section below the chip rail so the default UI stays
 // uncluttered.
+//
+// Meeting prep leads both rails. It asks the text agent for a sales-prep
+// brief (snapshot, discovery questions, objection-handling table) and is
+// deliberately text-only: VoicePanel lists its own keys, so it never shows
+// there — a spoken sales script would run far too long.
 const CUSTOMER_PROMPT_KEYS = [
+  'assistant.prompts.customer.meetingPrep',
+  'assistant.prompts.customer.annualReview',
+  'assistant.prompts.customer.outreach',
+  // Opens the application form on the left and pre-fills it from the record.
+  'assistant.prompts.application.startTermLife',
   'assistant.prompts.customer.policies',
   'assistant.prompts.customer.coverageGap',
   'assistant.prompts.customer.premiumDelta',
@@ -43,20 +60,25 @@ const CUSTOMER_MORE_PROMPT_KEYS = [
   'assistant.prompts.customer.outpatientDentalOptical',
   'assistant.prompts.customer.dayOneCover',
   'assistant.prompts.customer.preExistingWaiting',
+  'assistant.prompts.customer.marketPulse',
 ] as const;
 
 const PROSPECT_PROMPT_KEYS = [
+  'assistant.prompts.prospect.meetingPrep',
+  'assistant.prompts.prospect.outreach',
   'assistant.prompts.prospect.firstProducts',
   'assistant.prompts.prospect.discovery',
   'assistant.prompts.prospect.bestProducts',
   'assistant.prompts.prospect.company',
-  'assistant.prompts.prospect.whyUnicorn',
+  'assistant.prompts.prospect.whyAwesome',
   'assistant.prompts.prospect.qualifyQuestions',
+  'assistant.prompts.application.startTermLife',
+  'assistant.prompts.prospect.marketPulse',
 ] as const;
 
-export function ChatPanel({ customer }: ChatPanelProps) {
+export function ChatPanel({ customer, formBridge, pendingStart, onPendingStartDone }: ChatPanelProps) {
   const { t } = useTranslation();
-  const { messages, send, streaming, reset } = useAgentChat(customer);
+  const { messages, send, streaming, reset } = useAgentChat(customer, formBridge);
   const [input, setInput] = useState<string>('');
   const [attachment, setAttachment] = useState<UploadedDocument | null>(null);
   const [quickQuestionsOpen, setQuickQuestionsOpen] = useState<boolean>(false);
@@ -76,11 +98,32 @@ export function ChatPanel({ customer }: ChatPanelProps) {
     return CUSTOMER_MORE_PROMPT_KEYS.map((key) => ({ key, text: t(key) }));
   }, [isProspect, t]);
 
-  const HeaderIcon = isProspect ? Sprout : MessageCircle;
-  const headerText = isProspect
-    ? t('assistant.chat.headingProspect')
-    : t('assistant.chat.headingCustomer');
+  // The same title and icon for a customer and for a prospect: it is the same assistant.
+  const HeaderIcon = MessageCircle;
+  // "AI Chat - <customer name>", or "AI Chat - Prospect" while onboarding someone new (no record yet).
+  const heading = `${t('assistant.chat.heading')} - ${customer ? customer.name : t('assistant.cockpit.prospect')}`;
 
+  // Cockpit hand-off: once this customer's chat is showing, send the starter
+  // prompt that matches the suggested action, exactly once.
+  const startedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingStart || !customer || pendingStart.customerId !== customer.customer_id) return;
+    const marker = `${pendingStart.customerId}:${pendingStart.action}`;
+    if (startedRef.current === marker || streaming) return;
+    startedRef.current = marker;
+    const key =
+      pendingStart.action === 'annual_review'
+        ? 'assistant.prompts.customer.annualReview'
+        : pendingStart.action === 'outreach'
+          ? isProspect
+            ? 'assistant.prompts.prospect.outreach'
+            : 'assistant.prompts.customer.outreach'
+          : isProspect
+            ? 'assistant.prompts.prospect.meetingPrep'
+            : 'assistant.prompts.customer.meetingPrep';
+    void send(t(key));
+    onPendingStartDone?.();
+  }, [pendingStart, customer, isProspect, streaming, send, t, onPendingStartDone]);
   // Auto-scroll the message stream as new content streams in.
   useEffect(() => {
     const el = scrollRef.current;
@@ -148,7 +191,7 @@ export function ChatPanel({ customer }: ChatPanelProps) {
       <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-3">
         <div className="inline-flex items-center gap-2">
           <HeaderIcon className="h-4 w-4 text-brand-2" />
-          <h4 className="text-sm font-semibold">{headerText}</h4>
+          <h4 className="text-sm font-semibold">{heading}</h4>
         </div>
         {messages.length > 0 ? (
           <IconButton
@@ -203,7 +246,9 @@ export function ChatPanel({ customer }: ChatPanelProps) {
                     </div>
                     <div className="mt-0.5">
                       {message.content ? (
-                        <MarkdownMessage content={message.content} />
+                        <MarkdownMessage
+                          content={message.sources?.length ? stripSourcesLine(message.content) : message.content}
+                        />
                       ) : streaming ? (
                         <span className="inline-flex items-center gap-2 italic text-foreground-muted">
                           <Spinner size="sm" />
@@ -211,6 +256,7 @@ export function ChatPanel({ customer }: ChatPanelProps) {
                         </span>
                       ) : null}
                     </div>
+                    {message.sources?.length ? <SourcesFooter sources={message.sources} /> : null}
                   </div>
                 </div>
               );

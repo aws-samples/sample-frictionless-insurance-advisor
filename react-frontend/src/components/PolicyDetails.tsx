@@ -265,14 +265,14 @@ function SubAccountAllocation({ allocation }: { allocation: Record<string, numbe
   const entries = Object.entries(allocation).filter(([, pct]) => pct > 0);
   const total = entries.reduce((sum, [, pct]) => sum + pct, 0) || 1;
 
-  // Neon-tinted palette so the allocation bands feel cohesive with the brand.
+  // Brand-tinted palette so the allocation bands feel cohesive with the brand.
   const palette = [
-    'rgb(244 63 94)',     // brand-1
-    'rgb(139 92 246)',    // brand-2
-    'rgb(14 165 233)',    // brand-3
+    'rgb(37 99 235)',     // brand-1
+    'rgb(79 70 229)',     // brand-2
+    'rgb(13 148 136)',    // brand-3
     'rgb(16 185 129)',    // success
     'rgb(245 158 11)',    // warning
-    'rgb(99 102 241)',    // indigo
+    'rgb(100 116 139)',   // slate
   ];
 
   return (

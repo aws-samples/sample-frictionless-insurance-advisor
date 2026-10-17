@@ -2,11 +2,15 @@ import { useMemo, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
+import type { ChatFormBridge } from '../hooks/useAgentChat';
+import { useApplicationForm } from '../hooks/useApplicationForm';
 import { useCustomers } from '../hooks/useCustomers';
+import type { PriorityAction } from '../types';
 import { Alert } from '../ui';
 
 import { ChatPanel } from './ChatPanel';
 import { CustomerPanel } from './CustomerPanel';
+import { FormPanel } from './FormPanel';
 import { Sidebar } from './Sidebar';
 import { SidebarToggle } from './SidebarToggle';
 import { SplitWorkspace } from './SplitWorkspace';
@@ -29,7 +33,13 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
   const { customers, loading, error, refresh } = useCustomers();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [prospectMode, setProspectMode] = useState<boolean>(false);
+  // Set by the Cockpit: open this customer and send the matching starter prompt once.
+  const [pendingStart, setPendingStart] = useState<{ customerId: string; action: PriorityAction } | null>(null);
 
+  const handleHome = () => {
+    setSelectedId(null);
+    setProspectMode(false);
+  };
   const handleSelect = (customerId: string | null) => {
     if (customerId === null) {
       setSelectedId(null);
@@ -40,9 +50,28 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
     }
   };
 
+  const handleOpenFromCockpit = (customerId: string, action: PriorityAction) => {
+    setSelectedId(customerId);
+    setProspectMode(false);
+    setPendingStart({ customerId, action });
+  };
   const selectedCustomer = useMemo(
     () => customers.find((c) => c.customer_id === selectedId) ?? null,
     [customers, selectedId]
+  );
+
+  // The form the assistant opens when the advisor asks for an application.
+  // While one is open the left panel shows it instead of the profile.
+  const form = useApplicationForm(selectedCustomer, prospectMode);
+  const { activeForm } = form;
+  const formBridge = useMemo<ChatFormBridge>(
+    () => ({
+      getFormContext: form.getFormContext,
+      prefill: form.prefill,
+      onFormOpen: form.openForm,
+      onFormFill: form.fillField,
+    }),
+    [form.getFormContext, form.prefill, form.openForm, form.fillField]
   );
 
   const totalPolicies = useMemo(
@@ -58,6 +87,8 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
           selectedId={selectedId}
           loading={loading}
           error={error}
+          homeActive={selectedId === null && !prospectMode}
+          onHome={handleHome}
           onSelect={handleSelect}
           onRefresh={refresh}
         />
@@ -76,17 +107,37 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
         <SplitWorkspace
           storageId="insadv.workspace.split"
           left={
-            <CustomerPanel
-              customer={selectedCustomer}
-              totalCustomers={customers.length}
-              totalPolicies={totalPolicies}
-            />
+            activeForm ? (
+              <FormPanel
+                schema={activeForm}
+                fields={form.fields}
+                progress={form.progress}
+                carriedOver={form.carriedOver}
+                onFieldChange={form.setFieldManually}
+                onConfirmField={form.confirmField}
+                onClose={form.closeForm}
+                customerName={selectedCustomer?.name}
+              />
+            ) : (
+              <CustomerPanel
+                customer={selectedCustomer}
+                totalCustomers={customers.length}
+                totalPolicies={totalPolicies}
+                onOpenCustomer={handleOpenFromCockpit}
+                onOpenForm={form.openForm}
+              />
+            )
           }
           right={
             selectedCustomer ? (
-              <ChatPanel customer={selectedCustomer} />
+              <ChatPanel
+                customer={selectedCustomer}
+                formBridge={formBridge}
+                pendingStart={pendingStart}
+                onPendingStartDone={() => setPendingStart(null)}
+              />
             ) : prospectMode ? (
-              <ChatPanel customer={null} />
+              <ChatPanel customer={null} formBridge={formBridge} />
             ) : (
               <div className="p-6">
                 <Alert variant="info">{t('assistant.chat.selectCustomer')}</Alert>

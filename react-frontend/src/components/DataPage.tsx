@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import {
+  ChevronDown,
+  ChevronRight,
   Database,
   FileCode2,
   FileText,
   FolderOpen,
+  Mic,
   Search,
   X,
 } from 'lucide-react';
@@ -12,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 
 import { listDataFiles, loadDataFile } from '../lib/api';
 import { cn } from '../lib/cn';
-import { fmtDate } from '../lib/format';
+import { fmtDate, fmtDateTime } from '../lib/format';
 import { Alert, Badge, Card, IconButton, Spinner } from '../ui';
 import type {
   DataFile,
@@ -21,13 +24,21 @@ import type {
   FormSchema,
 } from '../types';
 
+import { CarrierRatingsView, parseCarrierRatingsFile } from './CarrierRatingsView';
 import { MarkdownMessage } from './MarkdownMessage';
+import {
+  AffordabilityCardView,
+  PricingCardView,
+  parseAffordabilityFile,
+  parsePricingFile,
+} from './PricingCardView';
 import { SplitWorkspace } from './SplitWorkspace';
+import { TranscriptView, parseTranscript } from './TranscriptView';
 
 /**
  * Folders whose content is internal-only sales material (battlecards and
  * competitor analysis). Flagged in the viewer so an advisor doesn't screen-
- * share it to a customer — same intent as the comparator's BR-COMP-002 badge.
+ * share it to a customer — same intent as the comparator's badge.
  */
 const INTERNAL_FOLDERS = new Set(['competitive', 'competitors']);
 
@@ -71,7 +82,7 @@ function parseFormSchema(content: string): FormSchema | null {
  * content is fetched lazily per selection and cached for the session so
  * clicking back to a document you've already opened is instant.
  */
-export function DataPage() {
+export function DataPage({ initialFile }: { initialFile?: { folder: string; key: string } | null }) {
   const { t } = useTranslation();
 
   // Listing state
@@ -89,6 +100,8 @@ export function DataPage() {
 
   const [query, setQuery] = useState<string>('');
   const [showRaw, setShowRaw] = useState<boolean>(false);
+  // Bumped to re-read the open document (a transcript that is still being saved).
+  const [refreshTick, setRefreshTick] = useState<number>(0);
 
   // Load the file listing once.
   useEffect(() => {
@@ -100,6 +113,13 @@ export function DataPage() {
         setGroups(data.folders);
         setTotal(data.total);
         setListError(null);
+        // Opened from a Sources link in the chat: select that document.
+        if (initialFile) {
+          const hit = data.folders
+            .flatMap((g) => g.files)
+            .find((f) => f.folder === initialFile.folder && f.key === initialFile.key);
+          if (hit) setSelected(hit);
+        }
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -122,7 +142,9 @@ export function DataPage() {
     }
     const id = fileId(selected);
     const cached = docCache[id];
-    if (cached) {
+    // PDFs come as links that expire after about two minutes, so they are
+    // always fetched again rather than served from the cache.
+    if (cached && cached.content_type !== 'pdf' && cached.content_type !== 'transcript') {
       setDoc(cached);
       setDocError(null);
       setDocLoading(false);
@@ -135,7 +157,9 @@ export function DataPage() {
       .then((content) => {
         if (cancelled) return;
         setDoc(content);
-        setDocCache((prev) => ({ ...prev, [id]: content }));
+        if (content.content_type !== 'pdf' && content.content_type !== 'transcript') {
+          setDocCache((prev) => ({ ...prev, [id]: content }));
+        }
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -151,8 +175,7 @@ export function DataPage() {
     // docCache is intentionally omitted: adding an entry must not retrigger
     // the fetch that produced it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
-
+  }, [selected, refreshTick]);
   // Markdown-only concern; JSON always renders as source.
   useEffect(() => {
     setShowRaw(false);
@@ -170,7 +193,7 @@ export function DataPage() {
       .map((group) => ({
         ...group,
         files: group.files.filter((f) => {
-          const haystack = `${f.name} ${f.path} ${group.folder} ${folderLabel(
+          const haystack = `${f.name} ${f.path} ${f.meta?.customer ?? ''} ${group.folder} ${folderLabel(
             group.folder
           )}`.toLowerCase();
           return haystack.includes(q);
@@ -243,6 +266,7 @@ export function DataPage() {
               error={docError}
               showRaw={showRaw}
               onToggleRaw={setShowRaw}
+              onRefresh={() => setRefreshTick((n) => n + 1)}
               folderLabel={folderLabel}
             />
           }
@@ -270,6 +294,26 @@ interface FileListProps {
   folderLabel: (folder: string) => string;
 }
 
+const COLLAPSED_KEY = 'insadv.data.collapsedFolders.v1';
+
+function readCollapsed(): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(COLLAPSED_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeCollapsed(folders: Set<string>): void {
+  try {
+    window.localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...folders]));
+  } catch {
+    /* private mode: the choice just isn't remembered */
+  }
+}
+
 function FileList({
   groups,
   total,
@@ -283,7 +327,41 @@ function FileList({
   onSelect,
   folderLabel,
 }: FileListProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language;
+
+  // Folders the advisor has folded away. Remembered between visits. While a
+  // search is active every match is shown, so a hit is never hidden in a
+  // folded folder.
+  const [collapsed, setCollapsed] = useState<Set<string>>(readCollapsed);
+  const isCollapsed = (folder: string) => !isFiltering && collapsed.has(folder);
+  const update = (next: Set<string>) => {
+    setCollapsed(next);
+    writeCollapsed(next);
+  };
+  const toggleFolder = (folder: string) => {
+    const next = new Set(collapsed);
+    if (next.has(folder)) next.delete(folder);
+    else next.add(folder);
+    update(next);
+  };
+  const allCollapsed = groups.length > 0 && groups.every((g) => collapsed.has(g.folder));
+  const toggleAll = () => update(allCollapsed ? new Set() : new Set(groups.map((g) => g.folder)));
+
+  // A document opened from outside the list (a Sources link, a deep link) must
+  // not sit inside a folded folder.
+  const selectedFolder = selectedId ? selectedId.split('/')[0] : null;
+  useEffect(() => {
+    if (selectedFolder && collapsed.has(selectedFolder)) {
+      const next = new Set(collapsed);
+      next.delete(selectedFolder);
+      setCollapsed(next);
+      writeCollapsed(next);
+    }
+    // Only a change of selection should reopen a folder, not the user folding
+    // the folder that holds the current selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   return (
     <div className="flex h-full flex-col border-r border-border bg-background-elevated/40">
@@ -313,11 +391,22 @@ function FileList({
           ) : null}
         </div>
         {!loading && !error ? (
-          <p className="mt-2 text-[11px] text-foreground-muted">
-            {isFiltering
-              ? t('assistant.pages.data.matchCount', { count: matchCount, total })
-              : t('assistant.pages.data.fileCount', { count: total })}
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-[11px] text-foreground-muted">
+              {isFiltering
+                ? t('assistant.pages.data.matchCount', { count: matchCount, total })
+                : t('assistant.pages.data.fileCount', { count: total })}
+            </p>
+            {!isFiltering && groups.length > 1 ? (
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium text-brand-2 hover:bg-background-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              >
+                {allCollapsed ? t('assistant.pages.data.expandAll') : t('assistant.pages.data.collapseAll')}
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -348,20 +437,44 @@ function FileList({
           <div className="flex flex-col gap-4">
             {groups.map((group) => (
               <section key={group.folder}>
-                <header className="mb-1.5 flex items-center gap-1.5 px-1">
-                  <FolderOpen className="h-3.5 w-3.5 shrink-0 text-brand-2" />
-                  <h3 className="truncate text-xs font-semibold uppercase tracking-wide">
-                    {folderLabel(group.folder)}
-                  </h3>
-                  <span className="ml-auto shrink-0 text-[11px] tabular-nums text-foreground-muted">
-                    {group.files.length}
-                  </span>
-                </header>
-                <ul className="flex flex-col gap-0.5">
+                <h3 className="mb-1.5">
+                  <button
+                    type="button"
+                    onClick={() => toggleFolder(group.folder)}
+                    aria-expanded={!isCollapsed(group.folder)}
+                    aria-controls={`data-folder-${group.folder}`}
+                    aria-label={t(
+                      isCollapsed(group.folder)
+                        ? 'assistant.pages.data.expandFolder'
+                        : 'assistant.pages.data.collapseFolder',
+                      { folder: folderLabel(group.folder) }
+                    )}
+                    disabled={isFiltering}
+                    className="flex w-full items-center gap-1.5 rounded-md px-1 py-0.5 text-left hover:bg-background-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-default disabled:hover:bg-transparent"
+                  >
+                    {isCollapsed(group.folder) ? (
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground-muted" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground-muted" />
+                    )}
+                    <FolderOpen className="h-3.5 w-3.5 shrink-0 text-brand-2" />
+                    <span className="truncate text-xs font-semibold uppercase tracking-wide">
+                      {folderLabel(group.folder)}
+                    </span>
+                    <span className="ml-auto shrink-0 text-[11px] font-normal tabular-nums text-foreground-muted">
+                      {group.files.length}
+                    </span>
+                  </button>
+                </h3>
+                <ul
+                  id={`data-folder-${group.folder}`}
+                  className={isCollapsed(group.folder) ? 'hidden' : 'flex flex-col gap-0.5'}
+                >
                   {group.files.map((file) => {
                     const id = fileId(file);
                     const isSelected = id === selectedId;
-                    const Icon = file.content_type === 'json' ? FileCode2 : FileText;
+                    const isTranscript = file.content_type === 'transcript';
+                    const Icon = isTranscript ? Mic : file.content_type === 'json' ? FileCode2 : FileText;
                     return (
                       <li key={id}>
                         <button
@@ -378,8 +491,19 @@ function FileList({
                           <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground-muted" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-medium text-foreground">
-                              {file.name}
+                              {isTranscript
+                                ? fmtDateTime(file.meta?.started_at ?? file.last_modified, locale) || file.name
+                                : file.name}
                             </span>
+                            {isTranscript ? (
+                              <span className="block truncate text-[10px] text-foreground-muted">
+                                {file.meta?.customer ?? t('assistant.pages.data.transcript.prospect')}
+                                {' · '}
+                                {file.meta?.ended === false
+                                  ? t('assistant.pages.data.transcript.inProgress')
+                                  : t('assistant.pages.data.transcript.turnCount', { count: file.meta?.turns ?? 0 })}
+                              </span>
+                            ) : null}
                             {file.path ? (
                               <span className="block truncate font-mono text-[10px] text-foreground-muted">
                                 {file.path}/
@@ -411,6 +535,7 @@ interface DocumentViewerProps {
   error: string | null;
   showRaw: boolean;
   onToggleRaw: (value: boolean) => void;
+  onRefresh: () => void;
   folderLabel: (folder: string) => string;
 }
 
@@ -421,6 +546,7 @@ function DocumentViewer({
   error,
   showRaw,
   onToggleRaw,
+  onRefresh,
   folderLabel,
 }: DocumentViewerProps) {
   const { t, i18n } = useTranslation();
@@ -445,7 +571,22 @@ function DocumentViewer({
   // genuinely something to render.
   const schema =
     doc && contentType === 'json' ? parseFormSchema(doc.content) : null;
-  const canRender = isMarkdown || schema !== null;
+  const pricing =
+    doc && contentType === 'json' ? parsePricingFile(doc.content) : null;
+  const affordability =
+    doc && contentType === 'json' ? parseAffordabilityFile(doc.content) : null;
+  const ratings =
+    doc && contentType === 'json' ? parseCarrierRatingsFile(doc.content) : null;
+  const transcript =
+    doc && contentType === 'transcript' ? parseTranscript(doc.content) : null;
+  const canRender =
+    isMarkdown ||
+    schema !== null ||
+    pricing !== null ||
+    affordability !== null ||
+    ratings !== null ||
+    transcript !== null;
+  const isPdf = contentType === 'pdf';
 
   return (
     <div className="flex h-full flex-col">
@@ -506,15 +647,60 @@ function DocumentViewer({
           </Alert>
         ) : null}
 
-        {!loading && !error && doc ? (
+        {!loading && !error && doc && isPdf ? (
+          <div className="flex h-full min-h-[480px] flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-foreground-muted">{t('assistant.pages.data.pdf.note')}</p>
+              <div className="flex items-center gap-2">
+                {doc.view_url ? (
+                  <a
+                    href={doc.view_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-8 items-center rounded-md border border-border bg-background-elevated px-3 text-xs font-medium hover:bg-background-muted"
+                  >
+                    {t('assistant.pages.data.pdf.open')}
+                  </a>
+                ) : null}
+                {doc.download_url ? (
+                  <a
+                    href={doc.download_url}
+                    className="inline-flex h-8 items-center rounded-md bg-gradient-to-br from-brand-2 to-brand-1 px-3 text-xs font-semibold text-white hover:opacity-90"
+                  >
+                    {t('assistant.pages.data.pdf.download')}
+                  </a>
+                ) : null}
+              </div>
+            </div>
+            {doc.view_url ? (
+              <object
+                data={doc.view_url}
+                type="application/pdf"
+                aria-label={doc.name}
+                className="min-h-[560px] w-full flex-1 rounded-lg border border-border bg-background-muted/40"
+              >
+                <p className="p-4 text-sm text-foreground-muted">{t('assistant.pages.data.pdf.fallback')}</p>
+              </object>
+            ) : null}
+          </div>
+        ) : null}
+        {!loading && !error && doc && !isPdf ? (
           canRender && !showRaw ? (
             isMarkdown ? (
               <Card className="p-5 sm:p-7">
                 <MarkdownMessage content={doc.content} variant="doc" />
               </Card>
+            ) : transcript ? (
+              <TranscriptView data={transcript} onRefresh={onRefresh} />
+            ) : pricing ? (
+              <PricingCardView data={pricing} />
+            ) : affordability ? (
+              <AffordabilityCardView data={affordability} />
+            ) : ratings ? (
+              <CarrierRatingsView data={ratings} />
             ) : (
-              // schema is non-null whenever canRender is true and it isn't
-              // markdown — see the canRender derivation above.
+              // schema is non-null whenever canRender is true and none of the
+              // above matched — see the canRender derivation above.
               <FormSchemaView schema={schema as FormSchema} />
             )
           ) : (

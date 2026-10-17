@@ -1,0 +1,237 @@
+{
+  "product_type": "travel",
+  "product_name": "Awesome Travel",
+  "premium_basis": "per trip for a single trip, per year for annual multi-trip",
+  "notes": [
+    "Invented demo rates. A single trip is priced per day of travel and per traveller; annual multi-trip is priced per traveller for the year.",
+    "Age is the age of the oldest traveller."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 0,
+      "max": 90,
+      "required": true,
+      "source": "profile",
+      "description": "Age of the oldest traveller"
+    },
+    "duration": {
+      "type": "choice",
+      "choices": [
+        "single_trip",
+        "annual_multi_trip"
+      ],
+      "required": true,
+      "description": "Single trip (1 to 90 days) or annual multi-trip."
+    },
+    "geographic": {
+      "type": "choice",
+      "choices": [
+        "regional",
+        "continental",
+        "worldwide"
+      ],
+      "required": true,
+      "description": "Geographic scope."
+    },
+    "trip_days": {
+      "type": "number",
+      "min": 1,
+      "max": 90,
+      "required_when": {
+        "duration": "single_trip"
+      },
+      "description": "Days of travel for a single trip."
+    },
+    "max_trip_days": {
+      "type": "choice",
+      "choices": [
+        "30",
+        "45",
+        "60"
+      ],
+      "default": "30",
+      "required_when": {
+        "duration": "annual_multi_trip"
+      },
+      "description": "Longest single trip allowed under the annual policy."
+    },
+    "level": {
+      "type": "choice",
+      "choices": [
+        "basic",
+        "standard",
+        "premium",
+        "elite"
+      ],
+      "default": "standard",
+      "description": "Coverage level."
+    },
+    "medical": {
+      "type": "choice",
+      "choices": [
+        "50000",
+        "100000",
+        "500000",
+        "1000000",
+        "unlimited"
+      ],
+      "default": "100000",
+      "description": "Emergency medical cover in USD, or unlimited."
+    },
+    "trip_cancellation": {
+      "type": "number",
+      "min": 0,
+      "max": 25000,
+      "default": 0,
+      "description": "Prepaid, non-refundable trip cost to cover, 1,500 to 25,000 (0 for none)."
+    },
+    "travellers": {
+      "type": "number",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Number of travellers."
+    },
+    "adventure_sports": {
+      "type": "boolean",
+      "default": false,
+      "description": "Adventure sports coverage."
+    },
+    "rental_car": {
+      "type": "boolean",
+      "default": false,
+      "description": "Rental car protection."
+    }
+  },
+  "base": {
+    "type": "trip",
+    "duration_input": "duration",
+    "travellers_input": "travellers",
+    "per_day": {
+      "regional": 3.2,
+      "continental": 4.5,
+      "worldwide": 6.5
+    },
+    "annual": {
+      "regional": 180,
+      "continental": 260,
+      "worldwide": 380
+    },
+    "days_input": "trip_days",
+    "geographic_input": "geographic",
+    "label": "Single trip: rate per day per traveller. Annual: rate per traveller per year"
+  },
+  "factors": [
+    {
+      "input": "level",
+      "label": "Coverage level",
+      "map": {
+        "basic": 0.8,
+        "standard": 1.0,
+        "premium": 1.3,
+        "elite": 1.7
+      }
+    },
+    {
+      "input": "medical",
+      "label": "Medical cover",
+      "map": {
+        "50000": 0.8,
+        "100000": 1.0,
+        "500000": 1.25,
+        "1000000": 1.45,
+        "unlimited": 1.8
+      }
+    },
+    {
+      "input": "age",
+      "label": "Traveller age",
+      "bands": [
+        {
+          "max": 30,
+          "mult": 0.85
+        },
+        {
+          "min": 31,
+          "max": 60,
+          "mult": 1.0
+        },
+        {
+          "min": 61,
+          "max": 70,
+          "mult": 1.7
+        },
+        {
+          "min": 71,
+          "max": 80,
+          "mult": 2.6
+        },
+        {
+          "min": 81,
+          "mult": 4.0
+        }
+      ]
+    },
+    {
+      "input": "max_trip_days",
+      "label": "Longest trip",
+      "when": {
+        "duration": "annual_multi_trip"
+      },
+      "map": {
+        "30": 1.0,
+        "45": 1.2,
+        "60": 1.4
+      }
+    }
+  ],
+  "addons": [
+    {
+      "input": "adventure_sports",
+      "label": "Adventure sports",
+      "pct": 0.25
+    },
+    {
+      "input": "rental_car",
+      "label": "Rental car protection",
+      "flat": 40
+    },
+    {
+      "input": "trip_cancellation",
+      "label": "Trip cancellation cover",
+      "rate_on_input": 0.045
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "One 10-day worldwide trip, age 35",
+      "options": {
+        "age": 35,
+        "duration": "single_trip",
+        "geographic": "worldwide",
+        "trip_days": 10
+      },
+      "annual_premium": 65
+    },
+    {
+      "label": "Annual multi-trip, worldwide, age 45, trips up to 45 days",
+      "options": {
+        "age": 45,
+        "duration": "annual_multi_trip",
+        "geographic": "worldwide",
+        "max_trip_days": "45"
+      },
+      "annual_premium": 456
+    }
+  ]
+}

@@ -17,7 +17,7 @@ Member ID: QS-AUTO-91044-DP
 **Issued to:** Daniel Park
 **Mailing address:** 412 Willow Court, Portland, OR 97201
 **DOB:** 05/22/1996
-**Email:** daniel.park@email.com
+**Email:** daniel.park@example.com
 **Phone:** (555) 678-9012
 
 ---

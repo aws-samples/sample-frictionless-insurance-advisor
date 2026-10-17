@@ -4,7 +4,8 @@
       "heading": "Pelanggan",
       "collapse": "Ciutkan bilah sisi",
       "expand": "Bentangkan bilah sisi",
-      "newProspect": "+ Prospek Baru"
+      "newProspect": "+ Prospek Baru",
+      "home": "Beranda"
     },
     "welcome": {
       "heading": "Selamat datang",
@@ -25,11 +26,25 @@
         "joinDate": "Sejak",
         "policiesCount": "Polis",
         "occupation": "Pekerjaan",
-        "maritalStatus": "Status pernikahan"
+        "maritalStatus": "Status pernikahan",
+        "gender": "Jenis kelamin"
       },
       "dataFreshness": {
         "badge": "Verifikasi info terkini",
         "tooltip": "Profil ini belum ditinjau selama lebih dari {{days}} hari. Pastikan detail klien masih terkini sebelum mengandalkan analisis perlindungan."
+      },
+      "actions": {
+        "gapAnalysis": {
+          "button": "Buat analisis kesenjangan",
+          "menuTitle": "Analisis perlindungan untuk",
+          "resultTitle": "Analisis kesenjangan: {{line}}",
+          "close": "Tutup analisis"
+        },
+        "form": {
+          "button": "Buka formulir pengajuan",
+          "menuTitle": "Formulir pengajuan untuk",
+          "error": "Formulir tidak dapat dibuka: {{message}}"
+        }
       }
     },
     "policies": {
@@ -98,8 +113,7 @@
       }
     },
     "chat": {
-      "headingCustomer": "Obrolan Polis AI",
-      "headingProspect": "Pendampingan Prospek",
+      "heading": "Obrolan AI",
       "selectCustomer": "Pilih pelanggan untuk memulai obrolan.",
       "emptyPlaceholder": "Ajukan pertanyaan atau pilih saran di bawah ini.",
       "messageLabel": "Pesan",
@@ -119,10 +133,16 @@
         "heading": "Contoh polis untuk {{name}}",
         "subtext": "Polis pihak ketiga sintetis untuk menguji alur unggahan.",
         "notice": "Penanggung fiktif. Bukan perlindungan nyata."
+      },
+      "sources": {
+        "label": "Sumber",
+        "openFile": "Buka {{title}} di Penjelajah Data (tab browser baru)",
+        "openWeb": "Buka {{title}} (tab browser baru)"
       }
     },
     "prompts": {
       "customer": {
+        "meetingPrep": "Bantu saya mempersiapkan pertemuan dengan nasabah ini",
         "policies": "Polis apa saja yang saya miliki?",
         "coverageGap": "Kesenjangan perlindungan apa yang saya miliki dan bagaimana cara mengatasinya?",
         "premiumDelta": "Mengapa premi Anda lebih tinggi/lebih rendah dibanding pesaing?",
@@ -131,18 +151,24 @@
         "mentalHealthMaternity": "Apakah Anda menanggung kesehatan mental, persalinan, atau pengobatan alternatif?",
         "outpatientDentalOptical": "Apakah Anda menanggung rawat jalan, gigi, atau optik?",
         "dayOneCover": "Bagaimana perlindungan hari pertama Anda dibanding masa tunggu pesaing lain?",
-        "preExistingWaiting": "Berapa masa tunggu kondisi yang sudah ada sebelumnya dibanding pesaing?"
+        "preExistingWaiting": "Berapa masa tunggu kondisi yang sudah ada sebelumnya dibanding pesaing?",
+        "annualReview": "Siapkan tinjauan tahunan untuk nasabah ini",
+        "outreach": "Buatkan draf email untuk nasabah ini",
+        "marketPulse": "Apa yang baru di pasar asuransi minggu ini?"
       },
       "prospect": {
+        "meetingPrep": "Bantu saya mempersiapkan pertemuan dengan prospek ini",
         "firstProducts": "Asuransi apa yang sebaiknya dipertimbangkan prospek ini terlebih dahulu?",
         "discovery": "Bantu saya memulai percakapan penggalian kebutuhan",
         "bestProducts": "Apa produk terbaik berdasarkan profil mereka?",
-        "company": "Ceritakan tentang Unicorn Insurance",
-        "whyUnicorn": "Mengapa mereka harus memilih Unicorn dibanding BigRival?",
-        "qualifyQuestions": "Pertanyaan apa yang harus saya ajukan untuk memenuhi syarat prospek ini?"
+        "company": "Ceritakan tentang Awesome Insurance",
+        "whyAwesome": "Mengapa mereka harus memilih Awesome dibanding BigRival?",
+        "qualifyQuestions": "Pertanyaan apa yang harus saya ajukan untuk memenuhi syarat prospek ini?",
+        "outreach": "Buatkan draf email perkenalan pertama untuk calon nasabah ini",
+        "marketPulse": "Apa yang baru di pasar asuransi minggu ini?"
       },
-      "voice": {
-        "startTermLifeApplication": "Mulai pengajuan asuransi jiwa berjangka"
+      "application": {
+        "startTermLife": "Mulai pengajuan asuransi jiwa berjangka"
       }
     },
     "pages": {
@@ -151,8 +177,14 @@
       },
       "comparator": {
         "heading": "Pembanding",
-        "intro": "Bandingkan produk asuransi antara Unicorn Insurance dan para pesaingnya. Pilih jenis produk, lalu pilih antara 2 hingga 4 produk untuk dibandingkan.",
+        "intro": "Bandingkan produk asuransi antara Awesome Insurance dan para pesaingnya. Pilih jenis produk, lalu pilih antara 2 hingga 4 produk untuk dibandingkan.",
         "typeLabel": "Jenis produk",
+        "line": {
+          "label": "Kategori produk",
+          "life": "Jiwa",
+          "general": "Umum",
+          "health": "Kesehatan"
+        },
         "typePlaceholder": "Pilih jenis produk",
         "productsLabel": "Produk untuk dibandingkan",
         "productsHelp": "Pilih antara {{min}} dan {{max}} produk.",
@@ -174,10 +206,46 @@
         "internalUseOnly": "Hanya untuk Penggunaan Internal",
         "staleNotice": "Sebagian data sumber mungkin sudah usang — verifikasi sebelum dibagikan kepada pelanggan.",
         "productStale": "Data lebih dari {{days}} hari",
-        "productUpdated": "Sumber diperbarui {{date}}"
+        "productUpdated": "Sumber diperbarui {{date}}",
+        "brochure": {
+          "title": "Tambahkan brosur pesaing (opsional)",
+          "help": "Unggah brosur PDF dari perusahaan asuransi lain untuk dimasukkan ke perbandingan ini. Brosur dibaca satu kali, hanya dipakai untuk perbandingan ini, dan dihapus otomatis dalam 48 jam.",
+          "choose": "Pilih PDF",
+          "uploading": "Mengunggah…",
+          "reading": "Membaca brosur…",
+          "remove": "Hapus",
+          "badge": "Brosur yang diunggah",
+          "notes": "{{count}} catatan dari pembacaan brosur",
+          "pdfOnly": "Pilih file PDF.",
+          "tooLarge": "PDF ini lebih besar dari 4,5 MB. Gunakan file yang lebih kecil.",
+          "noRoom": "Hapus centang satu produk untuk memberi ruang (maksimal 4).",
+          "sampleLabel": "Tidak punya brosur? Coba contoh:",
+          "sampleButton": "Unduh {{name}} (PDF)"
+        },
+        "uploadedNotice": "{{name}} berasal dari brosur yang Anda unggah. Brosur dibaca otomatis dan belum diverifikasi. Periksa rincian dengan brosur sebelum mengandalkannya.",
+        "ratings": {
+          "title": "Kekuatan keuangan perusahaan asuransi",
+          "outlook": "prospek",
+          "notStated": "Tidak disebutkan",
+          "illustrativeNote": "Peringkat pesaing adalah data demonstrasi sebagai ilustrasi, bukan angka sebenarnya.",
+          "brochureNote": "Peringkat untuk brosur yang diunggah sesuai yang tertulis di dalamnya dan belum diverifikasi.",
+          "asOf": "Peringkat per {{date}}."
+        },
+        "pdf": {
+          "button": "Unduh PDF",
+          "hint": "PDF untuk diberikan kepada nasabah, tanpa tanda penggunaan internal",
+          "preparing": "Menyiapkan…",
+          "failed": "Gagal membuat PDF: {{message}}",
+          "heading": "Perbandingan produk",
+          "prepared": "Disiapkan {{date}}",
+          "advisor": "Penasihat: {{name}}",
+          "uploadedNote": "{{name}} dibaca dari brosur yang diberikan penasihat Anda dan belum diverifikasi.",
+          "customerDisclaimer": "Berdasarkan dokumentasi produk per {{date}}. Perbandingan ini hanya untuk informasi. Ini bukan penawaran harga atau tawaran, dan mungkin tidak menampilkan semua fitur atau pengecualian. Periksa rincian dengan masing-masing perusahaan asuransi sebelum memutuskan."
+        },
+        "typesLoading": "Memuat jenis produk…"
       },
       "data": {
-        "heading": "Data",
+        "heading": "Penjelajah Data",
         "intro": "Telusuri dokumen referensi yang menjadi dasar jawaban asisten — portofolio produk, informasi perusahaan, posisi kompetitif, produk pesaing, promosi, dan skema formulir pengajuan.",
         "searchPlaceholder": "Cari berkas...",
         "clearSearch": "Hapus pencarian",
@@ -208,7 +276,84 @@
           "competitive": "Posisi Kompetitif",
           "competitors": "Produk Pesaing",
           "promotion": "Promosi",
-          "forms": "Formulir Pengajuan"
+          "forms": "Formulir Pengajuan",
+          "pricing": "Tabel Harga",
+          "brochures": "Brosur",
+          "transcripts": "Transkrip suara"
+        },
+        "pdf": {
+          "download": "Unduh PDF",
+          "open": "Buka di tab baru",
+          "note": "Brosur satu halaman untuk dibagikan kepada nasabah. Tidak menampilkan harga.",
+          "fallback": "Browser Anda tidak dapat menampilkan PDF di sini. Gunakan Unduh PDF atau Buka di tab baru."
+        },
+        "pricing": {
+          "ageBand": "Kelompok usia",
+          "ratePerUnit": "Tarif tahunan per {{unit}}",
+          "scaledNote": "Jumlah berlaku untuk pertanggungan {{amount}} dan menyesuaikan secara proporsional dengan nilai yang dipilih.",
+          "interpolatedNote": "Jumlah di antara baris dihitung dengan interpolasi.",
+          "monthlyBenefit": "Manfaat bulanan",
+          "baseAnnual": "Premi tahunan dasar",
+          "geography": "Wilayah",
+          "perDay": "Per hari, per pelancong",
+          "annualMulti": "Tahunan multi-perjalanan, per pelancong",
+          "addonPct": "+{{pct}}% dari premi",
+          "addonFlat": "+{{amount}} per tahun",
+          "addonPerUnit": "+{{amount}} untuk setiap {{per}} yang dipertanggungkan",
+          "addonOnAmount": "+{{pct}}% dari jumlah yang dimasukkan",
+          "indicative": "Hanya sebagai indikasi",
+          "effective": "Berlaku {{date}}",
+          "basis": "Dasar premi: {{basis}}. Mata uang: {{currency}}.",
+          "dependsOn": "Hal yang menentukan harga",
+          "option": "Pilihan",
+          "meaning": "Arti",
+          "allowed": "Nilai yang diizinkan",
+          "defaultCol": "Bawaan",
+          "required": "Wajib",
+          "fromProfile": "diambil dari catatan nasabah",
+          "baseRates": "Tarif dasar",
+          "factors": "Faktor penetapan tarif",
+          "factorsHelp": "Setiap faktor dikalikan dengan tarif dasar. Faktor yang tidak berlaku untuk pilihan yang dibuat dilewati.",
+          "addons": "Tambahan",
+          "addon": "Tambahan",
+          "effect": "Pengaruh pada premi",
+          "frequency": "Frekuensi pembayaran",
+          "paidEvery": "Dibayar",
+          "loading": "Pembebanan",
+          "noLoading": "Tidak ada",
+          "examples": "Contoh perhitungan",
+          "example": "Contoh",
+          "choices": "Pilihan",
+          "annualPremium": "Premi tahunan",
+          "examplesNote": "Dihitung dengan tabel ini, sehingga asisten menyebutkan angka yang sama.",
+          "affordabilityTitle": "Aturan keterjangkauan",
+          "ofIncome": "dari pendapatan tahunan, untuk semua polis aktif"
+        },
+        "transcript": {
+          "inProgress": "Sedang berlangsung",
+          "ended": "Selesai",
+          "started": "Mulai {{time}}",
+          "refresh": "Segarkan",
+          "expires": "Kedaluwarsa otomatis sekitar 24 hingga 48 jam setelah penyimpanan terakhir ({{time}}). Selama sesi terbuka, disimpan sekitar setiap 30 detik.",
+          "consent": "Persetujuan transkripsi dikonfirmasi pada {{time}}.",
+          "empty": "Belum ada yang disimpan dalam sesi ini.",
+          "about": "Tentang {{name}}",
+          "aboutProspect": "Tentang calon nasabah",
+          "advisor": "Penasihat",
+          "assistant": "Asisten",
+          "typed": "diketik",
+          "prospect": "Calon nasabah",
+          "turnCount": "{{count}} giliran"
+        },
+        "collapseAll": "Ciutkan semua",
+        "expandAll": "Luaskan semua",
+        "collapseFolder": "Ciutkan {{folder}}",
+        "expandFolder": "Luaskan {{folder}}",
+        "ratings": {
+          "carrierCount": "{{count}} perusahaan asuransi",
+          "agencyCount": "{{count}} lembaga pemeringkat",
+          "carrier": "Perusahaan asuransi",
+          "illustrative": "Ilustrasi"
         }
       }
     },
@@ -230,15 +375,27 @@
         "speaking": "Berbicara"
       },
       "mute": "Bisukan suara",
-      "unmute": "Aktifkan suara"
+      "unmute": "Aktifkan suara",
+      "consent": {
+        "question": "Sebelum merekam: apakah {{name}} setuju percakapan ini ditranskripsikan?",
+        "theProspect": "calon nasabah",
+        "hint": "Tidak ada yang disimpan atau diingat, dan tidak ada formulir yang diisi, sampai Anda mengonfirmasi. Jawab asisten dengan suara atau gunakan tombol.",
+        "changed": "Nasabah berganti, jadi persetujuan diperlukan lagi.",
+        "confirm": "Dikonfirmasi",
+        "decline": "Ditolak",
+        "confirmed": "Persetujuan dikonfirmasi pukul {{time}}. Percakapan ini ditranskripsikan dan disimpan selama 24 jam.",
+        "declinedMessage": "Persetujuan ditolak. Sesi telah berakhir dan tidak ada yang disimpan.",
+        "startNew": "Mulai sesi baru"
+      }
     },
     "recommendation": {
       "loading": "Menganalisis perlindungan dan mencari kesenjangan...",
       "noGaps": "Tidak ditemukan kesenjangan perlindungan yang material — pelanggan sudah terlindungi dengan baik sesuai profilnya.",
-      "error": "Tidak dapat menghasilkan rekomendasi: {{message}}"
+      "error": "Tidak dapat menghasilkan rekomendasi: {{message}}",
+      "exposureLabel": "Eksposur keuangan",
+      "exposureIllustrative": "Estimasi ilustratif"
     },
     "form": {
-      "backToProfile": "Profil",
       "progress": "{{filled}} dari {{total}} bidang wajib",
       "progressLabel": "Kelengkapan formulir",
       "pendingReview": "{{count}} untuk ditinjau",
@@ -253,7 +410,128 @@
       "legendProfile": "Dari profil",
       "legendHeard": "Terdengar dalam percakapan",
       "legendConfirm": "Mohon konfirmasi",
-      "legendManual": "Dimasukkan oleh Anda"
+      "legendManual": "Dimasukkan oleh Anda",
+      "downloadPdf": "Unduh PDF",
+      "yes": "Ya",
+      "no": "Tidak",
+      "pdf": {
+        "preparing": "Menyiapkan…",
+        "failed": "Gagal membuat PDF: {{message}}",
+        "prepared": "Disiapkan {{date}}",
+        "advisor": "Penasihat: {{name}}",
+        "requiredNote": "* Wajib. Biarkan kosong baris yang belum dijawab dan lengkapi dengan tulisan tangan.",
+        "signatureApplicant": "Tanda tangan pemohon",
+        "signatureAdvisor": "Tanda tangan penasihat",
+        "date": "Tanggal",
+        "disclaimer": "Draf yang disiapkan dengan asisten penasihat Awesome Insurance. Ini bukan penawaran pertanggungan. Pertanggungan baru berlaku setelah Awesome Insurance menerbitkan polis setelah underwriting."
+      }
+    },
+    "notes": {
+      "heading": "Catatan",
+      "add": "Tambah catatan",
+      "save": "Simpan catatan",
+      "typeLabel": "Jenis",
+      "type": {
+        "life_event": "Peristiwa hidup",
+        "interaction": "Interaksi"
+      },
+      "dateLabel": "Tanggal peristiwa (opsional)",
+      "textLabel": "Catatan",
+      "textPlaceholder": "mis. Menantikan anak kedua pada bulan Maret",
+      "empty": "Belum ada catatan.",
+      "eventOn": "Peristiwa: {{date}}",
+      "addedOn": "ditambahkan {{date}}",
+      "byAssistant": "Ditambahkan oleh asisten",
+      "byAssistantHint": "Disimpan oleh asisten AI atas permintaan penasihat",
+      "delete": "Hapus catatan",
+      "confirmDelete": "Hapus",
+      "saveFailed": "Gagal menyimpan catatan: {{message}}",
+      "deleteFailed": "Gagal menghapus catatan: {{message}}"
+    },
+    "cockpit": {
+      "heading": "Prioritas hari ini",
+      "summary": "{{needing}} dari {{total}} nasabah perlu perhatian, yang paling mendesak lebih dulu",
+      "refresh": "Segarkan",
+      "loading": "Memuat prioritas Anda…",
+      "empty": "Tidak ada yang perlu perhatian Anda saat ini.",
+      "error": "Tidak dapat memuat prioritas Anda: {{message}}",
+      "prospect": "Calon nasabah",
+      "actions": {
+        "annual_review": "Tinjauan tahunan",
+        "meeting_prep": "Siapkan pertemuan",
+        "outreach": "Buat draf email"
+      },
+      "rules": {
+        "review_overdue": "Profil terakhir ditinjau {{days}} hari lalu",
+        "life_event_upcoming": "Peristiwa hidup dalam {{days}} hari: {{text}}",
+        "life_event_passed": "Peristiwa hidup {{days}} hari lalu, belum ditindaklanjuti: {{text}}",
+        "renewal_due": "{{policy}} ({{insurer}}) diperpanjang dalam {{days}} hari",
+        "renewal_due_own": "{{policy}} diperpanjang dalam {{days}} hari",
+        "renewal_passed": "{{policy}} ({{insurer}}) melewati tanggal perpanjangan {{days}} hari lalu",
+        "renewal_passed_own": "{{policy}} melewati tanggal perpanjangan {{days}} hari lalu",
+        "over_cap": "Premi tahunan {{percent}}% dari penghasilan, di atas pedoman {{cap}}%",
+        "prospect_quiet": "Belum ada polis Awesome dan tidak ada kontak selama {{days}} hari"
+      }
+    },
+    "meetingNote": {
+      "button": "Rangkum menjadi catatan",
+      "title": "Catatan pertemuan",
+      "loading": "Menyusun catatan dari percakapan ini…",
+      "intro": "Periksa dan ubah draf, lalu simpan ke catatan nasabah. Tidak ada yang disimpan sebelum Anda menekan Simpan.",
+      "insufficient": "Percakapan ini belum cukup untuk menulis catatan.",
+      "error": "Tidak dapat menyusun catatan: {{message}}",
+      "saved": "Catatan disimpan ke data nasabah.",
+      "trimmed": "Dipersingkat agar sesuai batas 1.000 karakter.",
+      "dateLabel": "Tanggal tindak lanjut (opsional)"
+    },
+    "roleplay": {
+      "button": "Berlatih",
+      "setupTitle": "Berlatih dengan {{name}}",
+      "setupIntro": "Asisten berperan sebagai nasabah ini berdasarkan datanya. Jalankan percakapan seperti sungguhan, lalu akhiri untuk mendapat umpan balik.",
+      "difficulty": "Tingkat kesulitan",
+      "level": {
+        "friendly": "Ramah",
+        "neutral": "Netral",
+        "sceptical": "Skeptis"
+      },
+      "focusLabel": "Keberatan utama",
+      "focus": {
+        "any": "Biarkan bervariasi",
+        "cost": "Terlalu mahal",
+        "work": "Saya sudah dilindungi lewat kantor",
+        "young": "Saya masih terlalu muda",
+        "compare": "Saya ingin membandingkan dengan perusahaan saya",
+        "think": "Saya perlu memikirkannya"
+      },
+      "privacy": "Tidak ada dari sesi latihan yang direkam atau disimpan, dan tidak ada yang ditambahkan ke data nasabah. Data kesehatan tidak dibagikan ke asisten.",
+      "start": "Mulai latihan",
+      "banner": "Sesi latihan: asisten berperan sebagai {{name}}",
+      "bannerHint": "Nyalakan mikrofon dan nasabah akan menyapa Anda. Ucapkan \"end exercise\" untuk berhenti lebih awal.",
+      "leave": "Keluar dari latihan",
+      "endAndScore": "Akhiri dan nilai",
+      "feedbackTitle": "Umpan balik pelatihan",
+      "scoring": "Meninjau percakapan…",
+      "scoreError": "Tidak dapat membuat umpan balik: {{message}}",
+      "insufficient": "Percakapan terlalu singkat untuk diberi umpan balik. Coba lagi dan bicara lebih banyak.",
+      "claimsTitle": "Pernyataan produk yang diperiksa",
+      "verdict": {
+        "supported": "Sesuai lembar produk",
+        "contradicted": "Berbeda dari lembar produk",
+        "not_in_sheets": "Tidak ada di lembar produk"
+      },
+      "nextTime": "Coba lain kali",
+      "coachingNote": "Umpan balik pelatihan untuk latihan Anda sendiri, dibuat oleh AI. Ini bukan penilaian kinerja dan tidak disimpan.",
+      "finish": "Selesai",
+      "again": "Berlatih lagi",
+      "criteria": {
+        "rapport": "Pembukaan dan hubungan baik",
+        "discovery": "Pertanyaan penggalian",
+        "needs_link": "Menghubungkan kebutuhan dan perlindungan",
+        "objections": "Menangani keberatan",
+        "accuracy": "Ketepatan",
+        "compliance": "Kepatuhan",
+        "closing": "Penutup"
+      }
     }
   }
 }

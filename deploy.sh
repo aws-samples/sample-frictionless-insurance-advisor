@@ -1,6 +1,16 @@
 #!/bin/bash
 set -euo pipefail
 
+# The CDK CLI is pinned to the version that matches aws-cdk-lib in
+# pyproject.toml: an older CLI cannot read the cloud assembly a newer
+# aws-cdk-lib emits. Bump the two together. `uv run` keeps the project's
+# virtualenv active so `python3 app.py` (cdk.json) finds aws-cdk-lib.
+CDK_CLI_VERSION="2.1144.0"
+run_cdk() { uv run npx --yes "aws-cdk@${CDK_CLI_VERSION}" "$@"; }
+# Extra CDK context flags can be passed through, for example:
+#   CDK_EXTRA_ARGS="-c enable_public_signup=true -c signup_allowed_emails=a@example.com" ./deploy.sh
+read -r -a CDK_EXTRA <<< "${CDK_EXTRA_ARGS:-}"
+
 uv sync
 
 echo "🚀 Deploying Insurance Advisor AgentCore..."
@@ -15,13 +25,14 @@ echo "🚀 Deploying Insurance Advisor AgentCore..."
 #    04-voice — but 03 and 04 are siblings of each other and can deploy
 #    in parallel, which saves ~3-4 min on a full deploy.
 echo "🏗️  Deploying backend stacks (auth, tools, agentcore, voice)..."
-uv run cdk deploy \
+run_cdk deploy \
     insadv-01-auth \
     insadv-02-tools \
     insadv-03-agentcore \
     insadv-04-voice \
     --concurrency 4 \
-    --require-approval never
+    --require-approval never \
+    ${CDK_EXTRA[@]+"${CDK_EXTRA[@]}"}
 
 # Note: there used to be a step here re-asserting requestHeaderConfiguration on
 # the AgentCore Runtimes, because they were AwsCustomResource-backed and the
@@ -47,7 +58,7 @@ popd >/dev/null
 
 # 3) Deploy the frontend (S3 + CloudFront) once the dist/ exists.
 echo "☁️  Deploying frontend stack (S3 + CloudFront)..."
-uv run cdk deploy insadv-05-frontend --require-approval never
+run_cdk deploy insadv-05-frontend --require-approval never ${CDK_EXTRA[@]+"${CDK_EXTRA[@]}"}
 
 # 4) Print the CloudFront URL prominently. The frontend stack writes it
 #    both as a CfnOutput and to SSM (/insurance-advisor/frontend/site-url),

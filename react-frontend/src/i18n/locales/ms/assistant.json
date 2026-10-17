@@ -4,7 +4,8 @@
       "heading": "Pelanggan",
       "collapse": "Runtuhkan bar sisi",
       "expand": "Kembangkan bar sisi",
-      "newProspect": "+ Bakal Pelanggan Baharu"
+      "newProspect": "+ Bakal Pelanggan Baharu",
+      "home": "Laman Utama"
     },
     "welcome": {
       "heading": "Selamat datang",
@@ -25,11 +26,25 @@
         "joinDate": "Sejak",
         "policiesCount": "Polisi",
         "occupation": "Pekerjaan",
-        "maritalStatus": "Status perkahwinan"
+        "maritalStatus": "Status perkahwinan",
+        "gender": "Jantina"
       },
       "dataFreshness": {
         "badge": "Sahkan maklumat semasa",
         "tooltip": "Profil ini belum disemak selama lebih {{days}} hari. Sahkan butiran pelanggan masih terkini sebelum bergantung pada analisis perlindungan."
+      },
+      "actions": {
+        "gapAnalysis": {
+          "button": "Cipta analisis jurang",
+          "menuTitle": "Analisis perlindungan untuk",
+          "resultTitle": "Analisis jurang: {{line}}",
+          "close": "Tutup analisis"
+        },
+        "form": {
+          "button": "Buka borang permohonan",
+          "menuTitle": "Borang permohonan untuk",
+          "error": "Tidak dapat membuka borang: {{message}}"
+        }
       }
     },
     "policies": {
@@ -98,8 +113,7 @@
       }
     },
     "chat": {
-      "headingCustomer": "Sembang Polisi AI",
-      "headingProspect": "Bimbingan Bakal Pelanggan",
+      "heading": "Sembang AI",
       "selectCustomer": "Pilih seorang pelanggan untuk memulakan sembang.",
       "emptyPlaceholder": "Tanya soalan atau pilih cadangan di bawah.",
       "messageLabel": "Mesej",
@@ -119,10 +133,16 @@
         "heading": "Polisi sampel untuk {{name}}",
         "subtext": "Polisi pihak ketiga sintetik untuk menguji aliran muat naik.",
         "notice": "Penanggung insurans rekaan. Bukan perlindungan sebenar."
+      },
+      "sources": {
+        "label": "Sumber",
+        "openFile": "Buka {{title}} dalam Penjelajah Data (tab pelayar baharu)",
+        "openWeb": "Buka {{title}} (tab pelayar baharu)"
       }
     },
     "prompts": {
       "customer": {
+        "meetingPrep": "Bantu saya bersedia untuk mesyuarat dengan pelanggan ini",
         "policies": "Apakah polisi yang saya miliki?",
         "coverageGap": "Apakah jurang perlindungan yang saya ada dan bagaimana untuk mengatasinya?",
         "premiumDelta": "Mengapa premium anda lebih tinggi/lebih rendah daripada pesaing?",
@@ -131,18 +151,24 @@
         "mentalHealthMaternity": "Adakah anda melindungi kesihatan mental, bersalin, atau rawatan alternatif?",
         "outpatientDentalOptical": "Adakah anda melindungi rawatan pesakit luar, pergigian, atau optik?",
         "dayOneCover": "Apakah perlindungan hari pertama berbanding tempoh menunggu anda berbanding yang lain?",
-        "preExistingWaiting": "Apakah tempoh menunggu keadaan sedia ada anda berbanding pesaing?"
+        "preExistingWaiting": "Apakah tempoh menunggu keadaan sedia ada anda berbanding pesaing?",
+        "annualReview": "Sediakan semakan tahunan untuk pelanggan ini",
+        "outreach": "Draf e-mel untuk pelanggan ini",
+        "marketPulse": "Apakah perkembangan terkini dalam pasaran insurans minggu ini?"
       },
       "prospect": {
+        "meetingPrep": "Bantu saya bersedia untuk mesyuarat dengan bakal pelanggan ini",
         "firstProducts": "Insurans apakah yang patut dipertimbangkan oleh bakal pelanggan ini terlebih dahulu?",
         "discovery": "Bantu saya memulakan perbualan penerokaan",
         "bestProducts": "Apakah produk terbaik berdasarkan profil mereka?",
-        "company": "Ceritakan tentang Unicorn Insurance",
-        "whyUnicorn": "Mengapa mereka harus memilih Unicorn berbanding BigRival?",
-        "qualifyQuestions": "Apakah soalan yang patut saya tanya untuk melayakkan bakal pelanggan ini?"
+        "company": "Ceritakan tentang Awesome Insurance",
+        "whyAwesome": "Mengapa mereka harus memilih Awesome berbanding BigRival?",
+        "qualifyQuestions": "Apakah soalan yang patut saya tanya untuk melayakkan bakal pelanggan ini?",
+        "outreach": "Draf e-mel sentuhan pertama untuk prospek ini",
+        "marketPulse": "Apakah perkembangan terkini dalam pasaran insurans minggu ini?"
       },
-      "voice": {
-        "startTermLifeApplication": "Mulakan permohonan untuk insurans hayat bertempoh"
+      "application": {
+        "startTermLife": "Mulakan permohonan untuk insurans hayat bertempoh"
       }
     },
     "pages": {
@@ -151,8 +177,14 @@
       },
       "comparator": {
         "heading": "Pembanding",
-        "intro": "Bandingkan produk insurans merentasi Unicorn Insurance dan pesaingnya. Pilih jenis produk, kemudian pilih antara 2 hingga 4 produk untuk dibandingkan.",
+        "intro": "Bandingkan produk insurans merentasi Awesome Insurance dan pesaingnya. Pilih jenis produk, kemudian pilih antara 2 hingga 4 produk untuk dibandingkan.",
         "typeLabel": "Jenis produk",
+        "line": {
+          "label": "Kategori produk",
+          "life": "Hayat",
+          "general": "Am",
+          "health": "Kesihatan"
+        },
         "typePlaceholder": "Pilih jenis produk",
         "productsLabel": "Produk untuk dibandingkan",
         "productsHelp": "Pilih antara {{min}} dan {{max}} produk.",
@@ -174,10 +206,46 @@
         "internalUseOnly": "Untuk Kegunaan Dalaman Sahaja",
         "staleNotice": "Sebahagian data sumber mungkin sudah lapuk — sahkan sebelum berkongsi dengan pelanggan.",
         "productStale": "Data melebihi {{days}} hari",
-        "productUpdated": "Sumber dikemas kini {{date}}"
+        "productUpdated": "Sumber dikemas kini {{date}}",
+        "brochure": {
+          "title": "Tambah brosur pesaing (pilihan)",
+          "help": "Muat naik brosur PDF daripada syarikat insurans lain untuk dimasukkan ke dalam perbandingan ini. Ia dibaca sekali sahaja, digunakan untuk perbandingan ini sahaja dan dipadam secara automatik dalam masa 48 jam.",
+          "choose": "Pilih PDF",
+          "uploading": "Memuat naik…",
+          "reading": "Membaca brosur…",
+          "remove": "Buang",
+          "badge": "Brosur dimuat naik",
+          "notes": "{{count}} nota semasa membaca brosur",
+          "pdfOnly": "Sila pilih fail PDF.",
+          "tooLarge": "PDF ini melebihi 4.5 MB. Gunakan fail yang lebih kecil.",
+          "noRoom": "Nyahtanda satu produk untuk memberi ruang (maksimum 4).",
+          "sampleLabel": "Tiada brosur? Cuba contoh:",
+          "sampleButton": "Muat turun {{name}} (PDF)"
+        },
+        "uploadedNotice": "{{name}} datang daripada brosur yang anda muat naik. Ia dibaca secara automatik dan belum disahkan. Semak butirannya dengan brosur sebelum bergantung padanya.",
+        "ratings": {
+          "title": "Kekukuhan kewangan syarikat insurans",
+          "outlook": "tinjauan",
+          "notStated": "Tidak dinyatakan",
+          "illustrativeNote": "Penarafan pesaing ialah data demonstrasi sebagai ilustrasi, bukan angka sebenar.",
+          "brochureNote": "Penarafan bagi brosur yang dimuat naik adalah seperti yang dinyatakan di dalamnya dan belum disahkan.",
+          "asOf": "Penarafan setakat {{date}}."
+        },
+        "pdf": {
+          "button": "Muat turun PDF",
+          "hint": "PDF untuk diberikan kepada pelanggan, tanpa tanda kegunaan dalaman",
+          "preparing": "Menyediakan…",
+          "failed": "Tidak dapat mencipta PDF: {{message}}",
+          "heading": "Perbandingan produk",
+          "prepared": "Disediakan pada {{date}}",
+          "advisor": "Penasihat: {{name}}",
+          "uploadedNote": "{{name}} dibaca daripada brosur yang diberikan oleh penasihat anda dan belum disahkan.",
+          "customerDisclaimer": "Berdasarkan dokumentasi produk setakat {{date}}. Perbandingan ini untuk maklumat sahaja. Ia bukan sebut harga atau tawaran dan mungkin tidak menunjukkan semua ciri atau pengecualian. Sila semak butirannya dengan setiap syarikat insurans sebelum membuat keputusan."
+        },
+        "typesLoading": "Memuatkan jenis produk…"
       },
       "data": {
-        "heading": "Data",
+        "heading": "Penjelajah Data",
         "intro": "Layari dokumen rujukan yang menjadi asas jawapan pembantu — portfolio produk, maklumat syarikat, kedudukan persaingan, produk pesaing, promosi, dan skema borang permohonan.",
         "searchPlaceholder": "Cari fail...",
         "clearSearch": "Kosongkan carian",
@@ -208,7 +276,84 @@
           "competitive": "Kedudukan Persaingan",
           "competitors": "Produk Pesaing",
           "promotion": "Promosi",
-          "forms": "Borang Permohonan"
+          "forms": "Borang Permohonan",
+          "pricing": "Jadual Harga",
+          "brochures": "Brosur",
+          "transcripts": "Transkrip suara"
+        },
+        "pdf": {
+          "download": "Muat turun PDF",
+          "open": "Buka dalam tab baharu",
+          "note": "Brosur satu halaman untuk dikongsi dengan pelanggan. Ia tidak menunjukkan harga.",
+          "fallback": "Pelayar anda tidak dapat memaparkan PDF di sini. Gunakan Muat turun PDF atau Buka dalam tab baharu."
+        },
+        "pricing": {
+          "ageBand": "Kumpulan umur",
+          "ratePerUnit": "Kadar tahunan bagi setiap {{unit}}",
+          "scaledNote": "Jumlah adalah untuk perlindungan {{amount}} dan berskala mengikut jumlah yang dipilih.",
+          "interpolatedNote": "Jumlah di antara baris dikira secara interpolasi.",
+          "monthlyBenefit": "Faedah bulanan",
+          "baseAnnual": "Premium tahunan asas",
+          "geography": "Wilayah",
+          "perDay": "Sehari bagi setiap pengembara",
+          "annualMulti": "Pelbagai perjalanan tahunan, setiap pengembara",
+          "addonPct": "+{{pct}}% daripada premium",
+          "addonFlat": "+{{amount}} setahun",
+          "addonPerUnit": "+{{amount}} bagi setiap {{per}} diinsuranskan",
+          "addonOnAmount": "+{{pct}}% daripada jumlah yang dimasukkan",
+          "indicative": "Sebagai panduan sahaja",
+          "effective": "Berkuat kuasa {{date}}",
+          "basis": "Asas premium: {{basis}}. Mata wang: {{currency}}.",
+          "dependsOn": "Perkara yang menentukan harga",
+          "option": "Pilihan",
+          "meaning": "Maksud",
+          "allowed": "Nilai dibenarkan",
+          "defaultCol": "Lalai",
+          "required": "Wajib",
+          "fromProfile": "diambil daripada rekod pelanggan",
+          "baseRates": "Kadar asas",
+          "factors": "Faktor penetapan kadar",
+          "factorsHelp": "Setiap faktor didarabkan dengan kadar asas. Faktor yang tidak berkaitan dengan pilihan dilangkau.",
+          "addons": "Tambahan",
+          "addon": "Tambahan",
+          "effect": "Kesan ke atas premium",
+          "frequency": "Kekerapan bayaran",
+          "paidEvery": "Dibayar",
+          "loading": "Bebanan",
+          "noLoading": "Tiada",
+          "examples": "Contoh pengiraan",
+          "example": "Contoh",
+          "choices": "Pilihan",
+          "annualPremium": "Premium tahunan",
+          "examplesNote": "Dikira menggunakan jadual ini, jadi pembantu memberikan angka yang sama.",
+          "affordabilityTitle": "Peraturan kemampuan bayar",
+          "ofIncome": "daripada pendapatan tahunan, merentas semua polisi aktif"
+        },
+        "transcript": {
+          "inProgress": "Sedang berlangsung",
+          "ended": "Tamat",
+          "started": "Bermula {{time}}",
+          "refresh": "Muat semula",
+          "expires": "Tamat tempoh secara automatik kira-kira 24 hingga 48 jam selepas simpanan terakhir ({{time}}). Semasa sesi dibuka, ia disimpan kira-kira setiap 30 saat.",
+          "consent": "Persetujuan untuk transkripsi disahkan pada {{time}}.",
+          "empty": "Belum ada apa-apa yang disimpan dalam sesi ini.",
+          "about": "Mengenai {{name}}",
+          "aboutProspect": "Mengenai bakal pelanggan",
+          "advisor": "Penasihat",
+          "assistant": "Pembantu",
+          "typed": "ditaip",
+          "prospect": "Bakal pelanggan",
+          "turnCount": "{{count}} giliran"
+        },
+        "collapseAll": "Runtuhkan semua",
+        "expandAll": "Kembangkan semua",
+        "collapseFolder": "Runtuhkan {{folder}}",
+        "expandFolder": "Kembangkan {{folder}}",
+        "ratings": {
+          "carrierCount": "{{count}} syarikat insurans",
+          "agencyCount": "{{count}} agensi penarafan",
+          "carrier": "Syarikat insurans",
+          "illustrative": "Ilustrasi"
         }
       }
     },
@@ -230,15 +375,27 @@
         "speaking": "Bercakap"
       },
       "mute": "Senyapkan suara",
-      "unmute": "Nyahsenyap suara"
+      "unmute": "Nyahsenyap suara",
+      "consent": {
+        "question": "Sebelum merakam: adakah {{name}} bersetuju perbualan ini ditranskripsikan?",
+        "theProspect": "bakal pelanggan",
+        "hint": "Tiada apa yang disimpan atau diingati, dan tiada borang diisi, sehingga anda mengesahkan. Jawab kepada pembantu dengan suara atau gunakan butang.",
+        "changed": "Pelanggan telah bertukar, jadi persetujuan diperlukan semula.",
+        "confirm": "Disahkan",
+        "decline": "Ditolak",
+        "confirmed": "Persetujuan disahkan pada {{time}}. Perbualan ini ditranskripsikan dan disimpan selama 24 jam.",
+        "declinedMessage": "Persetujuan ditolak. Sesi telah tamat dan tiada apa yang disimpan.",
+        "startNew": "Mulakan sesi baharu"
+      }
     },
     "recommendation": {
       "loading": "Sedang menganalisis perlindungan dan mencari jurang...",
       "noGaps": "Tiada jurang perlindungan ketara dikenal pasti — pelanggan dilindungi dengan baik untuk profil mereka.",
-      "error": "Tidak dapat menjana cadangan: {{message}}"
+      "error": "Tidak dapat menjana cadangan: {{message}}",
+      "exposureLabel": "Pendedahan kewangan",
+      "exposureIllustrative": "Anggaran ilustrasi"
     },
     "form": {
-      "backToProfile": "Profil",
       "progress": "{{filled}} daripada {{total}} medan diperlukan",
       "progressLabel": "Penyempurnaan borang",
       "pendingReview": "{{count}} untuk disemak",
@@ -253,7 +410,128 @@
       "legendProfile": "Daripada profil",
       "legendHeard": "Didengari dalam perbualan",
       "legendConfirm": "Sila sahkan",
-      "legendManual": "Dimasukkan oleh anda"
+      "legendManual": "Dimasukkan oleh anda",
+      "downloadPdf": "Muat turun PDF",
+      "yes": "Ya",
+      "no": "Tidak",
+      "pdf": {
+        "preparing": "Menyediakan…",
+        "failed": "Tidak dapat mencipta PDF: {{message}}",
+        "prepared": "Disediakan pada {{date}}",
+        "advisor": "Penasihat: {{name}}",
+        "requiredNote": "* Wajib. Biarkan baris yang belum dijawab kosong dan lengkapkan dengan tulisan tangan.",
+        "signatureApplicant": "Tandatangan pemohon",
+        "signatureAdvisor": "Tandatangan penasihat",
+        "date": "Tarikh",
+        "disclaimer": "Draf yang disediakan dengan pembantu penasihat Awesome Insurance. Ini bukan tawaran perlindungan. Perlindungan bermula hanya apabila Awesome Insurance mengeluarkan polisi selepas penjaminan."
+      }
+    },
+    "notes": {
+      "heading": "Nota",
+      "add": "Tambah nota",
+      "save": "Simpan nota",
+      "typeLabel": "Jenis",
+      "type": {
+        "life_event": "Peristiwa hidup",
+        "interaction": "Interaksi"
+      },
+      "dateLabel": "Tarikh peristiwa (pilihan)",
+      "textLabel": "Nota",
+      "textPlaceholder": "cth. Menjangka anak kedua pada bulan Mac",
+      "empty": "Belum ada nota.",
+      "eventOn": "Peristiwa: {{date}}",
+      "addedOn": "ditambah {{date}}",
+      "byAssistant": "Ditambah oleh pembantu",
+      "byAssistantHint": "Disimpan oleh pembantu AI atas permintaan penasihat",
+      "delete": "Padam nota",
+      "confirmDelete": "Padam",
+      "saveFailed": "Tidak dapat menyimpan nota: {{message}}",
+      "deleteFailed": "Tidak dapat memadam nota: {{message}}"
+    },
+    "cockpit": {
+      "heading": "Keutamaan hari ini",
+      "summary": "{{needing}} daripada {{total}} pelanggan perlu perhatian, yang paling segera dahulu",
+      "refresh": "Muat semula",
+      "loading": "Memuatkan keutamaan anda…",
+      "empty": "Tiada yang memerlukan perhatian anda sekarang.",
+      "error": "Tidak dapat memuatkan keutamaan anda: {{message}}",
+      "prospect": "Prospek",
+      "actions": {
+        "annual_review": "Semakan tahunan",
+        "meeting_prep": "Sedia mesyuarat",
+        "outreach": "Draf e-mel"
+      },
+      "rules": {
+        "review_overdue": "Profil kali terakhir disemak {{days}} hari lalu",
+        "life_event_upcoming": "Peristiwa hidup dalam {{days}} hari: {{text}}",
+        "life_event_passed": "Peristiwa hidup {{days}} hari lalu, tiada susulan: {{text}}",
+        "renewal_due": "{{policy}} ({{insurer}}) diperbaharui dalam {{days}} hari",
+        "renewal_due_own": "{{policy}} diperbaharui dalam {{days}} hari",
+        "renewal_passed": "{{policy}} ({{insurer}}) telah melepasi tarikh pembaharuan {{days}} hari lalu",
+        "renewal_passed_own": "{{policy}} telah melepasi tarikh pembaharuan {{days}} hari lalu",
+        "over_cap": "Premium tahunan ialah {{percent}}% daripada pendapatan, melebihi garis panduan {{cap}}%",
+        "prospect_quiet": "Belum ada polisi Awesome dan tiada hubungan selama {{days}} hari"
+      }
+    },
+    "meetingNote": {
+      "button": "Ringkaskan kepada nota",
+      "title": "Nota mesyuarat",
+      "loading": "Menyediakan nota daripada perbualan ini…",
+      "intro": "Semak dan sunting draf, kemudian simpan ke nota pelanggan. Tiada apa-apa disimpan sehingga anda menekan Simpan.",
+      "insufficient": "Perbualan ini belum mencukupi untuk menulis nota.",
+      "error": "Tidak dapat menyediakan nota: {{message}}",
+      "saved": "Nota disimpan dalam rekod pelanggan.",
+      "trimmed": "Dipendekkan untuk memenuhi had 1,000 aksara.",
+      "dateLabel": "Tarikh susulan (pilihan)"
+    },
+    "roleplay": {
+      "button": "Berlatih",
+      "setupTitle": "Berlatih dengan {{name}}",
+      "setupIntro": "Pembantu berlakon sebagai pelanggan ini berdasarkan rekodnya. Jalankan perbualan seperti sebenar, kemudian tamatkan untuk mendapat maklum balas.",
+      "difficulty": "Tahap kesukaran",
+      "level": {
+        "friendly": "Mesra",
+        "neutral": "Neutral",
+        "sceptical": "Skeptikal"
+      },
+      "focusLabel": "Bantahan utama",
+      "focus": {
+        "any": "Biarkan berbeza",
+        "cost": "Terlalu mahal",
+        "work": "Saya sudah dilindungi melalui kerja",
+        "young": "Saya terlalu muda untuk memerlukannya",
+        "compare": "Saya mahu membandingkan dengan syarikat sedia ada",
+        "think": "Saya perlu fikirkannya dahulu"
+      },
+      "privacy": "Tiada apa-apa daripada sesi latihan dirakam atau disimpan, dan tiada yang ditambah pada rekod pelanggan. Maklumat kesihatan tidak dikongsi dengan pembantu.",
+      "start": "Mula latihan",
+      "banner": "Sesi latihan: pembantu berlakon sebagai {{name}}",
+      "bannerHint": "Hidupkan mikrofon dan pelanggan akan menyapa anda. Sebut \"end exercise\" untuk berhenti awal.",
+      "leave": "Keluar dari latihan",
+      "endAndScore": "Tamat dan nilai",
+      "feedbackTitle": "Maklum balas bimbingan",
+      "scoring": "Menyemak perbualan…",
+      "scoreError": "Tidak dapat menghasilkan maklum balas: {{message}}",
+      "insufficient": "Perbualan terlalu singkat untuk diberi maklum balas. Cuba lagi dan bercakap lebih banyak.",
+      "claimsTitle": "Kenyataan produk yang disemak",
+      "verdict": {
+        "supported": "Sepadan dengan lembaran",
+        "contradicted": "Berbeza daripada lembaran",
+        "not_in_sheets": "Tiada dalam lembaran"
+      },
+      "nextTime": "Cuba lain kali",
+      "coachingNote": "Maklum balas bimbingan untuk latihan anda sendiri, dijana oleh AI. Ia bukan penilaian prestasi dan tidak disimpan.",
+      "finish": "Selesai",
+      "again": "Berlatih lagi",
+      "criteria": {
+        "rapport": "Pembukaan dan hubungan",
+        "discovery": "Soalan penerokaan",
+        "needs_link": "Mengaitkan keperluan dengan perlindungan",
+        "objections": "Mengendalikan bantahan",
+        "accuracy": "Ketepatan",
+        "compliance": "Pematuhan",
+        "closing": "Penutup"
+      }
     }
   }
 }

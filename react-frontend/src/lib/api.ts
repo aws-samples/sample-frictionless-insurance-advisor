@@ -1,13 +1,23 @@
 import { fetchAuthSession } from 'aws-amplify/auth';
 
+import type { GapLine } from './productLines';
+
 import type {
   CatalogProduct,
   ComparisonResponse,
   Customer,
+  CustomerNote,
+  CustomerNoteType,
   DataFileContent,
   DataFileListResponse,
+  IngestedBrochure,
+  MeetingSummaryResponse,
   Policy,
+  PrioritiesResponse,
   RecommendationResponse,
+  RoleplayDifficulty,
+  RoleplayScoreResponse,
+  SampleBrochure,
 } from '../types';
 
 async function authHeaders(): Promise<Record<string, string>> {
@@ -49,6 +59,10 @@ async function postJson<T>(endpoint: string, payload: unknown): Promise<T> {
   return (await response.json()) as T;
 }
 
+/** The advisor's ranked to-do list for the Cockpit (GET /priorities). */
+export async function loadPriorities(limit = 8): Promise<PrioritiesResponse> {
+  return getJson<PrioritiesResponse>(`priorities?limit=${limit}`);
+}
 /**
  * Fetch customers assigned to the authenticated advisor and join them with
  * their policies client-side. Joins customer profiles with their policies client-side.
@@ -65,6 +79,63 @@ export async function loadCustomersWithPolicies(): Promise<Customer[]> {
   }));
 }
 
+/** Add a note to a customer's profile. Returns the note as stored. */
+export async function addNote(
+  customerId: string,
+  note: { type: CustomerNoteType; text: string; event_date?: string }
+): Promise<CustomerNote> {
+  const result = await postJson<{ note: CustomerNote }>('profile/notes', {
+    customer_id: customerId,
+    ...note,
+  });
+  return result.note;
+}
+
+/**
+ * Ask for a draft Summary / Concerns / Next actions note from a conversation.
+ * Nothing is saved: the advisor reviews the draft and saves it with addNote.
+ */
+export async function summariseMeeting(
+  customerId: string,
+  turns: { role: 'user' | 'assistant'; text: string }[],
+  locale: string
+): Promise<MeetingSummaryResponse> {
+  return postJson<MeetingSummaryResponse>('meeting-summary', { customer_id: customerId, turns, locale });
+}
+/**
+ * Coaching feedback on a practice conversation. In `turns` the advisor is "user"
+ * and the AI customer is "assistant". Nothing is stored.
+ */
+export async function scoreRoleplay(
+  customerId: string,
+  turns: { role: 'user' | 'assistant'; text: string }[],
+  difficulty: RoleplayDifficulty,
+  focus: string,
+  locale: string
+): Promise<RoleplayScoreResponse> {
+  return postJson<RoleplayScoreResponse>('roleplay-score', {
+    customer_id: customerId,
+    turns,
+    difficulty,
+    focus,
+    locale,
+  });
+}
+/** Delete one note. Only the advisor's own sign-in token is accepted for this. */
+export async function deleteNote(customerId: string, noteId: string): Promise<void> {
+  const endpoint =
+    `profile/notes/${encodeURIComponent(noteId)}` +
+    `?customer_id=${encodeURIComponent(customerId)}`;
+  const response = await fetch(apiUrl(endpoint), {
+    method: 'DELETE',
+    headers: await authHeaders(),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`${endpoint} returned ${response.status}: ${body}`);
+  }
+}
+
 /** Coerce a DynamoDB-stringified numeric to a number for display. */
 export function toNumber(value: number | string | undefined): number {
   if (value === undefined || value === null) return 0;
@@ -74,10 +145,21 @@ export function toNumber(value: number | string | undefined): number {
 }
 
 /** Distinct product types present in the catalog, sorted. */
-export async function loadProductTypes(): Promise<string[]> {
-  const data = await getJson<{ product_types: string[] }>('catalog/product-types');
-  return data.product_types;
+export function loadProductTypes(): Promise<string[]> {
+  // Kept for the session: the list is the same for every advisor and the call
+  // costs about a second on a cold backend. A failure is not kept, so the next
+  // call (a retry) asks again.
+  if (!productTypesPromise) {
+    productTypesPromise = getJson<{ product_types: string[] }>('catalog/product-types')
+      .then((data) => data.product_types)
+      .catch((err: unknown) => {
+        productTypesPromise = null;
+        throw err;
+      });
+  }
+  return productTypesPromise;
 }
+let productTypesPromise: Promise<string[]> | null = null;
 
 /** Catalog entries filtered to a single product type. */
 export async function loadProductsByType(productType: string): Promise<CatalogProduct[]> {
@@ -93,12 +175,71 @@ export async function loadProductsByType(productType: string): Promise<CatalogPr
  */
 export async function compareProducts(
   productIds: string[],
-  locale: string
+  locale: string,
+  tempIds: string[] = []
 ): Promise<ComparisonResponse> {
   return postJson<ComparisonResponse>('comparator/compare', {
     product_ids: productIds,
+    ...(tempIds.length > 0 && { temp_ids: tempIds }),
     locale,
   });
+}
+
+/**
+ * Read an uploaded competitor brochure for a temporary comparison. The file is
+ * uploaded first with uploadDocument(file, null). The reading is stored for a
+ * day under the advisor's own prefix and used by compareProducts via temp_id.
+ */
+export async function ingestBrochure(
+  documentId: string,
+  productType: string
+): Promise<IngestedBrochure> {
+  return postJson<IngestedBrochure>('comparator/ingest', {
+    document_id: documentId,
+    product_type: productType,
+  });
+}
+
+/** Sample competitor brochures (a fictitious carrier) offered as downloads. */
+export function listSampleBrochures(): Promise<SampleBrochure[]> {
+  if (!sampleBrochuresPromise) {
+    sampleBrochuresPromise = getJson<{ samples: SampleBrochure[] }>('data/samples')
+      .then((result) => result.samples)
+      .catch((err: unknown) => {
+        sampleBrochuresPromise = null;
+        throw err;
+      });
+  }
+  return sampleBrochuresPromise;
+}
+let sampleBrochuresPromise: Promise<SampleBrochure[]> | null = null;
+
+/**
+ * Warm the two lists the Comparator needs, so its dropdown is usually ready
+ * when the advisor first opens the tab. Fire and forget: errors are ignored
+ * here and surface (with a Retry) only if the advisor actually opens the page.
+ */
+export function prefetchComparatorData(): void {
+  void loadProductTypes().catch(() => undefined);
+  void listSampleBrochures().catch(() => undefined);
+}
+
+/**
+ * Turn an error thrown by getJson/postJson ("endpoint returned 422: {...}")
+ * into the backend's own message, when it sent one.
+ */
+export function friendlyApiError(err: unknown): string {
+  const text = err instanceof Error ? err.message : String(err);
+  const match = text.match(/returned \d+: (\{.*\})\s*$/s);
+  if (match) {
+    try {
+      const parsed = JSON.parse(match[1]) as { message?: unknown };
+      if (typeof parsed.message === 'string' && parsed.message) return parsed.message;
+    } catch {
+      /* fall through to the raw text */
+    }
+  }
+  return text;
 }
 
 /**
@@ -123,25 +264,32 @@ export async function loadDataFile(
   key: string
 ): Promise<DataFileContent> {
   const qs = new URLSearchParams({ folder, key }).toString();
-  return getJson<DataFileContent>(`data/file?${qs}`);
+  const raw = await getJson<Omit<DataFileContent, 'content'> & { content?: string }>(
+    `data/file?${qs}`
+  );
+  return { ...raw, content: raw.content ?? '' };
 }
 
 /**
- * Generate an LLM-backed coverage-gap analysis + Unicorn product
+ * Generate an LLM-backed coverage-gap analysis + Awesome product
  * recommendation for the selected customer. Pulls the customer's full
  * context server-side (profile + policies + catalog + promotions). Returns
  * a structured payload — see RecommendationResponse for the exact shape.
+ *
+ * `line` limits the analysis to Life, General or Health products (or all).
  *
  * Latency is dominated by the Bedrock call, typically 4-8 seconds. Callers
  * should render a loading state while this is in flight.
  */
 export async function loadRecommendation(
   customerId: string,
-  locale: string
+  locale: string,
+  line: GapLine = 'all'
 ): Promise<RecommendationResponse> {
   return postJson<RecommendationResponse>('recommend', {
     customer_id: customerId,
     locale,
+    line,
   });
 }
 

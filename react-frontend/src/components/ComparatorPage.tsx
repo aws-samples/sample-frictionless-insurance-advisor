@@ -1,21 +1,27 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { AlertTriangle, Check, Scale } from 'lucide-react';
+import { AlertTriangle, Check, Download, Scale } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { useAdvisorEmail } from '../hooks/useAdvisor';
 import {
   compareProducts,
   loadProductsByType,
   loadProductTypes,
 } from '../lib/api';
+import { exportBlocksToPdf } from '../lib/pdf';
+import { PRODUCT_LINES, typesForLine, type ProductLine } from '../lib/productLines';
+import { ratingDetail, summariseRatings } from '../lib/ratings';
 import { cn } from '../lib/cn';
 import { fmtDate } from '../lib/format';
 import { Alert, Badge, Button, Card, Select, Spinner } from '../ui';
-import type { CatalogProduct, ComparisonResponse } from '../types';
+import type { CatalogProduct, ComparisonResponse, IngestedBrochure } from '../types';
+import { BrochureUpload } from './BrochureUpload';
+import { ComparisonPrintView } from './ComparisonPrintView';
 
 const MIN_PRODUCTS = 2;
 const MAX_PRODUCTS = 4;
-// BR-COMP-003: keep in sync with STALE_AFTER_DAYS in lambda/comparator. Only
+// Keep in sync with STALE_AFTER_DAYS in lambda/comparator. Only
 // used here for the staleness label copy; the stale/fresh decision is made
 // server-side.
 const STALE_AFTER_DAYS = 90;
@@ -29,22 +35,30 @@ export function ComparatorPage() {
   const [typesLoading, setTypesLoading] = useState<boolean>(true);
   const [typesError, setTypesError] = useState<string | null>(null);
 
-  // Current selection state
+  // Current selection state. The advisor first picks a product line (Life / General /
+  // Health); the type dropdown then lists only that line's types.
+  const [line, setLine] = useState<ProductLine>('life');
   const [selectedType, setSelectedType] = useState<string>('');
   const [productsForType, setProductsForType] = useState<CatalogProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState<boolean>(false);
   const [productsError, setProductsError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // One competitor brochure the advisor uploaded for this comparison.
+  // It counts toward the 2..4 products and is tied to the selected product type.
+  const [brochure, setBrochure] = useState<IngestedBrochure | null>(null);
   // Comparison result state
   const [comparing, setComparing] = useState<boolean>(false);
   const [comparison, setComparison] = useState<ComparisonResponse | null>(null);
   const [comparisonError, setComparisonError] = useState<string | null>(null);
 
-  // Load the dropdown's product types once at mount.
+  // Load the dropdown's product types at mount (usually already prefetched),
+  // and again when the advisor presses Retry.
+  const [typesAttempt, setTypesAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
     setTypesLoading(true);
+    setTypesError(null);
     loadProductTypes()
       .then((types) => {
         if (!cancelled) {
@@ -63,7 +77,7 @@ export function ComparatorPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [typesAttempt]);
 
   // When the user picks a type, refetch the available products.
   useEffect(() => {
@@ -77,6 +91,7 @@ export function ComparatorPage() {
     setProductsLoading(true);
     setProductsError(null);
     setSelectedIds([]);
+    setBrochure(null);
     setComparison(null);
     setComparisonError(null);
     loadProductsByType(selectedType)
@@ -103,14 +118,20 @@ export function ComparatorPage() {
     setSelectedIds((prev) => prev.filter((id) => productsForType.some((p) => p.product_id === id)));
   }, [productsForType]);
 
+  // The uploaded brochure counts as a product, but at least one must come
+  // from the list (the backend enforces the same rule).
+  const totalProducts = selectedIds.length + (brochure ? 1 : 0);
   const canCompare =
-    selectedIds.length >= MIN_PRODUCTS && selectedIds.length <= MAX_PRODUCTS && !comparing;
+    totalProducts >= MIN_PRODUCTS &&
+    totalProducts <= MAX_PRODUCTS &&
+    selectedIds.length >= 1 &&
+    !comparing;
 
   const toggleProduct = (productId: string, checked: boolean) => {
     setSelectedIds((prev) => {
       if (checked) {
         if (prev.includes(productId)) return prev;
-        if (prev.length >= MAX_PRODUCTS) return prev;
+        if (prev.length + (brochure ? 1 : 0) >= MAX_PRODUCTS) return prev;
         return [...prev, productId];
       }
       return prev.filter((id) => id !== productId);
@@ -123,7 +144,7 @@ export function ComparatorPage() {
     setComparison(null);
     setComparisonError(null);
     try {
-      const result = await compareProducts(selectedIds, locale);
+      const result = await compareProducts(selectedIds, locale, brochure ? [brochure.temp_id] : []);
       setComparison(result);
     } catch (err: unknown) {
       setComparisonError(err instanceof Error ? err.message : String(err));
@@ -134,16 +155,25 @@ export function ComparatorPage() {
 
   const handleClearSelection = () => {
     setSelectedIds([]);
+    setBrochure(null);
     setComparison(null);
     setComparisonError(null);
   };
 
   const typeOptions = useMemo(() => {
-    return productTypes.map((type) => ({
+    return typesForLine(productTypes, line).map((type) => ({
       value: type,
       label: t(`domain.policyType.${type}`, { defaultValue: type }),
     }));
-  }, [productTypes, t]);
+  }, [productTypes, line, t]);
+
+  // Switching line clears the product type, which in turn clears the products,
+  // brochure and result (see the selectedType effect above).
+  const handleLineChange = (next: ProductLine) => {
+    if (next === line) return;
+    setLine(next);
+    setSelectedType('');
+  };
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -168,21 +198,31 @@ export function ComparatorPage() {
           <div className="flex flex-col gap-4">
             {typesError ? (
               <Alert variant="danger">
-                {t('common.errors.loadFailed', { message: typesError })}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span>{t('common.errors.loadFailed', { message: typesError })}</span>
+                  <Button variant="secondary" size="sm" onClick={() => setTypesAttempt((n) => n + 1)}>
+                    {t('common.actions.retry')}
+                  </Button>
+                </div>
               </Alert>
             ) : null}
+
+            <LineToggle value={line} onChange={handleLineChange} />
 
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-foreground-muted">
                 {t('assistant.pages.comparator.typeLabel')}
               </label>
+              <div className="relative" aria-busy={typesLoading}>
               <Select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
                 disabled={typesLoading || Boolean(typesError)}
               >
                 <option value="">
-                  {t('assistant.pages.comparator.typePlaceholder')}
+                  {typesLoading
+                    ? t('assistant.pages.comparator.typesLoading')
+                    : t('assistant.pages.comparator.typePlaceholder')}
                 </option>
                 {typeOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -190,6 +230,12 @@ export function ComparatorPage() {
                   </option>
                 ))}
               </Select>
+              {typesLoading ? (
+                <span className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2">
+                  <Spinner size="sm" />
+                </span>
+              ) : null}
+              </div>
             </div>
 
             {selectedType ? (
@@ -199,20 +245,33 @@ export function ComparatorPage() {
                 error={productsError}
                 selectedIds={selectedIds}
                 onToggle={toggleProduct}
+                maxProducts={MAX_PRODUCTS - (brochure ? 1 : 0)}
               />
             ) : (
               <p className="text-sm italic text-foreground-muted">
                 {t('assistant.pages.comparator.selectType')}
               </p>
             )}
+            {selectedType ? (
+              <BrochureUpload
+                productType={selectedType}
+                brochure={brochure}
+                onChange={(b) => {
+                  setBrochure(b);
+                  setComparison(null);
+                  setComparisonError(null);
+                }}
+                slotsFull={!brochure && selectedIds.length >= MAX_PRODUCTS}
+              />
+            ) : null}
 
             <div className="border-t border-border pt-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="text-xs text-foreground-muted">
-                  {t('assistant.pages.comparator.selectedCount', { count: selectedIds.length })}
+                  {t('assistant.pages.comparator.selectedCount', { count: totalProducts })}
                 </span>
                 <div className="flex items-center gap-2">
-                  {selectedIds.length > 0 ? (
+                  {totalProducts > 0 ? (
                     <Button variant="ghost" size="sm" onClick={handleClearSelection}>
                       {t('assistant.pages.comparator.clearButton')}
                     </Button>
@@ -229,12 +288,12 @@ export function ComparatorPage() {
                 </div>
               </div>
 
-              {selectedIds.length > 0 && selectedIds.length < MIN_PRODUCTS ? (
+              {totalProducts > 0 && totalProducts < MIN_PRODUCTS ? (
                 <p className="mt-2 text-xs text-foreground-muted">
                   {t('assistant.pages.comparator.minProducts', { min: MIN_PRODUCTS })}
                 </p>
               ) : null}
-              {selectedIds.length === MAX_PRODUCTS ? (
+              {totalProducts === MAX_PRODUCTS ? (
                 <p className="mt-2 text-xs text-foreground-muted">
                   {t('assistant.pages.comparator.maxProducts', { max: MAX_PRODUCTS })}
                 </p>
@@ -279,20 +338,97 @@ export function ComparatorPage() {
   );
 }
 
+interface LineToggleProps {
+  value: ProductLine;
+  onChange: (line: ProductLine) => void;
+}
+
+/**
+ * Life / General / Health switch. A radio group: arrow keys move between the
+ * options, and the selected one is the tab stop.
+ */
+function LineToggle({ value, onChange }: LineToggleProps) {
+  const { t } = useTranslation();
+  const refs = useRef<Record<ProductLine, HTMLButtonElement | null>>({
+    life: null,
+    general: null,
+    health: null,
+  });
+
+  const move = (delta: number) => {
+    const next = PRODUCT_LINES[(PRODUCT_LINES.indexOf(value) + delta + PRODUCT_LINES.length) % PRODUCT_LINES.length];
+    onChange(next);
+    refs.current[next]?.focus();
+  };
+
+  return (
+    <div>
+      <div
+        id="comparator-line-label"
+        className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-foreground-muted"
+      >
+        {t('assistant.pages.comparator.line.label')}
+      </div>
+      <div
+        role="radiogroup"
+        aria-labelledby="comparator-line-label"
+        className="inline-flex items-center gap-1 rounded-full border border-border bg-background-muted/60 p-0.5"
+      >
+        {PRODUCT_LINES.map((option) => {
+          const active = option === value;
+          return (
+            <button
+              key={option}
+              ref={(el) => {
+                refs.current[option] = el;
+              }}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              tabIndex={active ? 0 : -1}
+              onClick={() => onChange(option)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  move(1);
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  move(-1);
+                }
+              }}
+              className={cn(
+                'rounded-full px-4 py-1.5 text-sm font-medium transition-[background,color,box-shadow] duration-150',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+                active
+                  ? 'nav-pill-active'
+                  : 'text-foreground-muted hover:bg-background-elevated hover:text-foreground'
+              )}
+            >
+              {t(`assistant.pages.comparator.line.${option}`)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface ProductSelectorProps {
   products: CatalogProduct[];
   loading: boolean;
   error: string | null;
   selectedIds: string[];
   onToggle: (productId: string, checked: boolean) => void;
+  /** How many list products can be ticked (4, or 3 once a brochure is added). */
+  maxProducts: number;
 }
-
 function ProductSelector({
   products,
   loading,
   error,
   selectedIds,
   onToggle,
+  maxProducts,
 }: ProductSelectorProps) {
   const { t } = useTranslation();
 
@@ -321,7 +457,7 @@ function ProductSelector({
     );
   }
 
-  const atMax = selectedIds.length >= MAX_PRODUCTS;
+  const atMax = selectedIds.length >= maxProducts;
 
   return (
     <div>
@@ -411,12 +547,41 @@ function ComparisonView({ data }: { data: ComparisonResponse }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? i18n.language;
   const anyStale = data.products.some((p) => p.stale);
+  const uploadedProducts = data.products.filter((p) => p.uploaded);
+  const ratings = summariseRatings(data.products);
+  const outlookWord = t('assistant.pages.comparator.ratings.outlook');
+  // Customer PDF: the printable view is mounted only while exporting.
+  const advisorEmail = useAdvisorEmail();
+  const printRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!exporting) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!printRef.current) throw new Error('Print view not ready');
+        await exportBlocksToPdf(printRef.current, {
+          filename: `product-comparison-${new Date().toISOString().slice(0, 10)}.pdf`,
+        });
+      } catch (err) {
+        if (!cancelled) setPdfError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (!cancelled) setExporting(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [exporting]);
 
   return (
     <Card feature className="relative overflow-hidden">
-      {/* BR-COMP-002: diagonal watermark that only renders when the page is
-          printed / exported to PDF, so a shared hard copy is clearly marked
-          as internal. Hidden on screen (the header badge covers that). */}
+      {/* The on-screen "Internal use only" badge below
+          stays. The diagonal watermark here applies only to the browser's own
+          Print command (a screenshot-style hard copy of the advisor's screen).
+          The "Download PDF" handout for the customer is built separately in
+          ComparisonPrintView and carries no internal-use marking. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-50 hidden items-center justify-center print:flex"
@@ -429,10 +594,32 @@ function ComparisonView({ data }: { data: ComparisonResponse }) {
       <div className="border-b border-border bg-gradient-to-r from-brand-2/10 via-brand-1/5 to-transparent p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg font-semibold">{toCellText(data.title)}</h3>
-          <Badge variant="warning" className="shrink-0 uppercase tracking-wide">
-            {t('assistant.pages.comparator.internalUseOnly')}
-          </Badge>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <Badge variant="warning" className="uppercase tracking-wide">
+              {t('assistant.pages.comparator.internalUseOnly')}
+            </Badge>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={exporting}
+              onClick={() => {
+                setPdfError(null);
+                setExporting(true);
+              }}
+              title={t('assistant.pages.comparator.pdf.hint')}
+            >
+              <Download className="h-3.5 w-3.5" />
+              {exporting
+                ? t('assistant.pages.comparator.pdf.preparing')
+                : t('assistant.pages.comparator.pdf.button')}
+            </Button>
+          </div>
         </div>
+        {pdfError ? (
+          <p className="mt-2 text-xs text-danger" role="alert">
+            {t('assistant.pages.comparator.pdf.failed', { message: pdfError })}
+          </p>
+        ) : null}
         {data.summary ? (
           <div className="mt-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">
@@ -450,6 +637,94 @@ function ComparisonView({ data }: { data: ComparisonResponse }) {
           <Alert variant="warning">
             {t('assistant.pages.comparator.staleNotice')}
           </Alert>
+        ) : null}
+        {uploadedProducts.length > 0 ? (
+          <Alert variant="info">
+            {t('assistant.pages.comparator.uploadedNotice', {
+              name: uploadedProducts.map((p) => toCellText(p.name)).join(', '),
+            })}
+          </Alert>
+        ) : null}
+        {ratings.hasAny ? (
+          <section>
+            <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide">
+              {t('assistant.pages.comparator.ratings.title')}
+            </h4>
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-background-muted/60">
+                    <th className="w-[28%] px-3 py-2 text-left font-medium" />
+                    {data.products.map((product) => (
+                      <th
+                        key={product.id}
+                        className="border-l border-border px-3 py-2 text-left align-top font-medium"
+                      >
+                        <div className="font-semibold">{toCellText(product.name)}</div>
+                        <div className="text-xs font-normal text-foreground-muted">
+                          {toCellText(product.carrier)}
+                        </div>
+                        {product.uploaded ? (
+                          <Badge variant="info" className="mt-1">
+                            {t('assistant.pages.comparator.brochure.badge')}
+                          </Badge>
+                        ) : null}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ratings.rows.map((row, rowIdx) => (
+                    <tr
+                      key={row.agency}
+                      className={cn(
+                        'border-b border-border last:border-0',
+                        rowIdx % 2 === 1 && 'bg-background-muted/30'
+                      )}
+                    >
+                      <td className="px-3 py-2 align-top font-semibold">{row.agency}</td>
+                      {row.cells.map((r, idx) => (
+                        <td
+                          key={`${row.agency}-${idx}`}
+                          className="border-l border-border px-3 py-2 align-top"
+                        >
+                          {r ? (
+                            <>
+                              <span className="font-semibold">{r.rating}</span>
+                              {ratingDetail(r, outlookWord) ? (
+                                <div className="text-xs text-foreground-muted">
+                                  {ratingDetail(r, outlookWord)}
+                                </div>
+                              ) : null}
+                            </>
+                          ) : (
+                            <span className="text-foreground-muted">
+                              {t('assistant.pages.comparator.ratings.notStated')}
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-1.5 space-y-0.5 text-[11px] text-foreground-muted">
+              {ratings.anyIllustrative ? (
+                <p>{t('assistant.pages.comparator.ratings.illustrativeNote')}</p>
+              ) : null}
+              {ratings.anyFromBrochure ? (
+                <p>{t('assistant.pages.comparator.ratings.brochureNote')}</p>
+              ) : null}
+              {ratings.asOf ? (
+                <p>
+                  {t('assistant.pages.comparator.ratings.asOf', {
+                    date: fmtDate(ratings.asOf, locale),
+                  })}
+                </p>
+              ) : null}
+            </div>
+          </section>
         ) : null}
 
         {(Array.isArray(data.sections) ? data.sections : []).map((section) => (
@@ -527,6 +802,9 @@ function ComparisonView({ data }: { data: ComparisonResponse }) {
           {data.disclaimer ? toCellText(data.disclaimer) : t('assistant.pages.comparator.disclaimer')}
         </p>
       </div>
+      {exporting ? (
+        <ComparisonPrintView ref={printRef} data={data} advisorEmail={advisorEmail} />
+      ) : null}
     </Card>
   );
 }

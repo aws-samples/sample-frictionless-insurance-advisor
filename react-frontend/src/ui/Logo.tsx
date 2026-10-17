@@ -1,9 +1,9 @@
 import { cn } from '../lib/cn';
 
 /**
- * Inline SVG mark for Unicorn Insurance. A stylised unicorn horn /
- * shield mash-up — neon brand gradient. Currentcolor doesn't apply
- * because we use the gradient defined inside the SVG itself.
+ * Inline SVG mark for Awesome Insurance: a shield with a check mark, drawn in
+ * the brand gradient. currentColor does not apply because the gradient is
+ * defined inside the SVG itself.
  */
 export function Logo({ className }: { className?: string }) {
   return (
@@ -11,7 +11,7 @@ export function Logo({ className }: { className?: string }) {
       viewBox="0 0 32 32"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Unicorn Insurance logo"
+      aria-label="Awesome Insurance logo"
       className={cn('h-7 w-7 shrink-0', className)}
     >
       <defs>
@@ -33,13 +33,15 @@ export function Logo({ className }: { className?: string }) {
         stroke="url(#ui-grad)"
         strokeWidth="1.6"
       />
-      {/* Unicorn horn — striped diagonal */}
+      {/* Check mark */}
       <path
-        d="M11 21 L17 9 L21 11 L15 23 Z"
-        fill="url(#ui-grad)"
+        d="M10.5 16.5 L14.5 20.5 L22 11.5"
+        fill="none"
+        stroke="url(#ui-grad)"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <path d="M13 19 L18 11" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
-      <path d="M14.5 17 L19 11.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
     </svg>
   );
 }

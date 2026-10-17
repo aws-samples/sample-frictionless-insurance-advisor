@@ -56,6 +56,16 @@
       "Option A (level face)": "オプションA(定額)",
       "Option B (face + cash value)": "オプションB(額面+解約返戻金)",
       "Option C (face + return of premium)": "オプションC(額面+保険料返還)"
+    },
+    "gender": {
+      "male": "男性",
+      "female": "女性"
+    },
+    "productLine": {
+      "life": "生命保険商品",
+      "general": "損害保険商品",
+      "health": "医療・健康商品",
+      "all": "すべての商品"
     }
   }
 }

@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { ArrowLeft, Check, FileText, PenLine } from 'lucide-react';
+import { Check, Download, FileText, PenLine, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '../lib/cn';
+import { exportBlocksToPdf, slugForFile } from '../lib/pdf';
 import type { FormFieldDef, FormFieldState, FormSchema } from '../types';
 import { Badge, Button, Card, Select } from '../ui';
-import type { FormFillProgress } from '../hooks/useFormFill';
+import { useAdvisorEmail } from '../hooks/useAdvisor';
+import type { FormFillProgress } from '../hooks/formSessions';
 
 import { ConfidenceIndicator } from './ConfidenceIndicator';
+import { FormPrintView } from './FormPrintView';
 
 interface FormPanelProps {
   schema: FormSchema;
@@ -19,6 +22,8 @@ interface FormPanelProps {
   onFieldChange: (path: string, value: string) => void;
   onConfirmField: (path: string) => void;
   onClose: () => void;
+  /** Shown on the downloaded PDF. */
+  customerName?: string;
 }
 
 /** Maps a schema field type onto the right input element. */
@@ -31,6 +36,9 @@ function FieldInput({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useTranslation();
+  const yes = t('assistant.form.yes');
+  const no = t('assistant.form.no');
   const inputClass =
     'h-10 w-full rounded-md border border-border bg-background-elevated px-3 text-sm text-foreground ' +
     'transition-[border-color,box-shadow] duration-150 placeholder:text-foreground-muted ' +
@@ -57,8 +65,8 @@ function FieldInput({
     return (
       <Select id={field.path} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">—</option>
-        <option value="true">Yes</option>
-        <option value="false">No</option>
+        <option value="true">{yes}</option>
+        <option value="false">{no}</option>
       </Select>
     );
   }
@@ -91,10 +99,16 @@ export function FormPanel({
   onFieldChange,
   onConfirmField,
   onClose,
+  customerName,
 }: FormPanelProps) {
   const { t } = useTranslation();
   // Mock action — no backend. Kept local so the button can show it fired.
   const [sent, setSent] = useState(false);
+  // PDF download: the printable view is mounted only while exporting.
+  const advisorEmail = useAdvisorEmail();
+  const printRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // A different product means a different application, so a previous "sent"
   // must not carry over — the new form has its own fields to complete.
@@ -104,6 +118,26 @@ export function FormPanel({
 
   const readyToSend =
     progress.requiredTotal > 0 && progress.requiredFilled === progress.requiredTotal;
+
+  useEffect(() => {
+    if (!exporting) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!printRef.current) throw new Error('Print view not ready');
+        await exportBlocksToPdf(printRef.current, {
+          filename: `${slugForFile(schema.title)}${customerName ? `-${slugForFile(customerName)}` : ''}.pdf`,
+        });
+      } catch (err) {
+        if (!cancelled) setPdfError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (!cancelled) setExporting(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [exporting, schema.title, customerName]);
 
   // Editing a required field back to empty after sending should also undo the
   // sent state; the application is no longer complete.
@@ -125,15 +159,12 @@ export function FormPanel({
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t('assistant.form.backToProfile')}
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-3.5 w-3.5" />
+              {t('common.actions.close')}
+            </Button>
+          </div>
         </div>
 
         <div className="mt-5">
@@ -301,30 +332,51 @@ export function FormPanel({
           value; the label explains why it is disabled rather than leaving the
           advisor guessing. */}
       <div className="flex flex-col items-stretch gap-2 pb-2">
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          disabled={!readyToSend || sent}
-          onClick={() => setSent(true)}
-          title={
-            readyToSend
-              ? undefined
-              : t('assistant.form.sendBlocked', { count: progress.missingLabels.length })
-          }
-        >
-          {sent ? (
-            <>
-              <Check className="h-4 w-4" />
-              {t('assistant.form.sent')}
-            </>
-          ) : (
-            <>
-              <PenLine className="h-4 w-4" />
-              {t('assistant.form.sendForSignature')}
-            </>
-          )}
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            variant="primary"
+            size="lg"
+            className="sm:flex-1"
+            disabled={!readyToSend || sent}
+            onClick={() => setSent(true)}
+            title={
+              readyToSend
+                ? undefined
+                : t('assistant.form.sendBlocked', { count: progress.missingLabels.length })
+            }
+          >
+            {sent ? (
+              <>
+                <Check className="h-4 w-4" />
+                {t('assistant.form.sent')}
+              </>
+            ) : (
+              <>
+                <PenLine className="h-4 w-4" />
+                {t('assistant.form.sendForSignature')}
+              </>
+            )}
+          </Button>
+          {/* Download PDF works at any time, complete or not; it sits next to
+              Send for signature so the two end-of-form actions are together. */}
+          <Button
+            variant="secondary"
+            size="lg"
+            disabled={exporting}
+            onClick={() => {
+              setPdfError(null);
+              setExporting(true);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? t('assistant.form.pdf.preparing') : t('assistant.form.downloadPdf')}
+          </Button>
+        </div>
+        {pdfError ? (
+          <p className="text-center text-xs text-danger" role="alert">
+            {t('assistant.form.pdf.failed', { message: pdfError })}
+          </p>
+        ) : null}
         <p className="text-center text-xs text-foreground-muted">
           {sent
             ? t('assistant.form.sentHint')
@@ -333,6 +385,15 @@ export function FormPanel({
               : t('assistant.form.sendBlocked', { count: progress.missingLabels.length })}
         </p>
       </div>
+      {exporting ? (
+        <FormPrintView
+          ref={printRef}
+          schema={schema}
+          fields={fields}
+          advisorEmail={advisorEmail}
+          customerName={customerName}
+        />
+      ) : null}
     </div>
   );
 }

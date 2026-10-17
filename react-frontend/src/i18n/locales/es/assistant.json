@@ -4,7 +4,8 @@
       "heading": "Clientes",
       "collapse": "Contraer barra lateral",
       "expand": "Expandir barra lateral",
-      "newProspect": "+ Nuevo Prospecto"
+      "newProspect": "+ Nuevo Prospecto",
+      "home": "Inicio"
     },
     "welcome": {
       "heading": "Bienvenido",
@@ -25,11 +26,25 @@
         "joinDate": "Cliente desde",
         "policiesCount": "Pólizas",
         "occupation": "Ocupación",
-        "maritalStatus": "Estado civil"
+        "maritalStatus": "Estado civil",
+        "gender": "Género"
       },
       "dataFreshness": {
         "badge": "Verificar datos actuales",
         "tooltip": "Este perfil no se ha revisado en más de {{days}} días. Confirma que los datos del cliente siguen vigentes antes de basarte en el análisis de cobertura."
+      },
+      "actions": {
+        "gapAnalysis": {
+          "button": "Crear análisis de cobertura",
+          "menuTitle": "Analizar la cobertura de",
+          "resultTitle": "Análisis de cobertura: {{line}}",
+          "close": "Cerrar análisis"
+        },
+        "form": {
+          "button": "Abrir formulario de solicitud",
+          "menuTitle": "Formulario de solicitud de",
+          "error": "No se pudo abrir el formulario: {{message}}"
+        }
       }
     },
     "policies": {
@@ -98,8 +113,7 @@
       }
     },
     "chat": {
-      "headingCustomer": "Chat de pólizas con IA",
-      "headingProspect": "Coaching de cliente potencial",
+      "heading": "Chat con IA",
       "selectCustomer": "Selecciona un cliente para iniciar un chat.",
       "emptyPlaceholder": "Haz una pregunta o elige una sugerencia abajo.",
       "messageLabel": "Mensaje",
@@ -119,10 +133,16 @@
         "heading": "Póliza de muestra para {{name}}",
         "subtext": "Pólizas de terceros ficticias para probar la subida.",
         "notice": "Compañías ficticias. Sin cobertura real."
+      },
+      "sources": {
+        "label": "Fuentes",
+        "openFile": "Abrir {{title}} en Explorador de datos (nueva pestaña del navegador)",
+        "openWeb": "Abrir {{title}} (nueva pestaña del navegador)"
       }
     },
     "prompts": {
       "customer": {
+        "meetingPrep": "Ayúdame a preparar mi reunión con este cliente",
         "policies": "¿Qué pólizas tengo?",
         "coverageGap": "¿Qué huecos de cobertura tengo y cómo puedo solucionarlos?",
         "premiumDelta": "¿Por qué su prima es más alta o más baja que la de la competencia?",
@@ -131,18 +151,24 @@
         "mentalHealthMaternity": "¿Cubren salud mental, maternidad o tratamientos alternativos?",
         "outpatientDentalOptical": "¿Cubren tratamientos ambulatorios, dental u óptica?",
         "dayOneCover": "¿Cuál es su cobertura desde el primer día frente al período de espera de la competencia?",
-        "preExistingWaiting": "¿Cuál es su período de espera para condiciones preexistentes frente a la competencia?"
+        "preExistingWaiting": "¿Cuál es su período de espera para condiciones preexistentes frente a la competencia?",
+        "annualReview": "Prepara una revisión anual para este cliente",
+        "outreach": "Redacta un correo para este cliente",
+        "marketPulse": "¿Qué hay de nuevo en el mercado de seguros esta semana?"
       },
       "prospect": {
+        "meetingPrep": "Ayúdame a preparar mi reunión con este cliente potencial",
         "firstProducts": "¿Qué seguro debería considerar primero este cliente potencial?",
         "discovery": "Ayúdame a iniciar una conversación de descubrimiento",
         "bestProducts": "¿Cuáles son los mejores productos según su perfil?",
-        "company": "Cuéntame sobre Unicorn Insurance",
-        "whyUnicorn": "¿Por qué debería elegir Unicorn en lugar de BigRival?",
-        "qualifyQuestions": "¿Qué preguntas debería hacer para calificar a este cliente potencial?"
+        "company": "Cuéntame sobre Awesome Insurance",
+        "whyAwesome": "¿Por qué debería elegir Awesome en lugar de BigRival?",
+        "qualifyQuestions": "¿Qué preguntas debería hacer para calificar a este cliente potencial?",
+        "outreach": "Redacta un primer correo de contacto para este prospecto",
+        "marketPulse": "¿Qué hay de nuevo en el mercado de seguros esta semana?"
       },
-      "voice": {
-        "startTermLifeApplication": "Iniciar una solicitud de seguro de vida a término"
+      "application": {
+        "startTermLife": "Iniciar una solicitud de seguro de vida a término"
       }
     },
     "pages": {
@@ -151,8 +177,14 @@
       },
       "comparator": {
         "heading": "Comparador",
-        "intro": "Compara productos de seguros entre Unicorn Insurance y sus competidores. Selecciona un tipo de producto y luego elige entre 2 y 4 productos para comparar.",
+        "intro": "Compara productos de seguros entre Awesome Insurance y sus competidores. Selecciona un tipo de producto y luego elige entre 2 y 4 productos para comparar.",
         "typeLabel": "Tipo de producto",
+        "line": {
+          "label": "Línea de producto",
+          "life": "Vida",
+          "general": "Generales",
+          "health": "Salud"
+        },
         "typePlaceholder": "Selecciona un tipo de producto",
         "productsLabel": "Productos a comparar",
         "productsHelp": "Selecciona entre {{min}} y {{max}} productos.",
@@ -174,10 +206,46 @@
         "internalUseOnly": "Solo para uso interno",
         "staleNotice": "Algunos datos de origen pueden estar desactualizados; verifícalos antes de compartirlos con un cliente.",
         "productStale": "Datos de más de {{days}} días",
-        "productUpdated": "Fuente actualizada el {{date}}"
+        "productUpdated": "Fuente actualizada el {{date}}",
+        "brochure": {
+          "title": "Añadir un folleto de la competencia (opcional)",
+          "help": "Suba un folleto en PDF de otra aseguradora para incluirlo en esta comparación. Se lee una sola vez, se usa solo en esta comparación y se elimina automáticamente en un plazo de 48 horas.",
+          "choose": "Elegir PDF",
+          "uploading": "Subiendo…",
+          "reading": "Leyendo el folleto…",
+          "remove": "Quitar",
+          "badge": "Folleto subido",
+          "notes": "{{count}} nota(s) al leer el folleto",
+          "pdfOnly": "Elija un archivo PDF.",
+          "tooLarge": "Este PDF supera los 4,5 MB. Use un archivo más pequeño.",
+          "noRoom": "Desmarque un producto para hacer sitio (máximo 4).",
+          "sampleLabel": "¿No tiene un folleto? Pruebe un ejemplo:",
+          "sampleButton": "Descargar {{name}} (PDF)"
+        },
+        "uploadedNotice": "{{name}} procede de un folleto que subió. Se leyó automáticamente y no se ha verificado. Compruebe los datos con el folleto antes de basarse en ellos.",
+        "ratings": {
+          "title": "Solidez financiera de la aseguradora",
+          "outlook": "perspectiva",
+          "notStated": "No indicado",
+          "illustrativeNote": "Las calificaciones de la competencia son datos ilustrativos de demostración, no cifras reales.",
+          "brochureNote": "Las calificaciones del folleto subido son las que este indica y no se han verificado.",
+          "asOf": "Calificaciones a {{date}}."
+        },
+        "pdf": {
+          "button": "Descargar PDF",
+          "hint": "Un PDF para entregar al cliente, sin la marca de uso interno",
+          "preparing": "Preparando…",
+          "failed": "No se pudo crear el PDF: {{message}}",
+          "heading": "Comparación de productos",
+          "prepared": "Preparado el {{date}}",
+          "advisor": "Asesor: {{name}}",
+          "uploadedNote": "{{name}} se ha leído de un folleto aportado por su asesor y no se ha verificado.",
+          "customerDisclaimer": "Basado en la documentación de producto a {{date}}. Esta comparación es solo informativa. No es un presupuesto ni una oferta y puede no mostrar todas las características o exclusiones. Compruebe los detalles con cada aseguradora antes de decidir."
+        },
+        "typesLoading": "Cargando tipos de producto…"
       },
       "data": {
-        "heading": "Datos",
+        "heading": "Explorador de datos",
         "intro": "Consulta los documentos de referencia que respaldan las respuestas del asistente: cartera de productos, información de la empresa, posicionamiento competitivo, productos de la competencia, promociones y esquemas de formularios de solicitud.",
         "searchPlaceholder": "Buscar archivos...",
         "clearSearch": "Limpiar búsqueda",
@@ -208,7 +276,84 @@
           "competitive": "Posicionamiento competitivo",
           "competitors": "Productos de la competencia",
           "promotion": "Promociones",
-          "forms": "Formularios de solicitud"
+          "forms": "Formularios de solicitud",
+          "pricing": "Tablas de precios",
+          "brochures": "Folletos",
+          "transcripts": "Transcripciones de voz"
+        },
+        "pdf": {
+          "download": "Descargar PDF",
+          "open": "Abrir en una pestaña nueva",
+          "note": "Folleto de una página para compartir con clientes. No muestra precios.",
+          "fallback": "Su navegador no pudo mostrar el PDF aquí. Use Descargar PDF o Abrir en una pestaña nueva."
+        },
+        "pricing": {
+          "ageBand": "Tramo de edad",
+          "ratePerUnit": "Tarifa anual por cada {{unit}}",
+          "scaledNote": "Los importes corresponden a una cobertura de {{amount}} y escalan con la suma elegida.",
+          "interpolatedNote": "Los importes entre filas se interpolan.",
+          "monthlyBenefit": "Prestación mensual",
+          "baseAnnual": "Prima anual base",
+          "geography": "Región",
+          "perDay": "Por día y viajero",
+          "annualMulti": "Anual multiviaje, por viajero",
+          "addonPct": "+{{pct}} % de la prima",
+          "addonFlat": "+{{amount}} al año",
+          "addonPerUnit": "+{{amount}} por cada {{per}} asegurados",
+          "addonOnAmount": "+{{pct}} % del importe indicado",
+          "indicative": "Solo indicativo",
+          "effective": "Vigente desde {{date}}",
+          "basis": "Base de la prima: {{basis}}. Moneda: {{currency}}.",
+          "dependsOn": "De qué depende el precio",
+          "option": "Opción",
+          "meaning": "Significado",
+          "allowed": "Valores permitidos",
+          "defaultCol": "Predeterminado",
+          "required": "Obligatorio",
+          "fromProfile": "se toma del registro del cliente",
+          "baseRates": "Tarifas base",
+          "factors": "Factores de tarificación",
+          "factorsHelp": "Cada factor multiplica la tarifa base. Los factores que no aplican a las opciones elegidas se omiten.",
+          "addons": "Complementos",
+          "addon": "Complemento",
+          "effect": "Efecto en la prima",
+          "frequency": "Frecuencia de pago",
+          "paidEvery": "Pago",
+          "loading": "Recargo",
+          "noLoading": "Ninguno",
+          "examples": "Ejemplos calculados",
+          "example": "Ejemplo",
+          "choices": "Opciones elegidas",
+          "annualPremium": "Prima anual",
+          "examplesNote": "Calculados con estas tablas, de modo que los asistentes citan las mismas cifras.",
+          "affordabilityTitle": "Regla de asequibilidad",
+          "ofIncome": "de los ingresos anuales, entre todas las pólizas vigentes"
+        },
+        "transcript": {
+          "inProgress": "En curso",
+          "ended": "Finalizada",
+          "started": "Inicio {{time}}",
+          "refresh": "Actualizar",
+          "expires": "Caduca automáticamente entre 24 y 48 horas después de su último guardado ({{time}}). Mientras la sesión está abierta se guarda cada 30 segundos aproximadamente.",
+          "consent": "El consentimiento para transcribir se confirmó el {{time}}.",
+          "empty": "Aún no se ha guardado nada en esta sesión.",
+          "about": "Sobre {{name}}",
+          "aboutProspect": "Sobre un prospecto",
+          "advisor": "Asesor",
+          "assistant": "Asistente",
+          "typed": "escrito",
+          "prospect": "Prospecto",
+          "turnCount": "{{count}} intervenciones"
+        },
+        "collapseAll": "Contraer todo",
+        "expandAll": "Expandir todo",
+        "collapseFolder": "Contraer {{folder}}",
+        "expandFolder": "Expandir {{folder}}",
+        "ratings": {
+          "carrierCount": "{{count}} aseguradoras",
+          "agencyCount": "{{count}} agencias de calificación",
+          "carrier": "Aseguradora",
+          "illustrative": "Ilustrativo"
         }
       }
     },
@@ -230,15 +375,27 @@
         "speaking": "Hablando"
       },
       "mute": "Silenciar voz",
-      "unmute": "Activar voz"
+      "unmute": "Activar voz",
+      "consent": {
+        "question": "Antes de grabar: ¿{{name}} ha aceptado que esta conversación se transcriba?",
+        "theProspect": "el prospecto",
+        "hint": "No se guarda ni se recuerda nada, ni se rellenan formularios, hasta que lo confirmes. Responde en voz alta al asistente o usa los botones.",
+        "changed": "El cliente cambió, así que hace falta el consentimiento de nuevo.",
+        "confirm": "Confirmado",
+        "decline": "Rechazado",
+        "confirmed": "Consentimiento confirmado a las {{time}}. Esta conversación se transcribe y se conserva 24 horas.",
+        "declinedMessage": "Consentimiento rechazado. La sesión terminó y no se guardó nada.",
+        "startNew": "Iniciar una sesión nueva"
+      }
     },
     "recommendation": {
       "loading": "Analizando la cobertura y buscando brechas...",
       "noGaps": "No se han identificado brechas de cobertura significativas: el cliente está bien cubierto para su perfil.",
-      "error": "No se pudo generar la recomendación: {{message}}"
+      "error": "No se pudo generar la recomendación: {{message}}",
+      "exposureLabel": "Exposición financiera",
+      "exposureIllustrative": "Estimación ilustrativa"
     },
     "form": {
-      "backToProfile": "Perfil",
       "progress": "{{filled}} de {{total}} campos obligatorios",
       "progressLabel": "Progreso del formulario",
       "pendingReview": "{{count}} por revisar",
@@ -253,7 +410,128 @@
       "legendProfile": "Del perfil",
       "legendHeard": "Oído en la conversación",
       "legendConfirm": "Confirmar",
-      "legendManual": "Introducido por ti"
+      "legendManual": "Introducido por ti",
+      "downloadPdf": "Descargar PDF",
+      "yes": "Sí",
+      "no": "No",
+      "pdf": {
+        "preparing": "Preparando…",
+        "failed": "No se pudo crear el PDF: {{message}}",
+        "prepared": "Preparado el {{date}}",
+        "advisor": "Asesor: {{name}}",
+        "requiredNote": "* Obligatorio. Deje en blanco las líneas aún sin responder y complételas a mano.",
+        "signatureApplicant": "Firma del solicitante",
+        "signatureAdvisor": "Firma del asesor",
+        "date": "Fecha",
+        "disclaimer": "Borrador preparado con el asistente para asesores de Awesome Insurance. No es una oferta de cobertura. La cobertura solo comienza cuando Awesome Insurance emite una póliza tras la suscripción."
+      }
+    },
+    "notes": {
+      "heading": "Notas",
+      "add": "Añadir nota",
+      "save": "Guardar nota",
+      "typeLabel": "Tipo",
+      "type": {
+        "life_event": "Acontecimiento vital",
+        "interaction": "Interacción"
+      },
+      "dateLabel": "Fecha del acontecimiento (opcional)",
+      "textLabel": "Nota",
+      "textPlaceholder": "p. ej., espera su segundo hijo en marzo",
+      "empty": "Aún no hay notas.",
+      "eventOn": "Acontecimiento: {{date}}",
+      "addedOn": "añadida el {{date}}",
+      "byAssistant": "Añadida por el asistente",
+      "byAssistantHint": "Guardada por el asistente de IA a petición del asesor",
+      "delete": "Eliminar nota",
+      "confirmDelete": "Eliminar",
+      "saveFailed": "No se pudo guardar la nota: {{message}}",
+      "deleteFailed": "No se pudo eliminar la nota: {{message}}"
+    },
+    "cockpit": {
+      "heading": "Prioridades de hoy",
+      "summary": "{{needing}} de {{total}} clientes necesitan atención, los más urgentes primero",
+      "refresh": "Actualizar",
+      "loading": "Cargando tus prioridades…",
+      "empty": "Nada requiere tu atención ahora mismo.",
+      "error": "No se pudieron cargar tus prioridades: {{message}}",
+      "prospect": "Prospecto",
+      "actions": {
+        "annual_review": "Revisión anual",
+        "meeting_prep": "Preparar reunión",
+        "outreach": "Redactar correo"
+      },
+      "rules": {
+        "review_overdue": "Perfil revisado por última vez hace {{days}} días",
+        "life_event_upcoming": "Evento vital en {{days}} días: {{text}}",
+        "life_event_passed": "Evento vital hace {{days}} días, sin seguimiento: {{text}}",
+        "renewal_due": "{{policy}} ({{insurer}}) se renueva en {{days}} días",
+        "renewal_due_own": "{{policy}} se renueva en {{days}} días",
+        "renewal_passed": "{{policy}} ({{insurer}}) superó su fecha de renovación hace {{days}} días",
+        "renewal_passed_own": "{{policy}} superó su fecha de renovación hace {{days}} días",
+        "over_cap": "Las primas anuales son el {{percent}}% de los ingresos, por encima de la guía del {{cap}}%",
+        "prospect_quiet": "Aún sin póliza Awesome y sin contacto desde hace {{days}} días"
+      }
+    },
+    "meetingNote": {
+      "button": "Resumir en una nota",
+      "title": "Nota de la reunión",
+      "loading": "Redactando una nota a partir de esta conversación…",
+      "intro": "Revisa y edita el borrador y guárdalo en las notas del cliente. No se guarda nada hasta que pulses Guardar.",
+      "insufficient": "Todavía no hay suficiente en esta conversación para redactar una nota.",
+      "error": "No se pudo redactar la nota: {{message}}",
+      "saved": "Nota guardada en el registro del cliente.",
+      "trimmed": "Acortada para ajustarse al límite de 1.000 caracteres.",
+      "dateLabel": "Fecha de seguimiento (opcional)"
+    },
+    "roleplay": {
+      "button": "Practicar",
+      "setupTitle": "Practicar con {{name}}",
+      "setupIntro": "El asistente interpreta a este cliente con los datos de su ficha. Lleva la conversación como una real y termínala para recibir comentarios.",
+      "difficulty": "Dificultad",
+      "level": {
+        "friendly": "Amistoso",
+        "neutral": "Neutral",
+        "sceptical": "Escéptico"
+      },
+      "focusLabel": "Objeción principal",
+      "focus": {
+        "any": "Que varíe",
+        "cost": "Cuesta demasiado",
+        "work": "Ya tengo cobertura en el trabajo",
+        "young": "Soy demasiado joven para necesitarlo",
+        "compare": "Quiero compararlo con mi aseguradora",
+        "think": "Necesito pensarlo"
+      },
+      "privacy": "Nada de una sesión de práctica se graba ni se guarda, y no se añade nada al registro del cliente. Los datos de salud no se comparten con el asistente.",
+      "start": "Empezar práctica",
+      "banner": "Sesión de práctica: el asistente interpreta a {{name}}",
+      "bannerHint": "Activa el micrófono y el cliente te saluda. Di \"end exercise\" para parar antes.",
+      "leave": "Salir de la práctica",
+      "endAndScore": "Terminar y puntuar",
+      "feedbackTitle": "Comentarios de coaching",
+      "scoring": "Revisando la conversación…",
+      "scoreError": "No se pudieron generar los comentarios: {{message}}",
+      "insufficient": "No hubo suficiente conversación para dar comentarios. Inténtalo de nuevo y habla un poco más.",
+      "claimsTitle": "Afirmaciones sobre productos verificadas",
+      "verdict": {
+        "supported": "Coincide con la ficha",
+        "contradicted": "Difiere de la ficha",
+        "not_in_sheets": "No está en las fichas"
+      },
+      "nextTime": "Para la próxima vez",
+      "coachingNote": "Comentarios de coaching para tu propia práctica, generados por IA. No es una evaluación de desempeño y no se guarda.",
+      "finish": "Terminar",
+      "again": "Practicar de nuevo",
+      "criteria": {
+        "rapport": "Apertura y empatía",
+        "discovery": "Preguntas de descubrimiento",
+        "needs_link": "Vincular necesidades y cobertura",
+        "objections": "Manejo de objeciones",
+        "accuracy": "Exactitud",
+        "compliance": "Cumplimiento",
+        "closing": "Cierre"
+      }
     }
   }
 }

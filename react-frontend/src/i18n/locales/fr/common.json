@@ -7,7 +7,7 @@
       "assistant": "Assistant",
       "voice": "Voix",
       "comparator": "Comparateur",
-      "data": "Données",
+      "data": "Explorateur de données",
       "signOut": "Déconnexion",
       "language": "Langue",
       "pitchDeck": "Ouvrir la présentation"
@@ -16,7 +16,9 @@
       "send": "Envoyer",
       "clear": "Effacer",
       "refresh": "Actualiser",
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "retry": "Réessayer"
     },
     "states": {
       "loading": "Chargement...",
@@ -31,7 +33,7 @@
       "reload": "Recharger"
     },
     "brand": {
-      "nameAccent": "Unicorn",
+      "nameAccent": "Awesome",
       "nameSuffix": "Insurance"
     }
   }

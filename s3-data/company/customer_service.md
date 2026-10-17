@@ -1,4 +1,4 @@
-# Unicorn Insurance Customer Service
+# Awesome Insurance Customer Service
 
 This document describes how customers reach us, when we are available, what languages we support, and how complaints are escalated. Advisors can use it to set accurate expectations during the sales conversation and to hand off existing customers to the right channel.
 
@@ -16,11 +16,11 @@ Wait-time target for general service is under 90 seconds during business hours. 
 
 ### Email
 
-- **General enquiries:** `support@unicorninsurance.example`
-- **Claims:** `claims@unicorninsurance.example`
-- **Advisors:** `advisors@unicorninsurance.example`
-- **Complaints:** `complaints@unicorninsurance.example`
-- **Data protection / privacy:** `privacy@unicorninsurance.example`
+- **General enquiries:** `support@awesomeinsurance.example`
+- **Claims:** `claims@awesomeinsurance.example`
+- **Advisors:** `advisors@awesomeinsurance.example`
+- **Complaints:** `complaints@awesomeinsurance.example`
+- **Data protection / privacy:** `privacy@awesomeinsurance.example`
 
 We acknowledge email within one business day and aim to resolve or provide a substantive update within three business days.
 
@@ -32,7 +32,7 @@ We acknowledge email within one business day and aim to resolve or provide a sub
 
 ### In-app messaging
 
-- Secure messaging inside the Unicorn Insurance mobile app. Messages are tied to the customer's authenticated session and are persisted, so a conversation can span multiple sessions.
+- Secure messaging inside the Awesome Insurance mobile app. Messages are tied to the customer's authenticated session and are persisted, so a conversation can span multiple sessions.
 - Push notifications let customers know when we reply.
 - Photo and document upload is supported inside the chat, useful for claims evidence, proof of no-claims, and address documents.
 
@@ -148,7 +148,7 @@ Referral to the ombudsman is free for the customer, and our decision remains wit
 
 ### Advisor-initiated escalation
 
-Advisors can escalate on behalf of a client (with the client's consent) by contacting the advisor desk or emailing `complaints@unicorninsurance.example` with the policy or claim reference. The same SLAs apply.
+Advisors can escalate on behalf of a client (with the client's consent) by contacting the advisor desk or emailing `complaints@awesomeinsurance.example` with the policy or claim reference. The same SLAs apply.
 
 ## Accessibility
 

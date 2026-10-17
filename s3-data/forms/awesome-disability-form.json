@@ -1,0 +1,275 @@
+{
+  "form_id": "disability",
+  "product_type": "disability",
+  "product_name": "Awesome Disability",
+  "title": "Awesome Disability Application",
+  "sections": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "fields": [
+        {
+          "path": "applicant.full_name",
+          "label": "Full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.date_of_birth",
+          "label": "Date of birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "path": "applicant.gender",
+          "label": "Gender",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "male",
+              "label": "Male"
+            },
+            {
+              "value": "female",
+              "label": "Female"
+            }
+          ]
+        },
+        {
+          "path": "applicant.occupation",
+          "label": "Occupation",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.annual_income",
+          "label": "Annual income",
+          "type": "currency",
+          "required": true
+        },
+        {
+          "path": "applicant.email",
+          "label": "Email",
+          "type": "text"
+        },
+        {
+          "path": "applicant.phone",
+          "label": "Phone",
+          "type": "text"
+        },
+        {
+          "path": "applicant.address",
+          "label": "Address",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Coverage",
+      "fields": [
+        {
+          "path": "coverage.monthly_benefit",
+          "label": "Monthly benefit",
+          "type": "currency",
+          "required": true,
+          "hint": "$2,000 to $15,000, up to 60-70% of income"
+        },
+        {
+          "path": "coverage.benefit_period",
+          "label": "Benefit period",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "2_years",
+              "label": "2 years"
+            },
+            {
+              "value": "5_years",
+              "label": "5 years"
+            },
+            {
+              "value": "10_years",
+              "label": "10 years"
+            },
+            {
+              "value": "to_retirement",
+              "label": "Until retirement age (about 65)"
+            }
+          ]
+        },
+        {
+          "path": "coverage.waiting_period",
+          "label": "Waiting period",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "30",
+              "label": "30 days"
+            },
+            {
+              "value": "60",
+              "label": "60 days"
+            },
+            {
+              "value": "90",
+              "label": "90 days"
+            },
+            {
+              "value": "180",
+              "label": "180 days"
+            },
+            {
+              "value": "365",
+              "label": "365 days"
+            }
+          ]
+        },
+        {
+          "path": "coverage.occupation_class",
+          "label": "Occupation class",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "class_1",
+              "label": "Class 1: office / professional"
+            },
+            {
+              "value": "class_2",
+              "label": "Class 2"
+            },
+            {
+              "value": "class_3",
+              "label": "Class 3"
+            },
+            {
+              "value": "class_4",
+              "label": "Class 4"
+            },
+            {
+              "value": "class_5",
+              "label": "Class 5: heavy manual labour"
+            }
+          ]
+        },
+        {
+          "path": "coverage.definition",
+          "label": "Definition of disability",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "own_occupation",
+              "label": "Own occupation"
+            },
+            {
+              "value": "any_occupation",
+              "label": "Any occupation"
+            },
+            {
+              "value": "hybrid",
+              "label": "Own occupation, then any occupation"
+            }
+          ]
+        },
+        {
+          "path": "coverage.coverage_type",
+          "label": "Coverage type",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "short_term",
+              "label": "Short-term (up to 2 years)"
+            },
+            {
+              "value": "long_term",
+              "label": "Long-term"
+            },
+            {
+              "value": "combined",
+              "label": "Combined"
+            }
+          ]
+        },
+        {
+          "path": "coverage.premium_frequency",
+          "label": "Premium frequency",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "monthly",
+              "label": "Monthly"
+            },
+            {
+              "value": "quarterly",
+              "label": "Quarterly"
+            },
+            {
+              "value": "semi_annual",
+              "label": "Semi-annual"
+            },
+            {
+              "value": "annual",
+              "label": "Annual"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "addons",
+      "title": "Optional coverage",
+      "fields": [
+        {
+          "path": "addons.cola",
+          "label": "Cost of living adjustment",
+          "type": "boolean"
+        },
+        {
+          "path": "addons.future_purchase",
+          "label": "Future purchase option",
+          "type": "boolean"
+        },
+        {
+          "path": "addons.partial_disability",
+          "label": "Partial disability benefit",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "title": "Health",
+      "fields": [
+        {
+          "path": "health.smoker",
+          "label": "Smoker",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "path": "health.height_cm",
+          "label": "Height (cm)",
+          "type": "number"
+        },
+        {
+          "path": "health.weight_kg",
+          "label": "Weight (kg)",
+          "type": "number"
+        },
+        {
+          "path": "health.existing_conditions",
+          "label": "Existing conditions",
+          "type": "text",
+          "hint": "Comma-separated, or 'none'"
+        }
+      ]
+    }
+  ]
+}

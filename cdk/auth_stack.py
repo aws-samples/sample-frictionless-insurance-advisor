@@ -27,7 +27,10 @@ class AuthStack(Stack):
         self.user_pool = cognito.UserPool(
             self, "UserPool",
             user_pool_name="insurance-advisor-user",
-            self_sign_up_enabled=True,  # React app uses Amplify Authenticator self-signup
+            # Closed pool: only an administrator (or the opt-in /signup Lambda, see
+            # the `enable_public_signup` context flag) can create users. This is set
+            # explicitly so the pool is closed whatever the account's own policies are.
+            self_sign_up_enabled=False,
             sign_in_aliases=cognito.SignInAliases(email=True),
             auto_verify=cognito.AutoVerifiedAttrs(email=True),  # Auto-verify email
             removal_policy=RemovalPolicy.DESTROY,
@@ -74,7 +77,7 @@ class AuthStack(Stack):
             auth_flows=cognito.AuthFlow(
                 user_password=True,
                 user_srp=True,
-                admin_user_password=True  # Enabled for the signup Lambda's admin_initiate_auth path
+                admin_user_password=True  # ADMIN_USER_PASSWORD_AUTH: used by scripted sign-in (admin API, IAM-protected)
             ),
             o_auth=cognito.OAuthSettings(
                 flows=cognito.OAuthFlows(

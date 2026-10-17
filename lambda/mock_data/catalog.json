@@ -1,103 +1,103 @@
 [
   {
-    "product_id": "unicorn-rainbow-life",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "Rainbow Life",
+    "product_id": "awesome-term-life",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Term Life",
     "product_type": "Term Life Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/rainbow-life.md"
+    "s3_key": "products/awesome-term-life.md"
   },
   {
-    "product_id": "unicorn-everafter-whole-life",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "EverAfter Whole Life",
+    "product_id": "awesome-whole-life",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Whole Life",
     "product_type": "Whole Life Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/everafter-whole-life.md"
+    "s3_key": "products/awesome-whole-life.md"
   },
   {
-    "product_id": "unicorn-horizonflex-universal-life",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "HorizonFlex Universal Life",
+    "product_id": "awesome-universal-life",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Universal Life",
     "product_type": "Universal Life Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/horizonflex-universal-life.md"
+    "s3_key": "products/awesome-universal-life.md"
   },
   {
-    "product_id": "unicorn-stardust-variable-life",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "StardustVariable Life",
+    "product_id": "awesome-variable-life",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Variable Life",
     "product_type": "Variable Life Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/stardust-variable-life.md"
+    "s3_key": "products/awesome-variable-life.md"
   },
   {
-    "product_id": "unicorn-health-critical",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "Unicorn Health Critical",
+    "product_id": "awesome-critical-illness",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Critical Illness",
     "product_type": "Critical Illness Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/unicorn-health-critical.md"
+    "s3_key": "products/awesome-critical-illness.md"
   },
   {
-    "product_id": "unicorn-healinghorn-health",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "HealingHorn Health",
+    "product_id": "awesome-health",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Health",
     "product_type": "Health Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/healinghorn-health.md"
+    "s3_key": "products/awesome-health.md"
   },
   {
-    "product_id": "unicorn-glitterbarn-home",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "GlitterBarn Home Insurance",
+    "product_id": "awesome-home",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Home Insurance",
     "product_type": "Home Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/glitterbarn-home.md"
+    "s3_key": "products/awesome-home.md"
   },
   {
-    "product_id": "unicorn-fastunicorn-motor",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "FastUnicorn Motor",
+    "product_id": "awesome-motor",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Motor",
     "product_type": "Auto Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/fastunicorn-motor.md"
+    "s3_key": "products/awesome-motor.md"
   },
   {
-    "product_id": "unicorn-jetset-travel",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "JetSetUnicorn Travel",
+    "product_id": "awesome-travel",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Travel",
     "product_type": "Travel Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/jetset-unicorn-travel.md"
+    "s3_key": "products/awesome-travel.md"
   },
   {
-    "product_id": "unicorn-shield-disability",
-    "carrier_id": "unicorn",
-    "carrier_name": "Unicorn Insurance",
-    "product_name": "ShieldUnicorn Disability",
+    "product_id": "awesome-disability",
+    "carrier_id": "awesome",
+    "carrier_name": "Awesome Insurance",
+    "product_name": "Awesome Disability",
     "product_type": "Disability Insurance",
     "pricing_tier": "Mid-market",
     "s3_bucket": "portfolio",
-    "s3_key": "products/shield-unicorn-disability.md"
+    "s3_key": "products/awesome-disability.md"
   },
   {
     "product_id": "bigrival-centuryguard-life-term",
@@ -180,64 +180,64 @@
     "s3_key": "products/bigrival/careershield-disability.md"
   },
   {
-    "product_id": "starinsure-starbasic-auto",
-    "carrier_id": "starinsure",
-    "carrier_name": "StarInsure",
-    "product_name": "StarBasic Auto",
+    "product_id": "brookmere-basiccover-auto",
+    "carrier_id": "brookmere",
+    "carrier_name": "Brookmere",
+    "product_name": "BasicCover Auto",
     "product_type": "Auto Insurance",
     "pricing_tier": "Budget",
     "s3_bucket": "competitors",
-    "s3_key": "products/starinsure/starbasic-auto.md"
+    "s3_key": "products/brookmere/basiccover-auto.md"
   },
   {
-    "product_id": "starinsure-starbasic-renters",
-    "carrier_id": "starinsure",
-    "carrier_name": "StarInsure",
-    "product_name": "StarBasic Renters",
+    "product_id": "brookmere-basiccover-renters",
+    "carrier_id": "brookmere",
+    "carrier_name": "Brookmere",
+    "product_name": "BasicCover Renters",
     "product_type": "Renters Insurance",
     "pricing_tier": "Budget",
     "s3_bucket": "competitors",
-    "s3_key": "products/starinsure/starbasic-renters.md"
+    "s3_key": "products/brookmere/basiccover-renters.md"
   },
   {
-    "product_id": "starinsure-starbasic-life",
-    "carrier_id": "starinsure",
-    "carrier_name": "StarInsure",
-    "product_name": "StarBasic Life",
+    "product_id": "brookmere-basiccover-life",
+    "carrier_id": "brookmere",
+    "carrier_name": "Brookmere",
+    "product_name": "BasicCover Life",
     "product_type": "Term Life Insurance",
     "pricing_tier": "Budget",
     "s3_bucket": "competitors",
-    "s3_key": "products/starinsure/starbasic-life.md"
+    "s3_key": "products/brookmere/basiccover-life.md"
   },
   {
-    "product_id": "starinsure-starbasic-forever",
-    "carrier_id": "starinsure",
-    "carrier_name": "StarInsure",
-    "product_name": "StarBasic Forever",
+    "product_id": "brookmere-basiccover-forever",
+    "carrier_id": "brookmere",
+    "carrier_name": "Brookmere",
+    "product_name": "BasicCover Forever",
     "product_type": "Whole Life Insurance",
     "pricing_tier": "Budget",
     "s3_bucket": "competitors",
-    "s3_key": "products/starinsure/starbasic-forever.md"
+    "s3_key": "products/brookmere/basiccover-forever.md"
   },
   {
-    "product_id": "starinsure-starbasic-travel",
-    "carrier_id": "starinsure",
-    "carrier_name": "StarInsure",
-    "product_name": "StarBasic Travel",
+    "product_id": "brookmere-basiccover-travel",
+    "carrier_id": "brookmere",
+    "carrier_name": "Brookmere",
+    "product_name": "BasicCover Travel",
     "product_type": "Travel Insurance",
     "pricing_tier": "Budget",
     "s3_bucket": "competitors",
-    "s3_key": "products/starinsure/starbasic-travel.md"
+    "s3_key": "products/brookmere/basiccover-travel.md"
   },
   {
-    "product_id": "starinsure-starbasic-shield",
-    "carrier_id": "starinsure",
-    "carrier_name": "StarInsure",
-    "product_name": "StarBasic Shield",
+    "product_id": "brookmere-basiccover-shield",
+    "carrier_id": "brookmere",
+    "carrier_name": "Brookmere",
+    "product_name": "BasicCover Shield",
     "product_type": "Critical Illness Insurance",
     "pricing_tier": "Budget",
     "s3_bucket": "competitors",
-    "s3_key": "products/starinsure/starbasic-shield.md"
+    "s3_key": "products/brookmere/basiccover-shield.md"
   },
   {
     "product_id": "quicksafe-drive",

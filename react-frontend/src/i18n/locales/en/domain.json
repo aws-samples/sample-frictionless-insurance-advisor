@@ -56,6 +56,16 @@
       "Option A (level face)": "Option A (level face)",
       "Option B (face + cash value)": "Option B (face + cash value)",
       "Option C (face + return of premium)": "Option C (face + return of premium)"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female"
+    },
+    "productLine": {
+      "life": "Life products",
+      "general": "General products",
+      "health": "Health products",
+      "all": "All products"
     }
   }
 }

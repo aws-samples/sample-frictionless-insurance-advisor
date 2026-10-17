@@ -42,19 +42,30 @@ These are factual gaps advisors can reference when a prospect raises specific co
 - **Document-heavy onboarding.** New policies often involve longer forms, physical medical exams for life insurance, and extended underwriting windows compared to streamlined digital carriers.
 - **Bundling constraints.** Multi-policy discounts are available but tend to be limited to a small subset of combinations (auto + home) rather than broadly across the portfolio.
 
-## What Unicorn Insurance offers that BigRival does not
+## What Awesome Insurance offers that BigRival does not
 
-When a prospect is comparing Unicorn Insurance to a BigRival-style incumbent, lead with differentiators, not attacks:
+When a prospect is comparing Awesome Insurance to a BigRival-style incumbent, lead with differentiators, not attacks:
 
-- **Permanent life portfolio at mid-market pricing.** Unicorn offers term (Rainbow Life), whole (EverAfter Whole Life), universal (HorizonFlex Universal Life), and variable (StardustVariable Life) across the same life-type taxonomy BigRival covers, but at mid-market pricing rather than premium. For customers whose main attraction to a legacy carrier is the depth of the permanent-life range, Unicorn can match the shape of the portfolio without the premium-tier cost.
-- **Digital underwriting on permanent life.** Unicorn's whole and universal life products accept digital underwriting for applicants in standard health classes, avoiding the in-person medical exam and extended turnaround that is the default at BigRival. Customers who need a medical exam still have that path available.
-- **Digital-first onboarding with advisor support.** Unicorn offers fully online quoting and policy issuance across all seven core product lines, while still providing human advisor access when the customer wants it. BigRival's model centres on agent interaction, while Unicorn's model gives the customer the choice.
-- **Fast digital claims across all lines.** Unicorn supports in-app claims initiation, photo-based evidence upload, and faster first-response times for claims across Rainbow Life, HealingHorn Health, FastUnicorn Motor, GlitterBarn Home Insurance, ShieldUnicorn Disability, JetSetUnicorn Travel, and Unicorn Health Critical.
-- **Broad cross-line bundling.** Unicorn's multi-policy discounts apply across the entire portfolio, not just a selected pair of lines. Customers combining motor, home, and life can access greater aggregate savings than typically available under a legacy-carrier bundle.
-- **Critical illness as a dedicated line.** Unicorn Health Critical is structured as a dedicated critical illness product with tiered illness categories (Basic, Standard, Comprehensive). BigRival's supplemental health product typically bundles critical illness as a rider on broader health coverage rather than offering it as a stand-alone, deeply configured product.
-- **Modern rider configuration.** Unicorn's products allow customer-selected features (coverage amount, term, deductible, reimbursement model) to be configured at quote time through the digital journey, rather than requiring a back-and-forth with an agent.
-- **Travel insurance with tiered coverage.** JetSetUnicorn Travel offers Single Trip and Annual Multi-Trip options with coverage tiers from Basic to Elite and geographic scopes up to Worldwide. BigRival typically offers travel insurance only as a rider on other products or through a third-party partner, not as a dedicated line.
+- **Permanent life portfolio at mid-market pricing.** Awesome offers term (Awesome Term Life), whole (Awesome Whole Life), universal (Awesome Universal Life), and variable (Awesome Variable Life) across the same life-type taxonomy BigRival covers, but at mid-market pricing rather than premium. For customers whose main attraction to a legacy carrier is the depth of the permanent-life range, Awesome can match the shape of the portfolio without the premium-tier cost.
+- **Digital underwriting on permanent life.** Awesome's whole and universal life products accept digital underwriting for applicants in standard health classes, avoiding the in-person medical exam and extended turnaround that is the default at BigRival. Customers who need a medical exam still have that path available.
+- **Digital-first onboarding with advisor support.** Awesome offers fully online quoting and policy issuance across all seven core product lines, while still providing human advisor access when the customer wants it. BigRival's model centres on agent interaction, while Awesome's model gives the customer the choice.
+- **Fast digital claims across all lines.** Awesome supports in-app claims initiation, photo-based evidence upload, and faster first-response times for claims across Awesome Term Life, Awesome Health, Awesome Motor, Awesome Home Insurance, Awesome Disability, Awesome Travel, and Awesome Critical Illness.
+- **Broad cross-line bundling.** Awesome's multi-policy discounts apply across the entire portfolio, not just a selected pair of lines. Customers combining motor, home, and life can access greater aggregate savings than typically available under a legacy-carrier bundle.
+- **Critical illness as a dedicated line.** Awesome Critical Illness is structured as a dedicated critical illness product with tiered illness categories (Basic, Standard, Comprehensive). BigRival's supplemental health product typically bundles critical illness as a rider on broader health coverage rather than offering it as a stand-alone, deeply configured product.
+- **Modern rider configuration.** Awesome's products allow customer-selected features (coverage amount, term, deductible, reimbursement model) to be configured at quote time through the digital journey, rather than requiring a back-and-forth with an agent.
+- **Travel insurance with tiered coverage.** Awesome Travel offers Single Trip and Annual Multi-Trip options with coverage tiers from Basic to Elite and geographic scopes up to Worldwide. BigRival typically offers travel insurance only as a rider on other products or through a third-party partner, not as a dedicated line.
+
+## Financial-strength ratings
+> These ratings are illustrative mock data for a fictional carrier. Do not quote them as facts about any real insurer.
+
+- **AM Best:** A (Excellent), outlook Stable
+- **S&P Global Ratings:** A+ (Strong), outlook Stable
+- **Moody's:** A1 (Good), outlook Stable
+
+Rating drivers: a long operating history and a large, diversified balance sheet, offset by a higher expense base than newer carriers.
+
+For reference, Awesome Insurance is rated **A+ (Superior)** by AM Best, **AA-** by S&P Global Ratings and **Aa3** by Moody's, all with a stable outlook.
 
 ## Positioning guidance for advisors
 
-When a prospect is transitioning from a BigRival-style carrier, focus the conversation on what the customer is looking to keep and what they are looking to improve. Most commonly, prospects want to keep the breadth of coverage but want to improve the pace of service and the quality of the digital experience. Unicorn is well-suited to that customer because the product portfolio maps closely to what BigRival offers while the service and digital model is aligned with modern expectations. Avoid framing the conversation as "BigRival is bad" — frame it as "you can have the same breadth with a faster, more modern experience."
+When a prospect is transitioning from a BigRival-style carrier, focus the conversation on what the customer is looking to keep and what they are looking to improve. Most commonly, prospects want to keep the breadth of coverage but want to improve the pace of service and the quality of the digital experience. Awesome is well-suited to that customer because the product portfolio maps closely to what BigRival offers while the service and digital model is aligned with modern expectations. Avoid framing the conversation as "BigRival is bad" — frame it as "you can have the same breadth with a faster, more modern experience."

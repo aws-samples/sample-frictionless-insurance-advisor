@@ -7,3 +7,5 @@ export { IconButton } from './IconButton';
 export { Logo } from './Logo';
 export { Select } from './Select';
 export { Spinner } from './Spinner';
+export { MenuButton } from './MenuButton';
+export type { MenuGroup, MenuItem } from './MenuButton';

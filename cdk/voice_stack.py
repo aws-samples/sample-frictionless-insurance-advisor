@@ -1,8 +1,8 @@
-"""Voice Stack - AgentCore Runtime with Nova Sonic 2 + full insurance tool access.
+"""Voice Stack - AgentCore Runtime with Nova 2.5 Sonic + full insurance tool access.
 
 The voice runtime is now self-sufficient: it has the same MCP gateway tools,
 AgentCore Memory, Cognito user lookup and Bedrock Guardrail access as the
-main insurance agent, just with Nova Sonic 2 as the underlying model instead
+main insurance agent, just with Nova 2.5 Sonic as the underlying model instead
 of Claude. This removes the Claude-hop latency that the original proxy
 design had.
 
@@ -29,7 +29,12 @@ from .auth_stack import AuthStack
 # account/region and CloudFormation creates the L1 replacement before deleting
 # the old custom resource, so the previous name would collide.
 RUNTIME_NAME = "insurance_voice_agent"
-MODEL_ID = "amazon.nova-2-sonic-v1:0"
+# Nova 2.5 Sonic (GA October 2026) has the same API surface, voices and languages as Nova 2 Sonic
+# (amazon.nova-2-sonic-v1:0), with better tool calling and lower latency. It runs on demand in
+# us-east-1, so no inference profile is involved. This one constant sets both the IAM resource
+# and the runtime's MODEL_ID. The IAM policy allows only this model, so changing it here is all
+# a model switch needs.
+MODEL_ID = "amazon.nova-2-5-sonic"
 BEDROCK_REGION = "us-east-1"
 
 
@@ -94,16 +99,28 @@ class VoiceStack(Stack):
                 ),
                 "AgentCoreRuntime": iam.PolicyDocument(
                     statements=[
+                        # AgentCore (memory, token vault, gateway, workload identity):
+                        # limited to this account and region.
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=["bedrock-agentcore:*"],
+                            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:*"],
+                        ),
+                        # Pull the container image: the token call has no resource-level scope;
+                        # the layer calls are limited to this account's repositories.
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=["ecr:GetAuthorizationToken"],
+                            resources=["*"],
+                        ),
                         iam.PolicyStatement(
                             effect=iam.Effect.ALLOW,
                             actions=[
-                                "bedrock-agentcore:*",
-                                "ecr:GetAuthorizationToken",
                                 "ecr:BatchCheckLayerAvailability",
                                 "ecr:GetDownloadUrlForLayer",
                                 "ecr:BatchGetImage",
                             ],
-                            resources=["*"],
+                            resources=[f"arn:aws:ecr:{self.region}:{self.account}:repository/*"],
                         )
                     ]
                 ),
@@ -137,6 +154,36 @@ class VoiceStack(Stack):
             },
         )
         runtime_role.apply_removal_policy(RemovalPolicy.DESTROY)
+
+        # --- Observability (same permissions as the insurance runtime role) ----
+        # Metrics are limited to the AgentCore namespaces. The X-Ray calls have no
+        # resource-level scope.
+        runtime_role.add_to_policy(
+            iam.PolicyStatement(
+                sid="AgentCoreMetrics",
+                effect=iam.Effect.ALLOW,
+                actions=["cloudwatch:PutMetricData"],
+                resources=["*"],
+                conditions={
+                    "StringEquals": {
+                        "cloudwatch:namespace": ["AWS/BedrockAgentCore", "bedrock-agentcore"]
+                    }
+                },
+            )
+        )
+        runtime_role.add_to_policy(
+            iam.PolicyStatement(
+                sid="XRayTraces",
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                    "xray:GetSamplingRules",
+                    "xray:GetSamplingTargets",
+                ],
+                resources=["*"],
+            )
+        )
 
         # --- Extra IAM (matches the insurance runtime role) -----------
         # Gateway invoke + list.
@@ -201,6 +248,9 @@ class VoiceStack(Stack):
         # bucket; the runtime reads schemas directly rather than having the
         # model echo them back as tool arguments.
         agentcore_stack.forms_bucket.grant_read(runtime_role)
+        # Voice transcripts: write only (PutObject). The runtime cannot read
+        # or list the bucket; the data Lambda is the only reader.
+        agentcore_stack.transcripts_bucket.grant_put(runtime_role)
         # AgentCore Memory read/write for the insurance advisor memory.
         runtime_role.add_to_policy(
             iam.PolicyStatement(
@@ -236,7 +286,7 @@ class VoiceStack(Stack):
             "VoiceRuntimeL1",
             agent_runtime_name=RUNTIME_NAME,
             description=(
-                "Self-contained voice agent on Nova Sonic 2 with the same "
+                "Self-contained voice agent on Nova 2.5 Sonic with the same "
                 "insurance tool access as the main agent"
             ),
             role_arn=runtime_role.role_arn,
@@ -266,6 +316,17 @@ class VoiceStack(Stack):
                 "AWS_REGION": self.region,
                 "BEDROCK_REGION": BEDROCK_REGION,
                 "MODEL_ID": MODEL_ID,
+                # Traces. The runtime starts under OpenTelemetry auto-instrumentation (see the
+                # Dockerfile). Without this setting the model-call spans carry the customer's name,
+                # the system prompt and tool results as attributes. An empty value for
+                # gen_ai_unredacted_attributes turns that off: spans keep timing, tool names and
+                # token counts, and the content is replaced by "[REDACTED]".
+                "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_unredacted_attributes=",
+                # The AWS distro also adds a span for every MCP call that copies the tool's arguments
+                # and full result (customer profile, income, advisor address). It has no redaction
+                # setting, and Strands already records each tool call (name, status, timing) without
+                # content, so this one is switched off.
+                "OTEL_PYTHON_DISABLED_INSTRUMENTATIONS": "aws_mcp",
                 # Audio config
                 "INPUT_SAMPLE_RATE": "16000",
                 "OUTPUT_SAMPLE_RATE": "16000",
@@ -282,6 +343,8 @@ class VoiceStack(Stack):
                 # open_application_form tool so the schema is never routed
                 # back through the model as a tool argument.
                 "FORMS_BUCKET": agentcore_stack.forms_bucket.bucket_name,
+                # Transcripts are written here once consent is confirmed.
+                "TRANSCRIPTS_BUCKET": agentcore_stack.transcripts_bucket.bucket_name,
                 # Guardrail (same as insurance). Version is read
                 # from SSM at cold start via
                 # BEDROCK_GUARDRAIL_VERSION_PARAM_NAME so guardrail

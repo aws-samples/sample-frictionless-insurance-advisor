@@ -7,7 +7,7 @@
       "assistant": "テキストアシスタント",
       "voice": "テキスト+音声アシスタント",
       "comparator": "比較ツール",
-      "data": "データ",
+      "data": "データエクスプローラー",
       "signOut": "サインアウト",
       "language": "言語",
       "pitchDeck": "プレゼンテーションを開く"
@@ -16,7 +16,9 @@
       "send": "送信",
       "clear": "クリア",
       "refresh": "更新",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "close": "閉じる",
+      "retry": "再試行"
     },
     "states": {
       "loading": "読み込み中...",
@@ -31,7 +33,7 @@
       "reload": "再読み込み"
     },
     "brand": {
-      "nameAccent": "Unicorn",
+      "nameAccent": "Awesome",
       "nameSuffix": "Insurance"
     }
   }

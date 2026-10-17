@@ -1,7 +1,12 @@
-bedrock-agentcore
-strands-agents[bidi-all]
-aws_sdk_bedrock_runtime
-mcp
-PyJWT
-boto3
-pyaudio
+# Pinned to the combination that was tested together. Bump these deliberately and
+# re-run the voice checks; an unpinned install picks up breaking changes in
+# strands-agents (its bidi API moved from strands.experimental.bidi to
+# strands.bidi, with renamed classes and new event types).
+strands-agents[bidi,otel]==1.59.0
+bedrock-agentcore==1.24.1
+mcp==1.30.0
+PyJWT==2.15.1
+boto3==1.43.110
+# Traces and metrics for the voice runtime (session, response and tool-call spans). The same version the
+# text agent runs; AgentCore Observability reads what it exports.
+aws-opentelemetry-distro==0.19.0

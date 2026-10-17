@@ -4,7 +4,8 @@
       "heading": "顧客",
       "collapse": "サイドバーを折りたたむ",
       "expand": "サイドバーを展開",
-      "newProspect": "+ 新規見込み顧客"
+      "newProspect": "+ 新規見込み顧客",
+      "home": "ホーム"
     },
     "welcome": {
       "heading": "ようこそ",
@@ -25,11 +26,25 @@
         "joinDate": "加入日",
         "policiesCount": "契約数",
         "occupation": "職業",
-        "maritalStatus": "配偶者の有無"
+        "maritalStatus": "配偶者の有無",
+        "gender": "性別"
       },
       "dataFreshness": {
         "badge": "最新情報を確認",
         "tooltip": "このプロフィールは {{days}} 日以上見直されていません。補償分析を利用する前に、顧客情報が最新であることを確認してください。"
+      },
+      "actions": {
+        "gapAnalysis": {
+          "button": "補償ギャップ分析を作成",
+          "menuTitle": "分析する商品分野",
+          "resultTitle": "補償ギャップ分析：{{line}}",
+          "close": "分析を閉じる"
+        },
+        "form": {
+          "button": "申込フォームを開く",
+          "menuTitle": "申込フォームの商品",
+          "error": "フォームを開けませんでした：{{message}}"
+        }
       }
     },
     "policies": {
@@ -98,8 +113,7 @@
       }
     },
     "chat": {
-      "headingCustomer": "AI 契約チャット",
-      "headingProspect": "見込み顧客コーチング",
+      "heading": "AI チャット",
       "selectCustomer": "チャットを開始するには顧客を選択してください。",
       "emptyPlaceholder": "質問を入力するか、下の候補から選んでください。",
       "messageLabel": "メッセージ",
@@ -119,10 +133,16 @@
         "heading": "{{name}}様用のサンプル保険証書",
         "subtext": "アップロード機能のテスト用の架空の他社保険証書。",
         "notice": "架空の会社です。実際の補償ではありません。"
+      },
+      "sources": {
+        "label": "出典",
+        "openFile": "{{title}} をデータエクスプローラーで開く（新しいブラウザタブ）",
+        "openWeb": "{{title}} を開く（新しいブラウザタブ）"
       }
     },
     "prompts": {
       "customer": {
+        "meetingPrep": "このお客様との面談の準備を手伝ってください",
         "policies": "私はどのような契約に加入していますか？",
         "coverageGap": "補償に不足している部分はありますか？どのように対処できますか？",
         "premiumDelta": "なぜ御社の保険料は競合他社より高い／低いのですか？",
@@ -131,18 +151,24 @@
         "mentalHealthMaternity": "メンタルヘルス、妊娠・出産、代替医療は補償の対象ですか？",
         "outpatientDentalOptical": "外来診療、歯科、視力ケアは補償の対象ですか？",
         "dayOneCover": "他社の待機期間と比べて、御社の初日からの補償はどうなっていますか？",
-        "preExistingWaiting": "既往症に対する待機期間は競合他社と比べてどうですか？"
+        "preExistingWaiting": "既往症に対する待機期間は競合他社と比べてどうですか？",
+        "annualReview": "このお客様の年次レビューを準備してください",
+        "outreach": "このお客様へのメールを下書きしてください",
+        "marketPulse": "今週の保険市場の最新動向を教えてください"
       },
       "prospect": {
+        "meetingPrep": "この見込み顧客との面談の準備を手伝ってください",
         "firstProducts": "この見込み顧客が最初に検討すべき保険は何ですか？",
         "discovery": "ヒアリング会話を始める手助けをしてください",
         "bestProducts": "このプロフィールに最適な商品は何ですか？",
-        "company": "Unicorn Insurance について教えてください",
-        "whyUnicorn": "この見込み顧客はなぜ BigRival ではなく Unicorn を選ぶべきですか？",
-        "qualifyQuestions": "この見込み顧客を見極めるためにどのような質問をすべきですか？"
+        "company": "Awesome Insurance について教えてください",
+        "whyAwesome": "この見込み顧客はなぜ BigRival ではなく Awesome を選ぶべきですか？",
+        "qualifyQuestions": "この見込み顧客を見極めるためにどのような質問をすべきですか？",
+        "outreach": "この見込み客への最初の連絡メールを下書きしてください",
+        "marketPulse": "今週の保険市場の最新動向を教えてください"
       },
-      "voice": {
-        "startTermLifeApplication": "定期生命保険の申し込みを開始してください"
+      "application": {
+        "startTermLife": "定期生命保険の申し込みを開始してください"
       }
     },
     "pages": {
@@ -151,8 +177,14 @@
       },
       "comparator": {
         "heading": "比較ツール",
-        "intro": "Unicorn Insurance と競合他社の保険商品を比較します。商品タイプを選択してから、2〜4 つの商品を選んで比較してください。",
+        "intro": "Awesome Insurance と競合他社の保険商品を比較します。商品タイプを選択してから、2〜4 つの商品を選んで比較してください。",
         "typeLabel": "商品タイプ",
+        "line": {
+          "label": "商品分野",
+          "life": "生命保険",
+          "general": "損害保険",
+          "health": "医療・健康"
+        },
         "typePlaceholder": "商品タイプを選択",
         "productsLabel": "比較する商品",
         "productsHelp": "{{min}}〜{{max}} 個の商品を選択してください。",
@@ -174,10 +206,46 @@
         "internalUseOnly": "社内利用限定",
         "staleNotice": "一部の情報が古い可能性があります。顧客と共有する前に確認してください。",
         "productStale": "データは {{days}} 日以上前のものです",
-        "productUpdated": "ソース更新日: {{date}}"
+        "productUpdated": "ソース更新日: {{date}}",
+        "brochure": {
+          "title": "競合他社のパンフレットを追加（任意）",
+          "help": "他社のPDFパンフレットをアップロードすると、この比較に含められます。1回だけ読み取り、この比較にのみ使用し、48時間以内に自動削除されます。",
+          "choose": "PDFを選択",
+          "uploading": "アップロード中…",
+          "reading": "パンフレットを読み取り中…",
+          "remove": "削除",
+          "badge": "アップロードしたパンフレット",
+          "notes": "パンフレットの読み取りに関するメモ（{{count}}件）",
+          "pdfOnly": "PDFファイルを選択してください。",
+          "tooLarge": "このPDFは4.5 MBを超えています。小さいファイルを使用してください。",
+          "noRoom": "比較できるのは最大4件です。商品のチェックを1つ外してください。",
+          "sampleLabel": "パンフレットがない場合はサンプルをお試しください：",
+          "sampleButton": "{{name}} をダウンロード（PDF）"
+        },
+        "uploadedNotice": "{{name}} はアップロードされたパンフレットから取得したものです。自動で読み取られており、検証されていません。内容に頼る前にパンフレットで確認してください。",
+        "ratings": {
+          "title": "保険会社の財務健全性",
+          "outlook": "見通し",
+          "notStated": "記載なし",
+          "illustrativeNote": "競合他社の格付けは説明用のデモデータであり、実際の数値ではありません。",
+          "brochureNote": "アップロードしたパンフレットの格付けは記載どおりで、検証されていません。",
+          "asOf": "格付けの基準日：{{date}}。"
+        },
+        "pdf": {
+          "button": "PDFをダウンロード",
+          "hint": "お客様にお渡しできるPDF（社内専用の表示なし）",
+          "preparing": "作成中…",
+          "failed": "PDFを作成できませんでした：{{message}}",
+          "heading": "商品比較",
+          "prepared": "作成日 {{date}}",
+          "advisor": "アドバイザー：{{name}}",
+          "uploadedNote": "{{name}} はアドバイザーが提供したパンフレットから読み取ったもので、検証されていません。",
+          "customerDisclaimer": "{{date}} 時点の商品資料に基づいています。この比較は情報提供のみを目的としており、見積りや申込みの勧誘ではなく、すべての特長や免責事項を網羅しているとは限りません。ご判断の前に、各保険会社で内容をご確認ください。"
+        },
+        "typesLoading": "商品タイプを読み込み中…"
       },
       "data": {
-        "heading": "データ",
+        "heading": "データエクスプローラー",
         "intro": "アシスタントの回答の根拠となる参照ドキュメントを閲覧できます — 商品ポートフォリオ、会社情報、競合ポジショニング、競合商品、キャンペーン、申込書スキーマ。",
         "searchPlaceholder": "ファイルを検索...",
         "clearSearch": "検索をクリア",
@@ -208,7 +276,84 @@
           "competitive": "競合ポジショニング",
           "competitors": "競合商品",
           "promotion": "キャンペーン",
-          "forms": "申込書"
+          "forms": "申込書",
+          "pricing": "料金表",
+          "brochures": "パンフレット",
+          "transcripts": "音声の文字起こし"
+        },
+        "pdf": {
+          "download": "PDFをダウンロード",
+          "open": "新しいタブで開く",
+          "note": "お客様と共有できる1ページのパンフレットです。価格は記載していません。",
+          "fallback": "このブラウザではPDFを表示できません。PDFのダウンロードまたは新しいタブで開くをご利用ください。"
+        },
+        "pricing": {
+          "ageBand": "年齢区分",
+          "ratePerUnit": "{{unit}}あたりの年間料率",
+          "scaledNote": "金額は保障額 {{amount}} の場合で、選択した金額に比例します。",
+          "interpolatedNote": "行の間の金額は補間して算出します。",
+          "monthlyBenefit": "月額給付金",
+          "baseAnnual": "基本年間保険料",
+          "geography": "地域",
+          "perDay": "1日・1名あたり",
+          "annualMulti": "年間複数回旅行・1名あたり",
+          "addonPct": "保険料の +{{pct}}%",
+          "addonFlat": "年間 +{{amount}}",
+          "addonPerUnit": "保険金額 {{per}} ごとに +{{amount}}",
+          "addonOnAmount": "入力した金額の +{{pct}}%",
+          "indicative": "参考価格",
+          "effective": "適用開始日 {{date}}",
+          "basis": "保険料の基準: {{basis}}。通貨: {{currency}}。",
+          "dependsOn": "価格を左右する項目",
+          "option": "項目",
+          "meaning": "内容",
+          "allowed": "指定できる値",
+          "defaultCol": "既定値",
+          "required": "必須",
+          "fromProfile": "顧客レコードから取得",
+          "baseRates": "基本料率",
+          "factors": "料率係数",
+          "factorsHelp": "各係数は基本料率に掛け合わせます。選択内容に該当しない係数は適用されません。",
+          "addons": "特約・オプション",
+          "addon": "特約・オプション",
+          "effect": "保険料への影響",
+          "frequency": "払込頻度",
+          "paidEvery": "払込",
+          "loading": "割増",
+          "noLoading": "なし",
+          "examples": "計算例",
+          "example": "例",
+          "choices": "選択内容",
+          "annualPremium": "年間保険料",
+          "examplesNote": "これらの表で計算した金額で、アシスタントも同じ数字を案内します。",
+          "affordabilityTitle": "支払可能性ルール",
+          "ofIncome": "年収に対する上限（有効な全契約の合計）"
+        },
+        "transcript": {
+          "inProgress": "進行中",
+          "ended": "終了",
+          "started": "開始 {{time}}",
+          "refresh": "更新",
+          "expires": "最終保存（{{time}}）から約24〜48時間後に自動的に削除されます。セッション中は約30秒ごとに保存されます。",
+          "consent": "文字起こしへの同意は {{time}} に確認されました。",
+          "empty": "このセッションにはまだ何も保存されていません。",
+          "about": "{{name}} について",
+          "aboutProspect": "見込み客について",
+          "advisor": "アドバイザー",
+          "assistant": "アシスタント",
+          "typed": "入力",
+          "prospect": "見込み客",
+          "turnCount": "{{count}} 発言"
+        },
+        "collapseAll": "すべて折りたたむ",
+        "expandAll": "すべて展開",
+        "collapseFolder": "{{folder}}を折りたたむ",
+        "expandFolder": "{{folder}}を展開",
+        "ratings": {
+          "carrierCount": "{{count}}社",
+          "agencyCount": "格付機関{{count}}社",
+          "carrier": "保険会社",
+          "illustrative": "例示データ"
         }
       }
     },
@@ -230,15 +375,27 @@
         "speaking": "応答中"
       },
       "mute": "音声をミュート",
-      "unmute": "ミュート解除"
+      "unmute": "ミュート解除",
+      "consent": {
+        "question": "録音の前に：{{name}} さんはこの会話の文字起こしに同意しましたか？",
+        "theProspect": "見込み客",
+        "hint": "確認するまで、何も保存・記憶されず、フォームも入力されません。アシスタントに声で答えるか、ボタンを使ってください。",
+        "changed": "顧客が変わったため、再度の同意確認が必要です。",
+        "confirm": "同意あり",
+        "decline": "同意なし",
+        "confirmed": "{{time}} に同意を確認しました。この会話は文字起こしされ、24時間保存されます。",
+        "declinedMessage": "同意が得られませんでした。セッションを終了し、何も保存していません。",
+        "startNew": "新しいセッションを開始"
+      }
     },
     "recommendation": {
       "loading": "補償内容を分析し、不足を確認しています...",
       "noGaps": "重要な補償ギャップは見つかりませんでした — このプロファイルでは十分にカバーされています。",
-      "error": "推奨を生成できませんでした: {{message}}"
+      "error": "推奨を生成できませんでした: {{message}}",
+      "exposureLabel": "経済的リスク",
+      "exposureIllustrative": "参考値（推定）"
     },
     "form": {
-      "backToProfile": "プロフィール",
       "progress": "必須項目 {{total}} 件中 {{filled}} 件",
       "progressLabel": "入力の進捗",
       "pendingReview": "確認待ち {{count}} 件",
@@ -253,7 +410,128 @@
       "legendProfile": "プロフィールから",
       "legendHeard": "会話から取得",
       "legendConfirm": "確認が必要",
-      "legendManual": "手入力"
+      "legendManual": "手入力",
+      "downloadPdf": "PDFをダウンロード",
+      "yes": "はい",
+      "no": "いいえ",
+      "pdf": {
+        "preparing": "作成中…",
+        "failed": "PDFを作成できませんでした：{{message}}",
+        "prepared": "作成日 {{date}}",
+        "advisor": "アドバイザー：{{name}}",
+        "requiredNote": "* 必須項目です。未回答の欄は空白のままにして、手書きで記入してください。",
+        "signatureApplicant": "申込者の署名",
+        "signatureAdvisor": "アドバイザーの署名",
+        "date": "日付",
+        "disclaimer": "Awesome Insurance のアドバイザーアシスタントで作成した下書きです。補償の申し出ではありません。補償は、引受審査後に Awesome Insurance が保険証券を発行した時点で開始します。"
+      }
+    },
+    "notes": {
+      "heading": "メモ",
+      "add": "メモを追加",
+      "save": "メモを保存",
+      "typeLabel": "種類",
+      "type": {
+        "life_event": "ライフイベント",
+        "interaction": "やり取り"
+      },
+      "dateLabel": "出来事の日付（任意）",
+      "textLabel": "メモ",
+      "textPlaceholder": "例：3月に第二子が誕生予定",
+      "empty": "メモはまだありません。",
+      "eventOn": "出来事：{{date}}",
+      "addedOn": "{{date}} に追加",
+      "byAssistant": "アシスタントが追加",
+      "byAssistantHint": "アドバイザーの依頼で AI アシスタントが保存",
+      "delete": "メモを削除",
+      "confirmDelete": "削除",
+      "saveFailed": "メモを保存できませんでした：{{message}}",
+      "deleteFailed": "メモを削除できませんでした：{{message}}"
+    },
+    "cockpit": {
+      "heading": "今日の優先事項",
+      "summary": "{{total}}人中{{needing}}人のお客様に対応が必要です(緊急度の高い順)",
+      "refresh": "更新",
+      "loading": "優先事項を読み込み中…",
+      "empty": "現在、対応が必要なものはありません。",
+      "error": "優先事項を読み込めませんでした: {{message}}",
+      "prospect": "見込み客",
+      "actions": {
+        "annual_review": "年次レビュー",
+        "meeting_prep": "面談の準備",
+        "outreach": "メール作成"
+      },
+      "rules": {
+        "review_overdue": "プロフィールの最終確認は{{days}}日前です",
+        "life_event_upcoming": "{{days}}日後にライフイベント: {{text}}",
+        "life_event_passed": "{{days}}日前のライフイベント、その後フォローなし: {{text}}",
+        "renewal_due": "{{policy}}({{insurer}})は{{days}}日後に更新",
+        "renewal_due_own": "{{policy}}は{{days}}日後に更新",
+        "renewal_passed": "{{policy}}({{insurer}})は更新日を{{days}}日過ぎています",
+        "renewal_passed_own": "{{policy}}は更新日を{{days}}日過ぎています",
+        "over_cap": "年間保険料は収入の{{percent}}%で、目安の{{cap}}%を超えています",
+        "prospect_quiet": "Awesomeの契約はまだなく、{{days}}日間連絡がありません"
+      }
+    },
+    "meetingNote": {
+      "button": "メモにまとめる",
+      "title": "面談メモ",
+      "loading": "この会話からメモを作成中…",
+      "intro": "下書きを確認・編集して、お客様のメモに保存してください。保存ボタンを押すまで何も保存されません。",
+      "insufficient": "このやり取りには、まだメモを作成するだけの内容がありません。",
+      "error": "メモを作成できませんでした: {{message}}",
+      "saved": "お客様の記録にメモを保存しました。",
+      "trimmed": "1,000文字の上限に合わせて短縮しました。",
+      "dateLabel": "フォローアップ日(任意)"
+    },
+    "roleplay": {
+      "button": "練習する",
+      "setupTitle": "{{name}}さんで練習",
+      "setupIntro": "アシスタントが記録をもとにこのお客様を演じます。実際の面談のように進め、終了するとフィードバックが届きます。",
+      "difficulty": "難易度",
+      "level": {
+        "friendly": "友好的",
+        "neutral": "標準",
+        "sceptical": "懐疑的"
+      },
+      "focusLabel": "主な懸念",
+      "focus": {
+        "any": "おまかせ",
+        "cost": "費用が高い",
+        "work": "職場の保障がある",
+        "young": "まだ若いので必要ない",
+        "compare": "今の保険会社と比べたい",
+        "think": "考えさせてほしい"
+      },
+      "privacy": "練習セッションの内容は録音も保存もされず、お客様の記録にも追加されません。健康情報はアシスタントに共有されません。",
+      "start": "練習を始める",
+      "banner": "練習セッション: アシスタントが{{name}}さんを演じています",
+      "bannerHint": "マイクを開始するとお客様が挨拶します。途中で止めるには「end exercise」と言ってください。",
+      "leave": "練習をやめる",
+      "endAndScore": "終了して採点",
+      "feedbackTitle": "コーチングのフィードバック",
+      "scoring": "会話を確認中…",
+      "scoreError": "フィードバックを作成できませんでした: {{message}}",
+      "insufficient": "フィードバックには会話が短すぎました。もう少し話してもう一度お試しください。",
+      "claimsTitle": "確認した商品の説明",
+      "verdict": {
+        "supported": "資料と一致",
+        "contradicted": "資料と異なる",
+        "not_in_sheets": "資料にない"
+      },
+      "nextTime": "次回試すこと",
+      "coachingNote": "ご自身の練習のためのAI生成のフィードバックです。業績評価ではなく、保存されません。",
+      "finish": "終了",
+      "again": "もう一度練習",
+      "criteria": {
+        "rapport": "導入と信頼関係",
+        "discovery": "ヒアリング",
+        "needs_link": "ニーズと保障の結び付け",
+        "objections": "反論への対応",
+        "accuracy": "正確さ",
+        "compliance": "コンプライアンス",
+        "closing": "クロージング"
+      }
     }
   }
 }

@@ -1,0 +1,5 @@
+{
+  "_comment": "The 'today' each seed file was written against. The populator moves the dated fields forward by (today minus anchor) days on every run. Change an anchor only if you re-author that file's dates.",
+  "profiles": "2026-09-22",
+  "policies": "2024-12-03"
+}

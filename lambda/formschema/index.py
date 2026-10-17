@@ -24,14 +24,23 @@ from botocore.exceptions import ClientError
 
 s3_client = boto3.client('s3')
 
-# Product types map 1:1 onto <product_type>.json in the forms bucket. The
-# allowlist keeps a caller-supplied value from reaching S3 as a raw key.
-KNOWN_PRODUCT_TYPES = {
-    'term_life',
-    'whole_life',
-    'universal_life',
-    'variable_life',
+# Each product type maps onto one file in the forms bucket, named after the
+# product's portfolio file: <product-slug>-form.json (for example
+# awesome-term-life-form.json). The mapping is also the allowlist, so a
+# caller-supplied value never reaches S3 as a raw key.
+FORM_FILES = {
+    'term_life': 'awesome-term-life-form.json',
+    'whole_life': 'awesome-whole-life-form.json',
+    'universal_life': 'awesome-universal-life-form.json',
+    'variable_life': 'awesome-variable-life-form.json',
+    'critical_illness': 'awesome-critical-illness-form.json',
+    'health': 'awesome-health-form.json',
+    'home': 'awesome-home-form.json',
+    'auto': 'awesome-motor-form.json',
+    'travel': 'awesome-travel-form.json',
+    'disability': 'awesome-disability-form.json',
 }
+KNOWN_PRODUCT_TYPES = set(FORM_FILES)
 
 # Defence in depth behind the allowlist: no separators, no traversal.
 SAFE_KEY_RE = re.compile(r'^[a-z0-9_]+$')
@@ -78,7 +87,7 @@ def get_form_schema(product_type):
     if not bucket_name:
         raise ValueError("FORMS_BUCKET environment variable not set")
 
-    key = f"{product_type}.json"
+    key = FORM_FILES[product_type]
     response = s3_client.get_object(Bucket=bucket_name, Key=key)
     return json.loads(response['Body'].read().decode('utf-8'))
 

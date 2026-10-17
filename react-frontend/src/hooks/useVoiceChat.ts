@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import audioWorkletUrl from '../lib/audio-processor.worklet.js?url';
-import { connectVoice, TranscriptRole, VoiceConnection } from '../lib/voice';
-import type { Customer, FormFillEvent, FormSchema, VoiceMessage } from '../types';
+import { connectVoice, ConsentEvent, ConsentStatus, TranscriptRole, VoiceConnection } from '../lib/voice';
+import type { Customer, FormFillEvent, FormSchema, RoleplayConfig, VoiceMessage } from '../types';
 
 import { usePersistentBoolean } from './usePersistentBoolean';
 
@@ -42,11 +42,26 @@ export interface VoiceFormHandlers {
   onFormFill?: (event: FormFillEvent) => void;
 }
 
+/** Why consent went back to pending, for a short notice under the header. */
+export type ConsentNotice = 'customer_changed' | null;
+
+export interface VoiceConsentHandlers {
+  /**
+   * The advisor confirmed that the customer agreed to be transcribed. Called
+   * once per customer per session, with the time of the original answer. The
+   * customer id is null for a prospect who has no record yet; the call is held
+   * back until they have one.
+   */
+  onConsentConfirmed?: (customerId: string, at: string) => void;
+}
+
 export function useVoiceChat(
   customer: Customer | null,
   formHandlers?: VoiceFormHandlers,
   /** Field paths already filled from the customer record; relayed to the agent. */
-  formPrefill?: Record<string, string>
+  formPrefill?: Record<string, string>,
+  consentHandlers?: VoiceConsentHandlers,
+  roleplay: RoleplayConfig | null = null
 ) {
   // Held in a ref so re-renders of the owner don't tear down the socket:
   // `connect` must not depend on identity-unstable callbacks.
@@ -54,6 +69,25 @@ export function useVoiceChat(
   formHandlersRef.current = formHandlers;
   const formPrefillRef = useRef<Record<string, string> | undefined>(formPrefill);
   formPrefillRef.current = formPrefill;
+  const consentHandlersRef = useRef<VoiceConsentHandlers | undefined>(consentHandlers);
+  consentHandlersRef.current = consentHandlers;
+  // Practice mode: read when a connection opens, so switching it reconnects.
+  const roleplayRef = useRef<RoleplayConfig | null>(roleplay);
+  roleplayRef.current = roleplay;
+
+  // --- consent to record ------------------------------------
+  // The runtime is the source of truth; these mirror what it last said.
+  const [consent, setConsent] = useState<ConsentStatus>('pending');
+  const [consentAt, setConsentAt] = useState<string | null>(null);
+  const [consentNotice, setConsentNotice] = useState<ConsentNotice>(null);
+  const consentRef = useRef<ConsentStatus>('pending');
+  const consentAtRef = useRef<string | null>(null);
+  /** Customers this session has already logged the consent note for. */
+  const loggedForRef = useRef<Set<string>>(new Set());
+  /** The mic has started and the runtime has been asked to put the question. */
+  const promptedRef = useRef(false);
+  const currentCustomerIdRef = useRef<string | null>(customer?.customer_id ?? null);
+  currentCustomerIdRef.current = customer?.customer_id ?? null;
 
   const [state, setState] = useState<VoiceChatState>({
     connected: false,
@@ -124,7 +158,9 @@ export function useVoiceChat(
 
     const crossingProspectBoundary = (prevId === null) !== (nextId === null);
     if (crossingProspectBoundary && connRef.current?.isOpen()) {
-      // Reconnect with the new customer context.
+      // Reconnect with the new customer context. The new session starts
+      // without consent: picking a customer in the sidebar is a different
+      // person from the prospect, so the question is asked again.
       connRef.current.close();
       connRef.current = null;
       if (!connectingRef.current) {
@@ -159,7 +195,7 @@ export function useVoiceChat(
     setState((prev) => ({ ...prev, speaking: true }));
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    // Route through the master gain (mute), falling back to the destination
+    // Route through the main gain node (mute), falling back to the destination
     // if for some reason it isn't set up yet.
     src.connect(gainRef.current ?? ctx.destination);
     src.onended = () => playNext();
@@ -323,13 +359,47 @@ export function useVoiceChat(
     [commitAssistantSegment]
   );
 
+  /** Mirror a consent event from the runtime, and log the confirmation once. */
+  const handleConsent = useCallback((event: ConsentEvent) => {
+    consentRef.current = event.status;
+    setConsent(event.status);
+    setConsentNotice(event.reason === 'customer_changed' ? 'customer_changed' : null);
+    if (event.status === 'confirmed') {
+      const at = event.at;
+      consentAtRef.current = at;
+      setConsentAt(at);
+      const customerId = event.customerId ?? currentCustomerIdRef.current;
+      if (customerId && at && !loggedForRef.current.has(customerId)) {
+        loggedForRef.current.add(customerId);
+        consentHandlersRef.current?.onConsentConfirmed?.(customerId, at);
+      }
+    } else {
+      consentAtRef.current = null;
+      setConsentAt(null);
+      if (event.status === 'declined') {
+        // Declined: the session is ending and nothing was saved. Clear what is
+        // on screen too.
+        setState((prev) => ({ ...prev, history: [], partialUser: '', partialAssistant: '' }));
+      }
+    }
+  }, []);
+
   const connect = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, error: null }));
+      // A new session starts without consent.
+      consentRef.current = 'pending';
+      consentAtRef.current = null;
+      loggedForRef.current = new Set();
+      setConsent('pending');
+      setConsentAt(null);
+      setConsentNotice(null);
+      promptedRef.current = false;
       const conn = await connectVoice({
         customerId: customer?.customer_id ?? null,
         customerName: customer?.name ?? null,
         formPrefill: formPrefillRef.current,
+        roleplay: roleplayRef.current,
         onAudioChunk: queueAudio,
         onTranscript: handleTranscript,
         onInterruption: () => {
@@ -341,6 +411,7 @@ export function useVoiceChat(
           discardPendingText();
           setState((prev) => ({ ...prev, speaking: false, partialAssistant: '' }));
         },
+        onConsent: handleConsent,
         onFormOpen: (productType, schema) =>
           formHandlersRef.current?.onFormOpen?.(productType, schema),
         onFormFill: (event) => formHandlersRef.current?.onFormFill?.(event),
@@ -359,7 +430,7 @@ export function useVoiceChat(
       const msg = err instanceof Error ? err.message : String(err);
       setState((prev) => ({ ...prev, error: msg }));
     }
-  }, [customer, queueAudio, handleTranscript]);
+  }, [customer, queueAudio, handleTranscript, handleConsent]);
 
   const stopRecording = useCallback(() => {
     micCleanupRef.current();
@@ -440,6 +511,19 @@ export function useVoiceChat(
 
       recordingRef.current = true;
       setState((prev) => ({ ...prev, recording: true }));
+      // First time the mic opens in a session without consent: have the
+      // assistant ask the question now rather than wait to be spoken to.
+      if (roleplayRef.current) {
+        // Practice: no consent question (nobody real is on the line); the AI
+        // customer greets the advisor instead.
+        if (!promptedRef.current) {
+          promptedRef.current = true;
+          connRef.current?.send({ type: 'voice_roleplay_start' });
+        }
+      } else if (consentRef.current === 'pending' && !promptedRef.current) {
+        promptedRef.current = true;
+        connRef.current?.send({ type: 'voice_consent_prompt' });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setState((prev) => ({ ...prev, error: `Microphone: ${msg}` }));
@@ -490,6 +574,22 @@ export function useVoiceChat(
 
   const clearError = useCallback(() => setState((prev) => ({ ...prev, error: null })), []);
 
+  /** The on-screen answer to the consent question. */
+  const answerConsent = useCallback((status: 'confirmed' | 'declined') => {
+    connRef.current?.send({ type: 'voice_consent', status });
+  }, []);
+
+  // Entering or leaving a practice session needs a fresh connection: the runtime
+  // reads the mode once, from the first message.
+  const roleplayKey = roleplay ? JSON.stringify(roleplay) : '';
+  const lastRoleplayKeyRef = useRef<string>(roleplayKey);
+  useEffect(() => {
+    if (lastRoleplayKeyRef.current === roleplayKey) return;
+    lastRoleplayKeyRef.current = roleplayKey;
+    clearHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clearHistory is stable enough; run on mode change only
+  }, [roleplayKey]);
+
   useEffect(() => {
     // Auto-connect when the hook mounts (Voice page opens). Disconnect
     // when it unmounts (user navigates away or signs out). StrictMode
@@ -508,6 +608,10 @@ export function useVoiceChat(
 
   return {
     ...state,
+    consent,
+    consentAt,
+    consentNotice,
+    answerConsent,
     muted,
     connect,
     disconnect,

@@ -27,6 +27,21 @@ export function fmtNumber(value: number, locale: string): string {
  * Format an ISO date string (YYYY-MM-DD) for display. Invalid or empty
  * inputs are returned as-is so formatting never throws on partial data.
  */
+/** Date and time in the viewer's own time zone, e.g. "Oct 8, 2026, 9:40 PM". */
+export function fmtDateTime(iso: string | null | undefined, locale: string): string {
+  if (!iso) return '';
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed);
+}
+
+export function fmtTime(iso: string | null | undefined, locale: string): string {
+  if (!iso) return '';
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, { timeStyle: 'short' }).format(parsed);
+}
+
 export function fmtDate(iso: string | undefined, locale: string): string {
   if (!iso) return '';
   const parsed = new Date(iso);

@@ -4,7 +4,8 @@
       "heading": "客户",
       "collapse": "收起侧边栏",
       "expand": "展开侧边栏",
-      "newProspect": "+ 新增潜在客户"
+      "newProspect": "+ 新增潜在客户",
+      "home": "首页"
     },
     "welcome": {
       "heading": "欢迎",
@@ -25,11 +26,25 @@
         "joinDate": "起始于",
         "policiesCount": "保单",
         "occupation": "职业",
-        "maritalStatus": "婚姻状况"
+        "maritalStatus": "婚姻状况",
+        "gender": "性别"
       },
       "dataFreshness": {
         "badge": "核实最新信息",
         "tooltip": "此档案已超过 {{days}} 天未进行审核。在依据保障分析结果前，请确认客户信息仍为最新。"
+      },
+      "actions": {
+        "gapAnalysis": {
+          "button": "创建保障缺口分析",
+          "menuTitle": "分析以下产品的保障",
+          "resultTitle": "保障缺口分析：{{line}}",
+          "close": "关闭分析"
+        },
+        "form": {
+          "button": "打开投保申请表",
+          "menuTitle": "申请表产品",
+          "error": "无法打开申请表：{{message}}"
+        }
       }
     },
     "policies": {
@@ -98,8 +113,7 @@
       }
     },
     "chat": {
-      "headingCustomer": "AI 保单对话",
-      "headingProspect": "潜在客户辅导",
+      "heading": "AI 对话",
       "selectCustomer": "选择一位客户开始对话。",
       "emptyPlaceholder": "提出问题或从下方选择一个建议。",
       "messageLabel": "消息",
@@ -119,10 +133,16 @@
         "heading": "{{name}} 的示例保单",
         "subtext": "用于测试上传流程的合成第三方保单。",
         "notice": "虚构的承保公司，并非真实保障。"
+      },
+      "sources": {
+        "label": "来源",
+        "openFile": "在“数据浏览器”中打开 {{title}}（新浏览器标签页）",
+        "openWeb": "打开 {{title}}（新浏览器标签页）"
       }
     },
     "prompts": {
       "customer": {
+        "meetingPrep": "帮我准备与这位客户的会面",
         "policies": "我拥有哪些保单？",
         "coverageGap": "我存在哪些保障缺口，应如何弥补？",
         "premiumDelta": "为什么你们的保费比竞争对手更高/更低？",
@@ -131,18 +151,24 @@
         "mentalHealthMaternity": "你们是否覆盖心理健康、生育或替代疗法？",
         "outpatientDentalOptical": "你们是否覆盖门诊、牙科或视力治疗？",
         "dayOneCover": "与其他公司相比，你们的即时保障与等待期如何？",
-        "preExistingWaiting": "与竞争对手相比，你们对既往病症的等待期是多久？"
+        "preExistingWaiting": "与竞争对手相比，你们对既往病症的等待期是多久？",
+        "annualReview": "为这位客户准备年度回顾",
+        "outreach": "为这位客户起草一封邮件",
+        "marketPulse": "本周保险市场有什么新动态？"
       },
       "prospect": {
+        "meetingPrep": "帮我准备与这位潜在客户的会面",
         "firstProducts": "这位潜在客户应首先考虑哪些保险？",
         "discovery": "帮我开启一次需求探询对话",
         "bestProducts": "根据其情况，哪些产品最合适？",
-        "company": "介绍一下 Unicorn Insurance",
-        "whyUnicorn": "他们为什么应该选择 Unicorn 而非 BigRival？",
-        "qualifyQuestions": "我应该提哪些问题来评估这位潜在客户？"
+        "company": "介绍一下 Awesome Insurance",
+        "whyAwesome": "他们为什么应该选择 Awesome 而非 BigRival？",
+        "qualifyQuestions": "我应该提哪些问题来评估这位潜在客户？",
+        "outreach": "为这位潜在客户起草一封初次联系邮件",
+        "marketPulse": "本周保险市场有什么新动态？"
       },
-      "voice": {
-        "startTermLifeApplication": "开始办理定期寿险申请"
+      "application": {
+        "startTermLife": "开始办理定期寿险申请"
       }
     },
     "pages": {
@@ -151,8 +177,14 @@
       },
       "comparator": {
         "heading": "产品对比",
-        "intro": "对比 Unicorn Insurance 及其竞争对手的保险产品。请先选择产品类型，然后选择 2 到 4 款产品进行对比。",
+        "intro": "对比 Awesome Insurance 及其竞争对手的保险产品。请先选择产品类型，然后选择 2 到 4 款产品进行对比。",
         "typeLabel": "产品类型",
+        "line": {
+          "label": "产品类别",
+          "life": "人寿",
+          "general": "财产",
+          "health": "健康"
+        },
         "typePlaceholder": "选择产品类型",
         "productsLabel": "待对比产品",
         "productsHelp": "请选择 {{min}} 到 {{max}} 款产品。",
@@ -174,10 +206,46 @@
         "internalUseOnly": "仅供内部使用",
         "staleNotice": "部分源数据可能已过期——在与客户分享前请先核实。",
         "productStale": "数据已超过 {{days}} 天",
-        "productUpdated": "源数据更新于 {{date}}"
+        "productUpdated": "源数据更新于 {{date}}",
+        "brochure": {
+          "title": "添加竞争对手宣传册（可选）",
+          "help": "上传其他保险公司的 PDF 宣传册，即可纳入本次对比。它只会被读取一次，仅用于本次对比，并会在 48 小时内自动删除。",
+          "choose": "选择 PDF",
+          "uploading": "正在上传…",
+          "reading": "正在读取宣传册…",
+          "remove": "移除",
+          "badge": "已上传的宣传册",
+          "notes": "读取宣传册时的 {{count}} 条备注",
+          "pdfOnly": "请选择 PDF 文件。",
+          "tooLarge": "此 PDF 超过 4.5 MB，请使用较小的文件。",
+          "noRoom": "最多可对比 4 个产品，请先取消勾选一个。",
+          "sampleLabel": "手边没有宣传册？试试示例：",
+          "sampleButton": "下载 {{name}}（PDF）"
+        },
+        "uploadedNotice": "{{name}} 来自您上传的宣传册，由系统自动读取，尚未核实。使用前请对照宣传册核对细节。",
+        "ratings": {
+          "title": "保险公司财务实力",
+          "outlook": "展望",
+          "notStated": "未说明",
+          "illustrativeNote": "竞争对手的评级为演示用示例数据，并非真实数据。",
+          "brochureNote": "所上传宣传册的评级以其所述为准，尚未核实。",
+          "asOf": "评级截至 {{date}}。"
+        },
+        "pdf": {
+          "button": "下载 PDF",
+          "hint": "可交给客户的 PDF，不含内部使用标记",
+          "preparing": "正在生成…",
+          "failed": "无法生成 PDF：{{message}}",
+          "heading": "产品对比",
+          "prepared": "制作日期 {{date}}",
+          "advisor": "顾问：{{name}}",
+          "uploadedNote": "{{name}} 取自顾问提供的宣传册，尚未核实。",
+          "customerDisclaimer": "依据截至 {{date}} 的产品资料。本对比仅供参考，不构成报价或要约，也可能未列出全部特点或除外责任。决定前请向各保险公司核实细节。"
+        },
+        "typesLoading": "正在加载产品类型…"
       },
       "data": {
-        "heading": "数据",
+        "heading": "数据浏览器",
         "intro": "浏览为助手回答提供依据的参考文档——产品组合、公司信息、竞争定位、竞争对手产品、促销活动以及投保申请表结构。",
         "searchPlaceholder": "搜索文件...",
         "clearSearch": "清除搜索",
@@ -208,7 +276,84 @@
           "competitive": "竞争定位",
           "competitors": "竞争对手产品",
           "promotion": "促销活动",
-          "forms": "投保申请表"
+          "forms": "投保申请表",
+          "pricing": "费率表",
+          "brochures": "宣传册",
+          "transcripts": "语音转录"
+        },
+        "pdf": {
+          "download": "下载 PDF",
+          "open": "在新标签页打开",
+          "note": "可与客户分享的一页宣传册，不显示价格。",
+          "fallback": "您的浏览器无法在此显示 PDF。请使用“下载 PDF”或“在新标签页打开”。"
+        },
+        "pricing": {
+          "ageBand": "年龄段",
+          "ratePerUnit": "每 {{unit}} 的年费率",
+          "scaledNote": "金额对应 {{amount}} 的保额，并随所选保额按比例变化。",
+          "interpolatedNote": "行与行之间的金额按插值计算。",
+          "monthlyBenefit": "每月给付额",
+          "baseAnnual": "基础年保费",
+          "geography": "地区",
+          "perDay": "每人每天",
+          "annualMulti": "全年多次旅行，每人",
+          "addonPct": "保费的 +{{pct}}%",
+          "addonFlat": "每年 +{{amount}}",
+          "addonPerUnit": "每 {{per}} 保额 +{{amount}}",
+          "addonOnAmount": "所填金额的 +{{pct}}%",
+          "indicative": "仅供参考",
+          "effective": "生效日期 {{date}}",
+          "basis": "保费基准：{{basis}}。币种：{{currency}}。",
+          "dependsOn": "影响价格的因素",
+          "option": "选项",
+          "meaning": "含义",
+          "allowed": "可选值",
+          "defaultCol": "默认值",
+          "required": "必填",
+          "fromProfile": "取自客户档案",
+          "baseRates": "基础费率",
+          "factors": "费率系数",
+          "factorsHelp": "每个系数都会与基础费率相乘。与所选项目无关的系数不适用。",
+          "addons": "附加险",
+          "addon": "附加险",
+          "effect": "对保费的影响",
+          "frequency": "缴费频率",
+          "paidEvery": "缴费方式",
+          "loading": "加费",
+          "noLoading": "无",
+          "examples": "计算示例",
+          "example": "示例",
+          "choices": "所选项目",
+          "annualPremium": "年保费",
+          "examplesNote": "按这些表格计算，因此助手给出的数字与此一致。",
+          "affordabilityTitle": "可负担性规则",
+          "ofIncome": "占年收入的上限（所有有效保单合计）"
+        },
+        "transcript": {
+          "inProgress": "进行中",
+          "ended": "已结束",
+          "started": "开始于 {{time}}",
+          "refresh": "刷新",
+          "expires": "将在最后一次保存（{{time}}）后约 24 至 48 小时自动删除。会话进行期间约每 30 秒保存一次。",
+          "consent": "转录同意已于 {{time}} 确认。",
+          "empty": "此会话尚未保存任何内容。",
+          "about": "关于 {{name}}",
+          "aboutProspect": "关于潜在客户",
+          "advisor": "顾问",
+          "assistant": "助手",
+          "typed": "输入",
+          "prospect": "潜在客户",
+          "turnCount": "{{count}} 条发言"
+        },
+        "collapseAll": "全部折叠",
+        "expandAll": "全部展开",
+        "collapseFolder": "折叠{{folder}}",
+        "expandFolder": "展开{{folder}}",
+        "ratings": {
+          "carrierCount": "{{count}}家保险公司",
+          "agencyCount": "{{count}}家评级机构",
+          "carrier": "保险公司",
+          "illustrative": "示例数据"
         }
       }
     },
@@ -230,15 +375,27 @@
         "speaking": "回复中"
       },
       "mute": "静音",
-      "unmute": "取消静音"
+      "unmute": "取消静音",
+      "consent": {
+        "question": "录音前请确认：{{name}} 是否同意对本次对话进行转录？",
+        "theProspect": "潜在客户",
+        "hint": "在您确认之前，不会保存或记忆任何内容，也不会填写任何表单。可向助手口头回答，或使用按钮。",
+        "changed": "客户已更换，需要重新确认同意。",
+        "confirm": "已同意",
+        "decline": "不同意",
+        "confirmed": "已于 {{time}} 确认同意。本次对话将被转录并保存 24 小时。",
+        "declinedMessage": "已拒绝同意。会话已结束，未保存任何内容。",
+        "startNew": "开始新会话"
+      }
     },
     "recommendation": {
       "loading": "正在分析保障情况并查找缺口...",
       "noGaps": "未发现重大保障缺口——就其情况而言，该客户已获得充分保障。",
-      "error": "无法生成建议：{{message}}"
+      "error": "无法生成建议：{{message}}",
+      "exposureLabel": "财务风险敞口",
+      "exposureIllustrative": "示意性估算"
     },
     "form": {
-      "backToProfile": "档案",
       "progress": "已填写 {{total}} 个必填字段中的 {{filled}} 个",
       "progressLabel": "表单完成度",
       "pendingReview": "{{count}} 项待审核",
@@ -253,7 +410,128 @@
       "legendProfile": "来自档案",
       "legendHeard": "对话中获取",
       "legendConfirm": "请确认",
-      "legendManual": "由您输入"
+      "legendManual": "由您输入",
+      "downloadPdf": "下载 PDF",
+      "yes": "是",
+      "no": "否",
+      "pdf": {
+        "preparing": "正在生成…",
+        "failed": "无法生成 PDF：{{message}}",
+        "prepared": "制作日期 {{date}}",
+        "advisor": "顾问：{{name}}",
+        "requiredNote": "* 必填。尚未填写的栏位请留空，并手写补充。",
+        "signatureApplicant": "申请人签名",
+        "signatureAdvisor": "顾问签名",
+        "date": "日期",
+        "disclaimer": "本草稿由 Awesome Insurance 顾问助手生成，并非承保要约。只有在核保后由 Awesome Insurance 出具保单，保障才会生效。"
+      }
+    },
+    "notes": {
+      "heading": "备注",
+      "add": "添加备注",
+      "save": "保存备注",
+      "typeLabel": "类型",
+      "type": {
+        "life_event": "人生事件",
+        "interaction": "沟通记录"
+      },
+      "dateLabel": "事件日期（可选）",
+      "textLabel": "备注",
+      "textPlaceholder": "例如：预计三月迎来第二个孩子",
+      "empty": "暂无备注。",
+      "eventOn": "事件：{{date}}",
+      "addedOn": "添加于 {{date}}",
+      "byAssistant": "由助手添加",
+      "byAssistantHint": "由 AI 助手应顾问要求保存",
+      "delete": "删除备注",
+      "confirmDelete": "删除",
+      "saveFailed": "无法保存备注：{{message}}",
+      "deleteFailed": "无法删除备注：{{message}}"
+    },
+    "cockpit": {
+      "heading": "今日优先事项",
+      "summary": "{{total}}位客户中有{{needing}}位需要关注,按紧急程度排序",
+      "refresh": "刷新",
+      "loading": "正在加载优先事项…",
+      "empty": "目前没有需要关注的事项。",
+      "error": "无法加载优先事项:{{message}}",
+      "prospect": "潜在客户",
+      "actions": {
+        "annual_review": "年度回顾",
+        "meeting_prep": "准备会议",
+        "outreach": "起草邮件"
+      },
+      "rules": {
+        "review_overdue": "档案上次审核是在{{days}}天前",
+        "life_event_upcoming": "{{days}}天后有人生大事:{{text}}",
+        "life_event_passed": "{{days}}天前的人生大事,之后尚未跟进:{{text}}",
+        "renewal_due": "{{policy}}({{insurer}})将在{{days}}天后续保",
+        "renewal_due_own": "{{policy}}将在{{days}}天后续保",
+        "renewal_passed": "{{policy}}({{insurer}})已超过续保日期{{days}}天",
+        "renewal_passed_own": "{{policy}}已超过续保日期{{days}}天",
+        "over_cap": "年度保费占收入的{{percent}}%,超过{{cap}}%的参考线",
+        "prospect_quiet": "尚无Awesome保单,且已{{days}}天没有联系"
+      }
+    },
+    "meetingNote": {
+      "button": "总结为备注",
+      "title": "会议备注",
+      "loading": "正在根据此对话起草备注…",
+      "intro": "请检查并编辑草稿,然后保存到客户备注。在您点击保存之前不会保存任何内容。",
+      "insufficient": "此对话的内容尚不足以撰写备注。",
+      "error": "无法起草备注:{{message}}",
+      "saved": "备注已保存到客户记录。",
+      "trimmed": "已缩短以符合1000字符的限制。",
+      "dateLabel": "跟进日期(可选)"
+    },
+    "roleplay": {
+      "button": "练习",
+      "setupTitle": "与{{name}}练习",
+      "setupIntro": "助手会根据客户记录扮演这位客户。请像真实面谈一样进行,结束后可获得辅导反馈。",
+      "difficulty": "难度",
+      "level": {
+        "friendly": "友好",
+        "neutral": "一般",
+        "sceptical": "持怀疑态度"
+      },
+      "focusLabel": "主要异议",
+      "focus": {
+        "any": "随机",
+        "cost": "费用太高",
+        "work": "我已有公司提供的保障",
+        "young": "我还年轻,不需要",
+        "compare": "我想和现在的保险公司比较",
+        "think": "我需要考虑一下"
+      },
+      "privacy": "练习过程不会被录音或保存,也不会添加到客户记录。健康信息不会分享给助手。",
+      "start": "开始练习",
+      "banner": "练习环节:助手正在扮演{{name}}",
+      "bannerHint": "开启麦克风后客户会向您问好。说\"end exercise\"可提前结束。",
+      "leave": "退出练习",
+      "endAndScore": "结束并评分",
+      "feedbackTitle": "辅导反馈",
+      "scoring": "正在回顾对话…",
+      "scoreError": "无法生成反馈:{{message}}",
+      "insufficient": "对话内容太少,无法给出反馈。请再试一次并多说一些。",
+      "claimsTitle": "已核对的产品说法",
+      "verdict": {
+        "supported": "与资料一致",
+        "contradicted": "与资料不符",
+        "not_in_sheets": "资料中没有"
+      },
+      "nextTime": "下次尝试",
+      "coachingNote": "这是AI为您自己的练习生成的辅导反馈,不是绩效评估,也不会被保存。",
+      "finish": "完成",
+      "again": "再练一次",
+      "criteria": {
+        "rapport": "开场与亲和力",
+        "discovery": "需求挖掘提问",
+        "needs_link": "将需求与保障挂钩",
+        "objections": "处理异议",
+        "accuracy": "准确性",
+        "compliance": "合规",
+        "closing": "收尾"
+      }
     }
   }
 }

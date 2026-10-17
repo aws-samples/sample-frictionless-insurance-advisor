@@ -1,0 +1,46 @@
+{
+  "description": "Financial-strength ratings per carrier. Awesome Insurance figures are taken from company/credentials_and_ratings.md. Competitor figures are illustrative mock data for fictional carriers and do not describe any real company.",
+  "as_of": "2026-10-01",
+  "carriers": [
+    {
+      "carrier_id": "awesome",
+      "carrier_name": "Awesome Insurance",
+      "illustrative": false,
+      "ratings": [
+        {"agency": "AM Best", "rating": "A+", "label": "Superior", "outlook": "Stable"},
+        {"agency": "S&P Global Ratings", "rating": "AA-", "label": "Very Strong", "outlook": "Stable"},
+        {"agency": "Moody's", "rating": "Aa3", "label": "Excellent", "outlook": "Stable"}
+      ]
+    },
+    {
+      "carrier_id": "bigrival",
+      "carrier_name": "BigRival",
+      "illustrative": true,
+      "ratings": [
+        {"agency": "AM Best", "rating": "A", "label": "Excellent", "outlook": "Stable"},
+        {"agency": "S&P Global Ratings", "rating": "A+", "label": "Strong", "outlook": "Stable"},
+        {"agency": "Moody's", "rating": "A1", "label": "Good", "outlook": "Stable"}
+      ]
+    },
+    {
+      "carrier_id": "brookmere",
+      "carrier_name": "Brookmere",
+      "illustrative": true,
+      "ratings": [
+        {"agency": "AM Best", "rating": "B++", "label": "Good", "outlook": "Stable"},
+        {"agency": "S&P Global Ratings", "rating": "BBB+", "label": "Good", "outlook": "Stable"},
+        {"agency": "Moody's", "rating": "Baa1", "label": "Adequate", "outlook": "Stable"}
+      ]
+    },
+    {
+      "carrier_id": "quicksafe",
+      "carrier_name": "QuickSafe",
+      "illustrative": true,
+      "ratings": [
+        {"agency": "AM Best", "rating": "A-", "label": "Excellent", "outlook": "Stable"},
+        {"agency": "S&P Global Ratings", "rating": "A-", "label": "Strong", "outlook": "Positive"},
+        {"agency": "Moody's", "rating": "Not rated", "label": "", "outlook": ""}
+      ]
+    }
+  ]
+}

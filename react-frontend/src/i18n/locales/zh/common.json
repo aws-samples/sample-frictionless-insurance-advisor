@@ -7,7 +7,7 @@
       "assistant": "文本助手",
       "voice": "文本+语音助手",
       "comparator": "产品对比",
-      "data": "数据",
+      "data": "数据浏览器",
       "signOut": "退出登录",
       "language": "语言",
       "pitchDeck": "打开演示文稿"
@@ -16,7 +16,9 @@
       "send": "发送",
       "clear": "清除",
       "refresh": "刷新",
-      "cancel": "取消"
+      "cancel": "取消",
+      "close": "关闭",
+      "retry": "重试"
     },
     "states": {
       "loading": "加载中...",
@@ -31,7 +33,7 @@
       "reload": "重新加载"
     },
     "brand": {
-      "nameAccent": "Unicorn",
+      "nameAccent": "Awesome",
       "nameSuffix": "Insurance"
     }
   }

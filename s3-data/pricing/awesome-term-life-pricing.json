@@ -1,0 +1,214 @@
+{
+  "product_type": "term_life",
+  "product_name": "Awesome Term Life",
+  "premium_basis": "per year",
+  "notes": [
+    "Reference point: $500,000 over 20 years at age 35, male non-smoker = $420 a year."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 18,
+      "max": 70,
+      "required": true,
+      "source": "profile",
+      "description": "Age last birthday"
+    },
+    "gender": {
+      "type": "choice",
+      "choices": [
+        "male",
+        "female"
+      ],
+      "required": true,
+      "source": "profile",
+      "description": "Used to apply the gender factor. Taken from the customer's profile; if it is missing (for example a new prospect), ask the advisor."
+    },
+    "smoker": {
+      "type": "boolean",
+      "required": true,
+      "source": "profile",
+      "description": "Whether the person smokes or has used tobacco in the last 12 months."
+    },
+    "sum_assured": {
+      "type": "number",
+      "min": 250000,
+      "max": 2000000,
+      "required": true,
+      "description": "Death benefit in USD."
+    },
+    "term_years": {
+      "type": "choice",
+      "choices": [
+        "10",
+        "15",
+        "20",
+        "25",
+        "30"
+      ],
+      "required": true,
+      "description": "Length of the term in years."
+    },
+    "premium_structure": {
+      "type": "choice",
+      "choices": [
+        "level",
+        "return_of_premium"
+      ],
+      "default": "level",
+      "description": "Level premiums, or return of premium (all premiums refunded at the end of the term if no claim)."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "age_rate",
+    "amount_input": "sum_assured",
+    "unit": 1000,
+    "age_bands": [
+      {
+        "min": 18,
+        "max": 25
+      },
+      {
+        "min": 26,
+        "max": 30
+      },
+      {
+        "min": 31,
+        "max": 35
+      },
+      {
+        "min": 36,
+        "max": 40
+      },
+      {
+        "min": 41,
+        "max": 45
+      },
+      {
+        "min": 46,
+        "max": 50
+      },
+      {
+        "min": 51,
+        "max": 55
+      },
+      {
+        "min": 56,
+        "max": 60
+      },
+      {
+        "min": 61,
+        "max": 65
+      },
+      {
+        "min": 66,
+        "max": 70
+      }
+    ],
+    "rates": [
+      0.52,
+      0.6,
+      0.84,
+      1.3,
+      2.1,
+      3.2,
+      4.9,
+      7.6,
+      12.0,
+      19.0
+    ],
+    "label": "Annual rate per $1,000 of cover, male non-smoker, at the reference choices"
+  },
+  "factors": [
+    {
+      "input": "gender",
+      "label": "Gender",
+      "map": {
+        "male": 1.0,
+        "female": 0.88
+      }
+    },
+    {
+      "input": "smoker",
+      "label": "Smoker",
+      "map": {
+        "true": 1.9,
+        "false": 1.0
+      }
+    },
+    {
+      "input": "term_years",
+      "label": "Term",
+      "map": {
+        "10": 0.8,
+        "15": 0.9,
+        "20": 1.0,
+        "25": 1.15,
+        "30": 1.3
+      }
+    },
+    {
+      "input": "premium_structure",
+      "label": "Premium structure",
+      "map": {
+        "level": 1.0,
+        "return_of_premium": 1.9
+      }
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "Age 35, male, non-smoker, $500,000 over 20 years",
+      "options": {
+        "age": 35,
+        "gender": "male",
+        "smoker": false,
+        "sum_assured": 500000,
+        "term_years": "20"
+      },
+      "annual_premium": 420
+    },
+    {
+      "label": "Age 41, female, non-smoker, $1,500,000 over 20 years",
+      "options": {
+        "age": 41,
+        "gender": "female",
+        "smoker": false,
+        "sum_assured": 1500000,
+        "term_years": "20"
+      },
+      "annual_premium": 2772
+    },
+    {
+      "label": "Age 50, male, smoker, $250,000 over 10 years",
+      "options": {
+        "age": 50,
+        "gender": "male",
+        "smoker": true,
+        "sum_assured": 250000,
+        "term_years": "10"
+      },
+      "annual_premium": 1216
+    }
+  ]
+}

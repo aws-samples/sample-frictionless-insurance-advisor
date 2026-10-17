@@ -56,6 +56,16 @@
       "Option A (level face)": "옵션 A (정액)",
       "Option B (face + cash value)": "옵션 B (액면 + 해지 환급금)",
       "Option C (face + return of premium)": "옵션 C (액면 + 보험료 반환)"
+    },
+    "gender": {
+      "male": "남성",
+      "female": "여성"
+    },
+    "productLine": {
+      "life": "생명 상품",
+      "general": "일반 상품",
+      "health": "건강 상품",
+      "all": "전체 상품"
     }
   }
 }

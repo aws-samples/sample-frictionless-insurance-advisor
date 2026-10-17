@@ -11,6 +11,8 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 interface TopNavProps {
   activePage: Page;
   onChangePage: (page: Page) => void;
+  /** Logo / brand click: open the Assistant on its Home (Cockpit) view. */
+  onHome: () => void;
   advisorEmail: string | null;
   onSignOut: () => void;
 }
@@ -22,7 +24,7 @@ const PAGES = [
   { id: 'data', labelKey: 'common.nav.data', Icon: Database },
 ] as const;
 
-export function TopNav({ activePage, onChangePage, advisorEmail, onSignOut }: TopNavProps) {
+export function TopNav({ activePage, onChangePage, onHome, advisorEmail, onSignOut }: TopNavProps) {
   const { t } = useTranslation();
   const { theme, toggle } = useTheme();
 
@@ -31,13 +33,19 @@ export function TopNav({ activePage, onChangePage, advisorEmail, onSignOut }: To
       <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
         {/* Brand + nav */}
         <div className="flex items-center gap-4 sm:gap-8">
-          <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={onHome}
+            aria-label={t('assistant.sidebar.home')}
+            title={t('assistant.sidebar.home')}
+            className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+          >
             <Logo />
             <span className="hidden text-base font-bold tracking-tight sm:inline">
               <span className="text-brand-gradient">{t('common.brand.nameAccent')}</span>
               <span className="text-foreground-muted ml-1.5">{t('common.brand.nameSuffix')}</span>
             </span>
-          </div>
+          </button>
 
           <nav className="flex items-center gap-1 rounded-full border border-border bg-background-muted/60 p-0.5">
             {PAGES.map(({ id, labelKey, Icon }) => {

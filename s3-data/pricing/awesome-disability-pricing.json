@@ -1,0 +1,327 @@
+{
+  "product_type": "disability",
+  "product_name": "Awesome Disability",
+  "premium_basis": "per year",
+  "notes": [
+    "Table values are the published rates and are the male reference. A female applicant's premium is the table value times the female factor for her age band (Gender factor). The gender factors are illustrative placeholders until the pricing factors are confirmed. Basis: Own Occupation, Class 1 (office professional); benefits between the published amounts are interpolated, and $2,000 scales from the $3,000 row.",
+    "The monthly benefit is normally capped at 60 to 70% of pre-disability income.",
+    "Ages outside 25 to 60 have no published rate."
+  ],
+  "inputs": {
+    "age": {
+      "type": "number",
+      "min": 25,
+      "max": 60,
+      "required": true,
+      "source": "profile",
+      "description": "Age last birthday"
+    },
+    "gender": {
+      "type": "choice",
+      "choices": [
+        "male",
+        "female"
+      ],
+      "required": true,
+      "source": "profile",
+      "description": "Used with the age band to apply the gender factor. Taken from the customer's profile; if it is missing (for example a new prospect), ask the advisor."
+    },
+    "smoker": {
+      "type": "boolean",
+      "required": true,
+      "source": "profile",
+      "description": "Whether the person smokes or has used tobacco in the last 12 months."
+    },
+    "monthly_benefit": {
+      "type": "number",
+      "min": 2000,
+      "max": 15000,
+      "required": true,
+      "description": "Monthly benefit in USD."
+    },
+    "benefit_period": {
+      "type": "choice",
+      "choices": [
+        "2_years",
+        "5_years",
+        "10_years",
+        "to_retirement"
+      ],
+      "default": "to_retirement",
+      "description": "How long benefits are paid during one claim."
+    },
+    "waiting_period": {
+      "type": "choice",
+      "choices": [
+        "30",
+        "60",
+        "90",
+        "180",
+        "365"
+      ],
+      "default": "90",
+      "description": "Days before benefits begin."
+    },
+    "occupation_class": {
+      "type": "choice",
+      "choices": [
+        "class_1",
+        "class_2",
+        "class_3",
+        "class_4",
+        "class_5"
+      ],
+      "default": "class_1",
+      "description": "Class 1 office professional to Class 5 heavy manual."
+    },
+    "definition": {
+      "type": "choice",
+      "choices": [
+        "own_occupation",
+        "any_occupation",
+        "hybrid"
+      ],
+      "default": "own_occupation",
+      "description": "Own occupation, any occupation, or own occupation for a set period then any occupation."
+    },
+    "coverage_type": {
+      "type": "choice",
+      "choices": [
+        "short_term",
+        "long_term",
+        "combined"
+      ],
+      "default": "long_term",
+      "description": "Short-term (up to 2 years), long-term, or combined."
+    },
+    "cola": {
+      "type": "boolean",
+      "default": false,
+      "description": "Cost of living adjustment rider."
+    },
+    "future_purchase": {
+      "type": "boolean",
+      "default": false,
+      "description": "Future purchase option rider."
+    },
+    "partial_disability": {
+      "type": "boolean",
+      "default": false,
+      "description": "Partial disability benefit rider."
+    },
+    "premium_frequency": {
+      "type": "choice",
+      "choices": [
+        "annual",
+        "semi_annual",
+        "quarterly",
+        "monthly"
+      ],
+      "default": "annual",
+      "description": "How often the premium is paid. Paying more often adds a small instalment loading."
+    }
+  },
+  "base": {
+    "type": "age_amount",
+    "amount_input": "monthly_benefit",
+    "age_bands": [
+      {
+        "min": 25,
+        "max": 30
+      },
+      {
+        "min": 31,
+        "max": 40
+      },
+      {
+        "min": 41,
+        "max": 50
+      },
+      {
+        "min": 51,
+        "max": 60
+      }
+    ],
+    "rows": {
+      "3000": [
+        420,
+        660,
+        1020,
+        1680
+      ],
+      "5000": [
+        660,
+        1020,
+        1620,
+        2700
+      ],
+      "8000": [
+        1020,
+        1560,
+        2520,
+        4200
+      ],
+      "10000": [
+        1260,
+        1920,
+        3120,
+        5160
+      ],
+      "15000": [
+        1860,
+        2820,
+        4560,
+        7560
+      ]
+    },
+    "label": "Annual premium, Own Occupation, Class 1, at a 90-day wait, to retirement (product sheet)"
+  },
+  "factors": [
+    {
+      "input": "smoker",
+      "label": "Smoker",
+      "map": {
+        "true": 1.25,
+        "false": 1.0
+      }
+    },
+    {
+      "input": "age",
+      "label": "Gender factor (female, by age band; male = 1.0)",
+      "when": {
+        "gender": "female"
+      },
+      "bands": [
+        {
+          "max": 30,
+          "mult": 1.1
+        },
+        {
+          "min": 31,
+          "max": 40,
+          "mult": 1.2
+        },
+        {
+          "min": 41,
+          "max": 50,
+          "mult": 1.25
+        },
+        {
+          "min": 51,
+          "max": 60,
+          "mult": 1.15
+        }
+      ]
+    },
+    {
+      "input": "occupation_class",
+      "label": "Occupation class",
+      "map": {
+        "class_1": 1.0,
+        "class_2": 1.15,
+        "class_3": 1.35,
+        "class_4": 1.6,
+        "class_5": 1.9
+      }
+    },
+    {
+      "input": "definition",
+      "label": "Definition of disability",
+      "map": {
+        "own_occupation": 1.0,
+        "any_occupation": 0.7,
+        "hybrid": 0.85
+      }
+    },
+    {
+      "input": "waiting_period",
+      "label": "Waiting period",
+      "map": {
+        "30": 1.25,
+        "60": 1.1,
+        "90": 1.0,
+        "180": 0.85,
+        "365": 0.7
+      }
+    },
+    {
+      "input": "benefit_period",
+      "label": "Benefit period",
+      "map": {
+        "2_years": 0.55,
+        "5_years": 0.75,
+        "10_years": 0.9,
+        "to_retirement": 1.0
+      }
+    },
+    {
+      "input": "coverage_type",
+      "label": "Coverage type",
+      "map": {
+        "short_term": 0.6,
+        "long_term": 1.0,
+        "combined": 1.35
+      }
+    }
+  ],
+  "addons": [
+    {
+      "input": "cola",
+      "label": "Cost of living adjustment",
+      "pct": 0.15
+    },
+    {
+      "input": "future_purchase",
+      "label": "Future purchase option",
+      "pct": 0.1
+    },
+    {
+      "input": "partial_disability",
+      "label": "Partial disability benefit",
+      "pct": 0.08
+    }
+  ],
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "frequency_loading": {
+    "annual": 1.0,
+    "semi_annual": 1.02,
+    "quarterly": 1.03,
+    "monthly": 1.05
+  },
+  "indicative": true,
+  "examples": [
+    {
+      "label": "Age 35, male, non-smoker, $5,000 a month, defaults",
+      "options": {
+        "age": 35,
+        "gender": "male",
+        "smoker": false,
+        "monthly_benefit": 5000
+      },
+      "annual_premium": 1020
+    },
+    {
+      "label": "Age 45, male, non-smoker, $8,000 a month, 180-day wait",
+      "options": {
+        "age": 45,
+        "gender": "male",
+        "smoker": false,
+        "monthly_benefit": 8000,
+        "waiting_period": "180"
+      },
+      "annual_premium": 2142
+    },
+    {
+      "label": "Age 45, female, non-smoker, $8,000 a month, 180-day wait",
+      "options": {
+        "age": 45,
+        "gender": "female",
+        "smoker": false,
+        "monthly_benefit": 8000,
+        "waiting_period": "180"
+      },
+      "annual_premium": 2678
+    }
+  ]
+}

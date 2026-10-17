@@ -1,4 +1,4 @@
-# Unicorn Insurance - Service Standards and Claims Benchmarks
+# Awesome Insurance - Service Standards and Claims Benchmarks
 
 This document details our service commitments and how they compare to industry averages and known competitor performance. Use these benchmarks when a customer asks about our service quality relative to alternatives.
 
@@ -6,7 +6,7 @@ This document details our service commitments and how they compare to industry a
 
 ### Target Timelines by Line
 
-| Line of Business | Unicorn Target | Unicorn Actual (Last 12 Months) | Industry Avg | BigRival Reported | StarInsure Reported |
+| Line of Business | Awesome Target | Awesome Actual (Last 12 Months) | Industry Avg | BigRival Reported | Brookmere Reported |
 |------------------|----------------|-------------------------------|--------------|-------------------|---------------------|
 | Health (cashless) | eLOG in 2 hours | 1.8 hours avg | 4 hours | 4-6 hours | N/A |
 | Health (reimbursement) | 5 business days | 4.7 days avg | 8 days | 10-15 days | N/A |
@@ -18,7 +18,7 @@ This document details our service commitments and how they compare to industry a
 
 ### Claims Settlement Ratios
 
-| Line | Unicorn | BigRival | StarInsure | Industry Avg |
+| Line | Awesome | BigRival | Brookmere | Industry Avg |
 |------|---------|----------|-----------|--------------|
 | Health | 96.2% | 91.8% | N/A | 94.0% |
 | Critical Illness | 94.8% | N/A | 88.5% | 92.0% |
@@ -38,7 +38,7 @@ This document details our service commitments and how they compare to industry a
 
 ### Competitor Comparison: Cashless Claims
 
-| Feature | Unicorn | BigRival | StarInsure |
+| Feature | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | Cashless available? | Yes | Yes | No (no health product) |
 | Number of panel facilities | 800+ | ~600 | N/A |
@@ -54,11 +54,11 @@ This document details our service commitments and how they compare to industry a
 - **No individual claims-based loading.** Our premiums are community-rated based on overall portfolio performance.
 - Annual premium adjustments based on medical inflation and portfolio experience (typically 3-5% annually).
 - Contrast with BigRival: Individual claims-based loading of up to 30% after a major health claim.
-- Contrast with StarInsure: Annual increases of 8-12% due to smaller risk pool and adverse selection.
+- Contrast with Brookmere: Annual increases of 8-12% due to smaller risk pool and adverse selection.
 
 ### No-Claim Rewards
 
-| Feature | Unicorn | BigRival | StarInsure |
+| Feature | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | No-claim reward type | 10% premium discount | 5% discount | None |
 | Qualifying period | 2 continuous claim-free years | 5 continuous years | N/A |
@@ -75,7 +75,7 @@ This document details our service commitments and how they compare to industry a
 
 ### Competitor Comparison: Pre-Existing Conditions
 
-| Feature | Unicorn | BigRival | StarInsure |
+| Feature | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | Waiting period | 12 months | 12 months | Permanently excluded |
 | Coverage after waiting | Full coverage | Full coverage (may load premium) | Never covered |
@@ -95,7 +95,7 @@ This document details our service commitments and how they compare to industry a
 
 ### Competitor Digital Comparison
 
-| Feature | Unicorn | BigRival | StarInsure |
+| Feature | Awesome | BigRival | Brookmere |
 |---------|---------|----------|-----------|
 | Mobile app | Full-service | Basic (view policy, no claims) | Full-service |
 | Pre-auth via app | Yes | No | N/A |

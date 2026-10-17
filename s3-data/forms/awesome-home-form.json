@@ -1,0 +1,242 @@
+{
+  "form_id": "home",
+  "product_type": "home",
+  "product_name": "Awesome Home Insurance",
+  "title": "Awesome Home Insurance Application",
+  "sections": [
+    {
+      "id": "applicant",
+      "title": "Applicant",
+      "fields": [
+        {
+          "path": "applicant.full_name",
+          "label": "Full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "applicant.date_of_birth",
+          "label": "Date of birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "path": "applicant.occupation",
+          "label": "Occupation",
+          "type": "text"
+        },
+        {
+          "path": "applicant.annual_income",
+          "label": "Annual income",
+          "type": "currency"
+        },
+        {
+          "path": "applicant.email",
+          "label": "Email",
+          "type": "text"
+        },
+        {
+          "path": "applicant.phone",
+          "label": "Phone",
+          "type": "text"
+        },
+        {
+          "path": "applicant.address",
+          "label": "Address",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "property",
+      "title": "Property",
+      "fields": [
+        {
+          "path": "property.address",
+          "label": "Property address",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "property.type",
+          "label": "Property type",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "single_family",
+              "label": "Single-family home"
+            },
+            {
+              "value": "condominium",
+              "label": "Condominium"
+            },
+            {
+              "value": "townhouse",
+              "label": "Townhouse"
+            },
+            {
+              "value": "rental",
+              "label": "Rental property"
+            },
+            {
+              "value": "vacation",
+              "label": "Vacation home"
+            }
+          ]
+        },
+        {
+          "path": "property.year_built",
+          "label": "Year built",
+          "type": "number"
+        },
+        {
+          "path": "property.claims_last_5_years",
+          "label": "Home claims in the last 5 years",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Coverage",
+      "fields": [
+        {
+          "path": "coverage.dwelling_value",
+          "label": "Rebuilding cost of the home",
+          "type": "currency",
+          "required": true,
+          "hint": "$100,000 to $2,000,000+"
+        },
+        {
+          "path": "coverage.deductible",
+          "label": "Deductible",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "500",
+              "label": "$500"
+            },
+            {
+              "value": "1000",
+              "label": "$1,000"
+            },
+            {
+              "value": "2500",
+              "label": "$2,500"
+            },
+            {
+              "value": "5000",
+              "label": "$5,000"
+            }
+          ]
+        },
+        {
+          "path": "coverage.contents_percent",
+          "label": "Personal property cover",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "50",
+              "label": "50% of dwelling"
+            },
+            {
+              "value": "70",
+              "label": "70% of dwelling"
+            },
+            {
+              "value": "100",
+              "label": "100% of dwelling"
+            }
+          ]
+        },
+        {
+          "path": "coverage.liability",
+          "label": "Personal liability",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "100000",
+              "label": "$100,000"
+            },
+            {
+              "value": "300000",
+              "label": "$300,000"
+            },
+            {
+              "value": "500000",
+              "label": "$500,000"
+            },
+            {
+              "value": "1000000",
+              "label": "$1,000,000"
+            }
+          ]
+        },
+        {
+          "path": "coverage.living_expenses_months",
+          "label": "Additional living expenses",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "12",
+              "label": "12 months"
+            },
+            {
+              "value": "24",
+              "label": "24 months"
+            },
+            {
+              "value": "36",
+              "label": "36 months"
+            }
+          ]
+        },
+        {
+          "path": "coverage.premium_frequency",
+          "label": "Premium frequency",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "monthly",
+              "label": "Monthly"
+            },
+            {
+              "value": "quarterly",
+              "label": "Quarterly"
+            },
+            {
+              "value": "semi_annual",
+              "label": "Semi-annual"
+            },
+            {
+              "value": "annual",
+              "label": "Annual"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "addons",
+      "title": "Optional coverage",
+      "fields": [
+        {
+          "path": "addons.flood",
+          "label": "Flood protection",
+          "type": "boolean"
+        },
+        {
+          "path": "addons.home_business",
+          "label": "Home business coverage",
+          "type": "boolean"
+        }
+      ]
+    }
+  ]
+}
