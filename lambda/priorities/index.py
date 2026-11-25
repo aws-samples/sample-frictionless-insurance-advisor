@@ -33,6 +33,7 @@ notifications, scheduling.
 """
 import json
 import os
+import time
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -302,6 +303,44 @@ def _response(status, body):
     }
 
 
+# The advisor's email comes from Cognito (access tokens do not carry it), one
+# AdminGetUser call per request. Remember the answer per container for a short
+# time. The key is the `username` claim API Gateway's authorizer verified, never
+# anything the caller sent. 60 seconds matches the gateway interceptor's cache.
+# Failures are not cached.
+ADVISOR_CACHE_SECONDS = 60
+ADVISOR_CACHE_MAX = 256
+_advisor_cache = {}
+_cognito = None
+
+
+def _cognito_client():
+    """One Cognito client per container instead of one per request."""
+    global _cognito
+    if _cognito is None:
+        _cognito = boto3.client("cognito-idp")
+    return _cognito
+
+
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
+
+
 def extract_advisor_id(event):
     """The signed-in advisor's email, taken ONLY from the verified sign-in token.
 
@@ -312,12 +351,22 @@ def extract_advisor_id(event):
     username = claims.get("username")
     if not username:
         return None
+    # Reuse an answer Cognito gave for this authorizer-verified username a
+    # moment ago (see ADVISOR_CACHE_SECONDS); the token itself is still checked
+    # by API Gateway on every request.
+    now = time.time()
+    hit = _advisor_cache.get(username) if isinstance(username, str) else None
+    if hit and hit[1] > now:
+        return hit[0]
     try:
-        cognito = boto3.client("cognito-idp")
-        user = cognito.admin_get_user(UserPoolId=os.environ.get("USER_POOL_ID"), Username=username)
-        for attr in user["UserAttributes"]:
-            if attr["Name"] == "email":
-                return attr["Value"]
+        user = _cognito_client().admin_get_user(UserPoolId=os.environ.get("USER_POOL_ID"), Username=username)
+        email = _verified_email(user)
+        if email:
+            if isinstance(username, str):
+                if len(_advisor_cache) >= ADVISOR_CACHE_MAX:
+                    _advisor_cache.clear()
+                _advisor_cache[username] = (email, now + ADVISOR_CACHE_SECONDS)
+            return email
     except Exception as e:  # noqa: BLE001
         print(f"Error resolving the advisor: {type(e).__name__}")
     return None

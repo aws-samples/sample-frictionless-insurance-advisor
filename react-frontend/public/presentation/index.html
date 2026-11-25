@@ -2,22 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Frictionless Insurance Assistance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="meta.title">Frictionless Insurance Assistance</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css"
-        integrity="sha384-AJKv9Ui5SfA0VsFksFI9GuA1ztX9Ca3CLP6HGfX4YY/tYSVodC+PUszaQZFIlkuy"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css"
-        integrity="sha384-YgvgKeZJykuztG+iQPoZHNZENTFZvOcOJ/uRzmJTje6GHYN9zAw+y5rx/L8MQKA/"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme"
-        integrity="sha384-/TZMdZeq0ZGi4iePTHhOMXOkyv2f72ZcwmhAtOmSZlPkx+5qCOfyc/U1kjd5Su6S"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Everything the deck loads is served from this origin (no CDN, no Google Fonts), see vendor/README.md -->
+  <link rel="stylesheet" href="vendor/fonts/inter.css" />
+  <link rel="stylesheet" href="vendor/reveal-5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="vendor/reveal-5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="vendor/reveal-5.1.0/dist/theme/white.css" id="theme" />
 
   <style>
     :root {
@@ -36,9 +28,23 @@
       --shadow-sm: 0 1px 2px 0 rgba(20,20,40,0.04);
       --shadow-md: 0 4px 16px -4px rgba(20,20,40,0.08), 0 1px 2px rgba(20,20,40,0.04);
       --shadow-glow: 0 0 0 1px rgba(139,92,246,0.18), 0 12px 32px -8px rgba(139,92,246,0.22);
+      /* Type scale, in canvas pixels (the canvas is 1366 x 768 and reveal scales it to the window) */
+      --fs-h1: 6.2rem;
+      --fs-h2: 2.7rem;
+      --fs-lead: 1.4rem;
+      --fs-card-h: 1.5rem;
+      --fs-body: 1.3rem;
+      --fs-small: 1.05rem;
+      --fs-pill: 0.95rem;
     }
 
-    html, body { background: var(--bg); }
+    /* The page background, the top bar and the slide background belong to the window, not to the slide box */
+    html, body { background: var(--bg); margin: 0; }
+    body::before {
+      content: ""; position: fixed; top: 0; left: 0; right: 0; height: 4px; z-index: 20;
+      background: var(--grad); opacity: 0.9; pointer-events: none;
+    }
+    .reveal-viewport { background: var(--bg); }
     .reveal {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: var(--ink);
@@ -46,413 +52,655 @@
       -webkit-font-smoothing: antialiased;
     }
     .reveal .slides { text-align: left; }
-    .reveal .slides section { background: var(--bg); }
-
-    .reveal .slides section.has-bar::before {
-      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: var(--grad); opacity: 0.85;
+    /* Top-aligned flex column that fills the whole 16:9 canvas. The padding keeps content clear of the
+       controls: top right (full screen button, language picker) and bottom (slide number, hint, arrows). */
+    .reveal .slides > section {
+      background: transparent; box-sizing: border-box; width: 100%; height: 100%;
+      display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch;
+      padding: 36px 52px 76px; overflow: hidden;
     }
+    .reveal .slides > section.present { display: flex; }
+    .reveal .slides > section > * { max-width: 100%; }
+    .reveal .slides > section > .pill, .reveal .slides > section > .pill-row { align-self: flex-start; }
 
     .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
       color: var(--ink); text-transform: none; letter-spacing: -0.015em; font-weight: 700; margin: 0 0 0.35em 0;
     }
     .reveal h1 { font-size: 2.6rem; line-height: 1.05; }
-    .reveal h2 { font-size: 1.8rem; line-height: 1.15; }
-    .reveal h3 { font-size: 1.05rem; line-height: 1.25; }
-    .reveal p, .reveal li { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.5; }
+    .reveal h2 { font-size: var(--fs-h2); line-height: 1.12; }
+    .reveal h3 { font-size: 1.3rem; line-height: 1.25; }
+    .reveal p, .reveal li { color: var(--ink-soft); font-size: var(--fs-body); line-height: 1.45; }
+    .reveal .slides > section > p { font-size: var(--fs-lead); margin: 0 0 14px 0; }
     .reveal ul { margin: 0; padding-left: 1.1em; }
-    .reveal ul li { margin: 0.18em 0; }
-    .reveal .muted { color: var(--muted); font-size: 0.78rem; }
+    .reveal ul li { margin: 0.2em 0; }
+    .reveal .muted { color: var(--muted); font-size: var(--fs-small); }
 
     .reveal .grad-text {
       background: var(--grad); -webkit-background-clip: text; background-clip: text;
       color: transparent; -webkit-text-fill-color: transparent;
     }
+    .reveal .pill-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .reveal .pill-row .pill { margin-bottom: 0; }
+    .reveal .part-tag { font-size: var(--fs-pill); font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
     .reveal .pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 12px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 16px; border-radius: 999px;
       background: var(--bg-elev); border: 1px solid var(--line);
-      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      font-size: var(--fs-pill); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--muted); margin-bottom: 14px;
     }
     .reveal .pill::before {
-      content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--grad);
+      content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--grad);
     }
     .reveal .pill-grad { background: var(--grad); color: white; border: none; box-shadow: var(--shadow-glow); }
     .reveal .pill-grad::before { background: white; }
 
-    .reveal .grid { display: grid; gap: 14px; }
+    /* Grids share the free height of the slide; rows are equal so cards line up */
+    .reveal .grid { display: grid; gap: 14px; flex: 1 1 auto; min-height: 0; grid-auto-rows: minmax(min-content, 1fr); margin-top: 0 !important; }
+    .reveal .grid + .grid, .reveal .grid + .card, .reveal .card + .grid { margin-top: 14px !important; }
     .reveal .grid-2 { grid-template-columns: 1fr 1fr; }
     .reveal .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
     .reveal .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 
     .reveal .card {
-      background: var(--bg-elev); border: 1px solid var(--line); border-radius: 14px;
-      padding: 14px 16px; box-shadow: var(--shadow-sm);
-      position: relative; overflow: hidden;
+      background: var(--bg-elev); border: 1px solid var(--line); border-radius: 16px;
+      padding: 14px 20px; box-shadow: var(--shadow-sm);
+      position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start;
     }
     .reveal .card::before {
-      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
       background: var(--grad); opacity: 0.55;
     }
-    .reveal .card h3, .reveal .card h4 { margin: 0 0 6px 0; font-size: 0.95rem; color: var(--ink); font-weight: 700; }
-    .reveal .card p, .reveal .card li { font-size: 0.78rem; color: var(--ink-soft); line-height: 1.45; }
+    .reveal .card h3, .reveal .card h4 { margin: 0 0 8px 0; font-size: var(--fs-card-h); line-height: 1.2; color: var(--ink); font-weight: 700; }
+    .reveal .card p, .reveal .card li { font-size: var(--fs-body); color: var(--ink-soft); line-height: 1.42; margin: 0; }
+    .reveal .card li { margin: 0.25em 0; }
+    .reveal .card.wide { flex: 0 0 auto; }
+    /* Slides with few cards get a larger size so they do not look empty */
+    .reveal section.roomy { --fs-card-h: 1.65rem; --fs-body: 1.4rem; --fs-lead: 1.4rem; }
+    /* Slides with long cards use a slightly smaller size so six cards still fit */
+    .reveal section.dense { --fs-card-h: 1.4rem; --fs-body: 1.22rem; }
 
     .reveal .stat {
       background: var(--bg-elev); border: 1px solid var(--line); border-radius: 14px;
       padding: 14px 16px; box-shadow: var(--shadow-sm);
     }
-    .reveal .stat .num {
-      display: block; font-weight: 800; font-size: 1.8rem; line-height: 1.05; letter-spacing: -0.02em;
-      background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
-    }
-    .reveal .stat .lbl { color: var(--muted); font-size: 0.72rem; line-height: 1.35; margin-top: 6px; display: block; }
 
-    .reveal section.cover { padding: 0; }
+    /* title slide */
+    .reveal .slides > section.cover { justify-content: center; }
     .reveal .cover-mark {
       font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
       color: var(--muted); margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
     }
-    .reveal .cover-mark .dot {
-      width: 28px; height: 28px; border-radius: 999px; background: var(--grad); box-shadow: var(--shadow-glow);
-    }
     .reveal .cover-title {
-      font-size: 3.2rem; line-height: 1.02; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 18px;
+      font-size: var(--fs-h1); line-height: 1.02; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 26px;
     }
-    .reveal .cover-tagline {
-      font-size: 1rem; color: var(--ink-soft); max-width: 760px; line-height: 1.5; margin: 0;
+    .reveal .slides > section .cover-tagline {
+      font-size: 1.9rem; color: var(--ink-soft); max-width: 1000px; line-height: 1.4; margin: 0;
     }
+    .reveal .slides > section .cover-note { margin-top: 56px; font-size: 1.2rem; }
 
-    /* architecture SVG */
+    /* architecture SVG: fills the space under the title */
     .arch {
-      width: 100%; height: 460px; background: var(--bg-elev);
+      display: block; width: 100%; height: auto; flex: 1 1 0; min-height: 0; background: var(--bg-elev);
       border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-sm);
     }
     .arch text { font-family: 'Inter', sans-serif; }
     .arch .lane { fill: var(--bg-muted); stroke: var(--line); }
-    .arch .lane-title { font-size: 10px; font-weight: 700; fill: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .arch .lane-title { font-size: 12px; font-weight: 700; fill: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
     .arch .box { rx: 10; ry: 10; stroke-width: 1.4; }
     .arch .box-front { fill: #FFFFFF; stroke: var(--brand-3); }
     .arch .box-id    { fill: #FFFFFF; stroke: var(--brand-1); }
     .arch .box-rt    { fill: #FFFFFF; stroke: var(--brand-2); }
     .arch .box-tool  { fill: #FFFFFF; stroke: var(--line-strong); }
     .arch .box-data  { fill: #FFFFFF; stroke: var(--line-strong); }
-    .arch .label-bold { font-size: 11px; font-weight: 700; fill: var(--ink); }
-    .arch .label-mute { font-size: 9.5px; fill: var(--muted); }
+    .arch .label-bold { font-size: 13px; font-weight: 700; fill: var(--ink); }
+    .arch .label-mute { font-size: 11.5px; fill: var(--muted); }
     .arch .edge        { stroke: #A1A1AA; stroke-width: 1.2; fill: none; }
-    .arch .edge-grad   { stroke: url(#archGrad); stroke-width: 1.6; fill: none; }
+    .arch .edge-grad   { stroke: url(#archGrad); stroke-width: 1.8; fill: none; }
     .arch .edge-dashed { stroke: #A1A1AA; stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
-    .arch .edge-label  { font-size: 9.5px; fill: var(--muted); }
+    .arch .edge-label  { font-size: 10.5px; fill: var(--muted); }
+    .reveal .slides > section > .arch-note { margin: 10px 0 0 0; font-size: 1.2rem; line-height: 1.35; }
 
+    /* Reveal chrome: slide number bottom left, arrows bottom right, progress bar along the bottom edge */
     .reveal .slide-number {
       font-family: 'Inter', sans-serif; color: var(--muted); background: transparent;
-      right: 24px; bottom: 16px; font-size: 0.7rem;
+      left: 18px; right: auto; bottom: 14px; font-size: 15px; font-weight: 500; padding: 0;
     }
-    .reveal .slides section > * { max-width: 100%; }
-    .reveal .slides section { overflow: hidden; }
+    .reveal .progress { height: 4px; color: var(--brand-2); background: rgba(24,24,27,0.06); }
+    .reveal .controls { color: var(--brand-2); }
+
+    /* Deck chrome: full screen button + language picker (top right), shortcut hint (bottom centre) */
+    .deck-ui { position: fixed; top: 10px; right: 14px; z-index: 100; display: flex; align-items: center; gap: 8px; }
+    .deck-lang[hidden], .deck-btn[hidden] { display: none; }
+    .deck-btn, .deck-lang select {
+      font: 500 13px/1.2 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--muted); background: rgba(255,255,255,0.92);
+      border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; height: 32px; cursor: pointer;
+    }
+    .deck-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .deck-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .deck-btn:hover, .deck-lang select:hover { border-color: var(--line-strong); color: var(--ink-soft); }
+    .deck-btn:focus-visible, .deck-lang select:focus-visible { outline: 2px solid var(--brand-1); outline-offset: 1px; }
+    .deck-hint { position: fixed; left: 50%; bottom: 11px; transform: translateX(-50%); z-index: 100; white-space: nowrap; height: 28px; background: transparent; border-color: transparent; }
+    .deck-hint kbd, .deck-help kbd {
+      font: 600 12px/1 'Inter', sans-serif; color: var(--ink-soft); background: var(--bg-elev);
+      border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 5px; padding: 3px 6px; display: inline-block; min-width: 1em; text-align: center;
+    }
+    .deck-ui, .deck-hint, .reveal .controls, .reveal .slide-number { transition: opacity 0.35s ease; }
+    /* In full screen the chrome fades out after a few seconds without mouse or key activity */
+    html.deck-idle .deck-ui, html.deck-idle .deck-hint, html.deck-idle .reveal .controls, html.deck-idle .reveal .slide-number { opacity: 0; }
+
+    /* Own, translated help overlay (replaces reveal's English-only one) */
+    .deck-help[hidden] { display: none; }
+    .deck-help { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(24,24,27,0.55); }
+    .deck-help-panel {
+      background: var(--bg-elev); color: var(--ink); border-radius: 16px; box-shadow: var(--shadow-md);
+      padding: 24px 30px 20px; width: min(560px, 92vw); max-height: 90vh; overflow: auto;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .deck-help h2 { font-size: 20px; margin: 0 0 14px 0; font-weight: 700; letter-spacing: 0; }
+    .deck-help dl { display: grid; grid-template-columns: max-content 1fr; gap: 10px 20px; margin: 0; align-items: center; }
+    .deck-help dt { white-space: nowrap; display: flex; gap: 4px; }
+    .deck-help dd { margin: 0; font-size: 15px; color: var(--ink-soft); line-height: 1.35; }
+    .deck-help-close { margin-top: 18px; float: right; }
+
+    /* the speaker view embeds this page as previews: no chrome there */
+    html.deck-receiver .deck-ui, html.deck-receiver .deck-hint, html.deck-receiver .deck-help { display: none !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .deck-ui, .deck-hint, .reveal .controls, .reveal .slide-number, .reveal .progress span { transition: none !important; }
+    }
+    @media print { .deck-ui, .deck-hint, .deck-help, body::before { display: none !important; } }
+
+    /* per-language system font fallbacks (Inter has no CJK or Thai glyphs; no extra font requests) */
+    html:lang(ja) .reveal { --r-main-font: 'Inter', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans CJK JP', sans-serif; --r-heading-font: 'Source Sans Pro', Helvetica, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans CJK JP', sans-serif; }
+    html:lang(ko) .reveal { --r-main-font: 'Inter', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans CJK KR', sans-serif; --r-heading-font: 'Source Sans Pro', Helvetica, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans CJK KR', sans-serif; }
+    html:lang(zh) .reveal { --r-main-font: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; --r-heading-font: 'Source Sans Pro', Helvetica, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; }
+    html:lang(th) .reveal { --r-main-font: 'Inter', 'Thonburi', 'Leelawadee UI', 'Tahoma', 'Noto Sans Thai', sans-serif; --r-heading-font: 'Source Sans Pro', Helvetica, 'Thonburi', 'Leelawadee UI', 'Tahoma', 'Noto Sans Thai', sans-serif; }
+    html:lang(ja) .reveal, html:lang(ko) .reveal, html:lang(zh) .reveal, html:lang(th) .reveal { font-family: var(--r-main-font); }
+    html:lang(ja) .arch text, html:lang(ko) .arch text, html:lang(zh) .arch text, html:lang(th) .arch text,
+    html:lang(ja) .deck-lang select, html:lang(ko) .deck-lang select, html:lang(zh) .deck-lang select, html:lang(th) .deck-lang select { font-family: 'Inter', sans-serif; }
+    html:lang(ja) .arch text { font-family: 'Inter', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans CJK JP', sans-serif; }
+    html:lang(ko) .arch text { font-family: 'Inter', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans CJK KR', sans-serif; }
+    html:lang(zh) .arch text { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; }
+    html:lang(th) .arch text { font-family: 'Inter', 'Thonburi', 'Leelawadee UI', 'Tahoma', 'Noto Sans Thai', sans-serif; }
+
+    /* CJK and Thai: no uppercase, no tracking (negative or positive tracking breaks these scripts) */
+    html:lang(ja) .reveal h1, html:lang(ja) .reveal h2, html:lang(ja) .reveal h3, html:lang(ja) .reveal h4, html:lang(ja) .reveal .cover-title, html:lang(ja) .reveal .stat .num, html:lang(ja) .reveal .pill, html:lang(ja) .reveal .cover-mark, html:lang(ja) .arch .lane-title,
+    html:lang(ko) .reveal h1, html:lang(ko) .reveal h2, html:lang(ko) .reveal h3, html:lang(ko) .reveal h4, html:lang(ko) .reveal .cover-title, html:lang(ko) .reveal .stat .num, html:lang(ko) .reveal .pill, html:lang(ko) .reveal .cover-mark, html:lang(ko) .arch .lane-title,
+    html:lang(zh) .reveal h1, html:lang(zh) .reveal h2, html:lang(zh) .reveal h3, html:lang(zh) .reveal h4, html:lang(zh) .reveal .cover-title, html:lang(zh) .reveal .stat .num, html:lang(zh) .reveal .pill, html:lang(zh) .reveal .cover-mark, html:lang(zh) .arch .lane-title,
+    html:lang(th) .reveal h1, html:lang(th) .reveal h2, html:lang(th) .reveal h3, html:lang(th) .reveal h4, html:lang(th) .reveal .cover-title, html:lang(th) .reveal .stat .num, html:lang(th) .reveal .pill, html:lang(th) .reveal .cover-mark, html:lang(th) .arch .lane-title {
+      letter-spacing: 0; text-transform: none;
+    }
+    /* Thai stacks tone marks above and below the line: it needs more line height */
+    html:lang(th) .reveal h2, html:lang(th) .reveal h3 { line-height: 1.35; }
+    html:lang(th) .reveal p, html:lang(th) .reveal li { line-height: 1.6; }
+    html:lang(th) .reveal .card p, html:lang(th) .reveal .card li { line-height: 1.55; }
+    html:lang(th) .reveal .cover-title { line-height: 1.25; }
+    /* long compound words (German, Malay, Indonesian) may wrap instead of overflowing a card */
+    .reveal .card h4, .reveal .card p, .reveal .card li { overflow-wrap: break-word; }
+    html:lang(de) .reveal .card h4, html:lang(de) .reveal .card p, html:lang(de) .reveal .card li { hyphens: auto; }
+
+    .arch .label-lam { font-size: 12.5px; }
+    /* Thai needs more room: tone marks above and below the line */
+    html:lang(th) .reveal .card p, html:lang(th) .reveal .card li { line-height: 1.5; }
+    html:lang(th) .reveal .cover-title { line-height: 1.2; }
   </style>
 </head>
 <body>
+<div class="deck-ui">
+  <button type="button" id="deck-fs" class="deck-btn" hidden aria-pressed="false" aria-label="Full screen (F)" title="Full screen (F)"
+          data-i18n-attr="aria-label:ui.fullscreen;title:ui.fullscreen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+  </button>
+  <div class="deck-lang" hidden>
+    <select id="deck-lang" aria-label="Language" data-i18n-attr="aria-label:ui.language">
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="zh">简体中文</option>
+      <option value="ms">Bahasa Melayu</option>
+      <option value="th">ไทย</option>
+      <option value="id">Bahasa Indonesia</option>
+    </select>
+  </div>
+</div>
+<button type="button" id="deck-hint" class="deck-btn deck-hint" data-i18n="ui.hint">Press ? for shortcuts</button>
+<div id="deck-help" class="deck-help" role="dialog" aria-modal="true" aria-labelledby="deck-help-title" hidden>
+  <div class="deck-help-panel">
+    <h2 id="deck-help-title" data-i18n="ui.help.title">Keyboard shortcuts</h2>
+    <dl>
+      <dt><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd data-i18n="ui.help.nav">Previous / next slide</dd>
+      <dt><kbd>F</kbd></dt><dd data-i18n="ui.help.fullscreen">Full screen on / off</dd>
+      <dt><kbd>S</kbd></dt><dd data-i18n="ui.help.notes">Speaker notes in a new window</dd>
+      <dt><kbd>Esc</kbd><kbd>O</kbd></dt><dd data-i18n="ui.help.overview">Slide overview</dd>
+      <dt><kbd>?</kbd></dt><dd data-i18n="ui.help.help">Show or hide this help</dd>
+      <dt><kbd>B</kbd></dt><dd data-i18n="ui.help.pause">Black out the screen (pause)</dd>
+    </dl>
+    <button type="button" id="deck-help-close" class="deck-btn deck-help-close" data-i18n="ui.help.close">Close</button>
+  </div>
+</div>
 <div class="reveal">
   <div class="slides">
+  <!-- ============== 1: TITLE ============== -->
+  <section class="cover">
+    <img data-i18n-attr="alt:s1.logoAlt" src="../favicon.svg" alt="Awesome Insurance logo" style="display:block; width:112px; height:112px; margin:0 0 8px 0; border:0; background:none; box-shadow:none;" />
+    <span data-i18n="s1.pill" class="pill">Product overview</span>
+    <h1 class="cover-title"><span class="grad-text">Frictionless</span> Insurance Advisor</h1>
+    <p data-i18n="s1.tagline" class="cover-tagline">An AI co-pilot for insurance advisors, in chat and by voice, built on Amazon Bedrock AgentCore.</p>
+    <p data-i18n="s1.note" class="muted cover-note">Sample demo: Awesome Insurance, its products and all customer data are fictional.</p>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n1.b1">Introduce the product: an AI co-pilot for insurance advisors, in chat and by voice.</li>
+      <li data-i18n="n1.b2">It is built on Amazon Bedrock AgentCore and works in ten languages.</li>
+      <li data-i18n="n1.b3">This is a sample demo: Awesome Insurance, its products and all customer data are fictional.</li>
+      <li data-i18n="n1.b4">Agenda: the challenge, the solution, the benefits, daily use, the application flow, trust, then the architecture.</li>
+    </ul>
+    </aside>
+  </section>
 
-  <!-- ============== SLIDE 1: THE CHALLENGE ============== -->
-  <section class="has-bar">
-    <span class="pill">The challenge</span>
-    <h2>Why Insurance Advisors Need <span class="grad-text">AI</span></h2>
+  <!-- ============== 2: THE CHALLENGE ============== -->
+  <section class="roomy">
+    <span data-i18n="s2.pill" class="pill">The challenge</span>
+    <h2 data-i18n="s2.title" data-i18n-html>Why Insurance Advisors Need <span class="grad-text">AI</span></h2>
     <div class="grid grid-2" style="margin-top:14px;">
       <div class="card">
-        <h4>Complexity & Information Overload</h4>
+        <h4 data-i18n="s2.c1.title">Complexity & Information Overload</h4>
         <ul>
-          <li>Insurance documents are complex, jargon-heavy, and difficult to interpret quickly</li>
-          <li>Advisors manage hundreds of products across multiple providers — impossible to know everything</li>
-          <li>Manual comparison is time-consuming and error-prone</li>
+          <li data-i18n="s2.c1.li1">Insurance documents are complex, jargon-heavy, and difficult to interpret quickly</li>
+          <li data-i18n="s2.c1.li2">Advisors manage hundreds of products across multiple providers — impossible to know everything</li>
+          <li data-i18n="s2.c1.li3">Manual comparison is time-consuming and error-prone</li>
         </ul>
       </div>
       <div class="card">
-        <h4>Lost Momentum & Revenue</h4>
+        <h4 data-i18n="s2.c2.title">Lost Momentum & Revenue</h4>
         <ul>
-          <li>When customers ask questions, advisors often say "let me get back to you" and wait for the insurer — losing momentum and trust</li>
-          <li>Customers expect instant, personalized answers — not callbacks days later</li>
-          <li>Advisors miss cross-sell/upsell opportunities due to lack of holistic coverage visibility</li>
+          <li data-i18n="s2.c2.li1">When customers ask questions, advisors often say "let me get back to you" and wait for the insurer — losing momentum and trust</li>
+          <li data-i18n="s2.c2.li2">Customers expect instant, personalized answers — not callbacks days later</li>
+          <li data-i18n="s2.c2.li3">Advisors miss cross-sell/upsell opportunities due to lack of holistic coverage visibility</li>
         </ul>
       </div>
     </div>
-    <div class="card" style="margin-top:14px;">
-      <h4>Competitive pressure</h4>
-      <p>Digital-first insurers and aggregators are raising the bar — advisors who can't deliver instant, informed answers lose deals to those who can.</p>
+    <div class="card wide">
+      <h4 data-i18n="s2.c3.title">Competitive pressure</h4>
+      <p data-i18n="s2.c3.body">Digital-first insurers and aggregators are raising the bar — advisors who can't deliver instant, informed answers lose deals to those who can.</p>
     </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n2.b1">Insurance documents are long and full of jargon, and no advisor can know hundreds of products from many providers.</li>
+      <li data-i18n="n2.b2">Comparing products by hand is slow and error-prone.</li>
+      <li data-i18n="n2.b3">When customers ask a question, the answer waits for the insurer, and momentum and trust are lost. Cross-sell and upsell chances are missed too.</li>
+      <li data-i18n="n2.b4">Digital-first insurers and aggregators raise the bar: advisors who cannot answer on the spot lose deals.</li>
+    </ul>
+    </aside>
   </section>
 
-  <!-- ============== SLIDE 2: THE SOLUTION ============== -->
-  <section class="has-bar">
-    <span class="pill pill-grad">The solution</span>
-    <h2>Frictionless <span class="grad-text">Insurance Assistance</span></h2>
-    <p style="margin-bottom:16px;">An AI-powered advisory tool that transforms how insurance advisors interact with customers — making every conversation informed, instant, and customer-centric.</p>
-    <div class="grid grid-3" style="margin-top:8px;">
+  <!-- ============== 3: THE SOLUTION, PART 1 ============== -->
+  <section class="roomy">
+    <div class="pill-row">
+      <span data-i18n="s3.pill" class="pill pill-grad">The solution</span>
+      <span class="part-tag" data-i18n="ui.part1of2">Part 1 of 2</span>
+    </div>
+    <h2 data-i18n="s3.title" data-i18n-html>Frictionless <span class="grad-text">Insurance Assistance</span></h2>
+    <p data-i18n="s3.intro">An AI-powered advisory tool that transforms how insurance advisors interact with customers — making every conversation informed, instant, and customer-centric.</p>
+    <div class="grid grid-2">
       <div class="card">
-        <h4>Document Intelligence</h4>
-        <p>Upload insurance policies from any insurer — the tool ingests, understands, and makes them queryable instantly</p>
+        <h4 data-i18n="s3.c1.title">Document Intelligence</h4>
+        <p data-i18n="s3.c1.body">Upload insurance policies from any insurer — the tool ingests, understands, and makes them queryable instantly</p>
       </div>
       <div class="card">
-        <h4>Real-time Q&A</h4>
-        <p>Advisors can answer customer questions on the spot, with the sources shown — no more waiting for insurers to come back with clarifications</p>
+        <h4 data-i18n="s3.c2.title">Real-time Q&A</h4>
+        <p data-i18n="s3.c2.body">Advisors can answer customer questions on the spot, with the sources shown — no more waiting for insurers to come back with clarifications</p>
       </div>
       <div class="card">
-        <h4>Product Comparison</h4>
-        <p>Compare products across providers with carrier financial-strength ratings, a customer handout PDF, and a competitor brochure you upload on the spot</p>
+        <h4 data-i18n="s3.c3.title">Product Comparison</h4>
+        <p data-i18n="s3.c3.body">Compare products across providers with carrier financial-strength ratings, a customer handout PDF, and a competitor brochure you upload on the spot</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s3.c4.title">Coverage Gap Analysis</h4>
+        <p data-i18n="s3.c4.body">Automatically identify what is missing in a customer's coverage, with the estimated dollar exposure of each gap</p>
       </div>
     </div>
-    <div class="grid grid-3" style="margin-top:14px;">
-      <div class="card">
-        <h4>Coverage Gap Analysis</h4>
-        <p>Automatically identify what is missing in a customer's coverage, with the estimated dollar exposure of each gap</p>
-      </div>
-      <div class="card">
-        <h4>Multi-channel</h4>
-        <p>Works via chat for digital interactions or voice for live customer calls</p>
-      </div>
-      <div class="card">
-        <h4>Works for All Customers</h4>
-        <p>Existing portfolio reviews or new prospect onboarding</p>
-      </div>
-    </div>
-    <div class="grid grid-3" style="margin-top:14px;">
-      <div class="card">
-        <h4>Applications That Fill Themselves</h4>
-        <p>The application form opens mid-conversation, for ten Awesome products, and populates as the advisor and customer talk — in chat or by voice</p>
-      </div>
-      <div class="card">
-        <h4>Show Your Sources</h4>
-        <p>Every answer cites the documents or web pages behind it, and the same product, company, and competitor documents can be browsed in the app</p>
-      </div>
-      <div class="card">
-        <h4>Nine Languages</h4>
-        <p>Interface and AI answers in English, 日本語, 한국어, 简体中文, Español, Français, Bahasa Melayu, ไทย, Bahasa Indonesia</p>
-      </div>
-    </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n3.b1">The tool makes every conversation informed, instant and customer-centric.</li>
+      <li data-i18n="n3.b2">Document intelligence: upload a policy from any insurer and it can be queried at once.</li>
+      <li data-i18n="n3.b3">Real-time Q&amp;A shows the sources, and product comparison adds carrier financial-strength ratings, a customer handout PDF and a competitor brochure uploaded on the spot.</li>
+      <li data-i18n="n3.b4">Coverage gap analysis shows what is missing, with the estimated dollar exposure of each gap.</li>
+    </ul>
+    </aside>
   </section>
 
-  <!-- ============== SLIDE 3: BUSINESS BENEFITS ============== -->
-  <section class="has-bar">
-    <span class="pill">Business benefits</span>
-    <h2>Value for <span class="grad-text">Insurers</span></h2>
+  <!-- ============== 4: THE SOLUTION, PART 2 ============== -->
+  <section class="roomy">
+    <div class="pill-row">
+      <span data-i18n="s3.pill" class="pill pill-grad">The solution</span>
+      <span class="part-tag" data-i18n="ui.part2of2">Part 2 of 2</span>
+    </div>
+    <h2 data-i18n="s3.title" data-i18n-html>Frictionless <span class="grad-text">Insurance Assistance</span></h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4 data-i18n="s3.c5.title">Multi-channel</h4>
+        <p data-i18n="s3.c5.body">Works via chat for digital interactions or voice for live customer calls</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s3.c6.title">Works for All Customers</h4>
+        <p data-i18n="s3.c6.body">Existing portfolio reviews or new prospect onboarding</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s3.c7.title">Applications That Fill Themselves</h4>
+        <p data-i18n="s3.c7.body">The application form opens mid-conversation, for ten Awesome products, and populates as the advisor and customer talk — in chat or by voice</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s3.c8.title">Show Your Sources</h4>
+        <p data-i18n="s3.c8.body">Every answer cites the documents or web pages behind it, and the same product, company, and competitor documents can be browsed in the app</p>
+      </div>
+    </div>
+      <div class="card wide">
+        <h4 data-i18n="s3.c9.title">Ten Languages</h4>
+        <p data-i18n="s3.c9.body">Interface and AI answers in English, 日本語, 한국어, 简体中文, Español, Français, Deutsch, Bahasa Melayu, ไทย, Bahasa Indonesia</p>
+      </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n4.b1">It works in chat for digital interactions and by voice for live customer calls, for existing customers and new prospects.</li>
+      <li data-i18n="n4.b2">The application form opens mid-conversation, for ten Awesome products, and fills as the advisor and customer talk.</li>
+      <li data-i18n="n4.b3">Every answer cites the documents or web pages behind it, and those documents can be browsed in the app.</li>
+      <li data-i18n="n4.b4">The interface and the AI answers are available in ten languages.</li>
+    </ul>
+    </aside>
+  </section>
+
+  <!-- ============== 5: BUSINESS BENEFITS ============== -->
+  <section class="dense">
+    <span data-i18n="s4.pill" class="pill">Business benefits</span>
+    <h2 data-i18n="s4.title" data-i18n-html>Value for <span class="grad-text">Insurers</span></h2>
     <div class="grid grid-4" style="margin-top:14px;">
       <div class="card">
-        <h4>Customer Centricity</h4>
-        <p>Complex insurance documents decoded instantly — advisors focus on the customer, not paperwork</p>
+        <h4 data-i18n="s4.c1.title">Customer Centricity</h4>
+        <p data-i18n="s4.c1.body">Complex insurance documents decoded instantly — advisors focus on the customer, not paperwork</p>
       </div>
       <div class="card">
-        <h4>Increased Revenue</h4>
-        <p>Cross-sell/upsell through automated coverage gap identification</p>
+        <h4 data-i18n="s4.c2.title">Increased Revenue</h4>
+        <p data-i18n="s4.c2.body">Cross-sell/upsell through automated coverage gap identification</p>
       </div>
       <div class="card">
-        <h4>Competitive Advantage</h4>
-        <p>Advisors armed with real-time knowledge of competitor products by simply uploading their policy documents</p>
+        <h4 data-i18n="s4.c3.title">Competitive Advantage</h4>
+        <p data-i18n="s4.c3.body">Advisors armed with real-time knowledge of competitor products by simply uploading their policy documents</p>
       </div>
       <div class="card">
-        <h4>Zero Wait Time</h4>
-        <p>Eliminate the "let me check and get back to you" — answer questions in real-time during the conversation</p>
+        <h4 data-i18n="s4.c4.title">Zero Wait Time</h4>
+        <p data-i18n="s4.c4.body">Eliminate the "let me check and get back to you" — answer questions in real-time during the conversation</p>
       </div>
     </div>
     <div class="grid grid-4" style="margin-top:14px;">
       <div class="card">
-        <h4>Faster Onboarding</h4>
-        <p>Reduce time-to-first-policy for new prospects</p>
+        <h4 data-i18n="s4.c5.title">Faster Onboarding</h4>
+        <p data-i18n="s4.c5.body">Reduce time-to-first-policy for new prospects</p>
       </div>
       <div class="card">
-        <h4>Improved Retention</h4>
-        <p>Proactive coverage reviews for existing customers</p>
+        <h4 data-i18n="s4.c6.title">Improved Retention</h4>
+        <p data-i18n="s4.c6.body">Proactive coverage reviews for existing customers</p>
       </div>
       <div class="card">
-        <h4>Advisor Productivity</h4>
-        <p>Reduce research time from hours to seconds</p>
+        <h4 data-i18n="s4.c7.title">Advisor Productivity</h4>
+        <p data-i18n="s4.c7.body">Reduce research time from hours to seconds</p>
       </div>
       <div class="card">
-        <h4>Consistent Experience</h4>
-        <p>Standardized advice quality across every advisor — and across nine languages from one knowledge base</p>
+        <h4 data-i18n="s4.c8.title">Consistent Experience</h4>
+        <p data-i18n="s4.c8.body">Standardized advice quality across every advisor — and across ten languages from one knowledge base</p>
       </div>
     </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n5.b1">Customer centricity and zero wait time: complex documents are decoded instantly and questions are answered during the conversation.</li>
+      <li data-i18n="n5.b2">Revenue: coverage gap identification supports cross-sell and upsell.</li>
+      <li data-i18n="n5.b3">Competitive advantage: advisors learn about competitor products just by uploading their policy documents.</li>
+      <li data-i18n="n5.b4">Faster onboarding, better retention, research time cut from hours to seconds, and the same advice quality across every advisor and ten languages.</li>
+    </ul>
+    </aside>
   </section>
 
-  <!-- ============== SLIDE 4: USE CASES & HOW IT WORKS ============== -->
-  <section class="has-bar">
-    <span class="pill">Use cases</span>
-    <h2>How It <span class="grad-text">Works</span></h2>
+  <!-- ============== 6: USE CASES ============== -->
+  <section>
+    <span data-i18n="s5.pill" class="pill">Use cases</span>
+    <h2 data-i18n="s5.title" data-i18n-html>How Advisors <span class="grad-text">Use It</span></h2>
     <div class="grid grid-3" style="margin-top:14px;">
       <div class="card">
-        <h4>Upload & Understand</h4>
-        <p>Upload any insurer's policy documents → AI extracts key terms, coverage, exclusions, and benefits</p>
+        <h4 data-i18n="s5.c1.title">Upload & Understand</h4>
+        <p data-i18n="s5.c1.body">Upload any insurer's policy documents → AI extracts key terms, coverage, exclusions, and benefits</p>
       </div>
       <div class="card">
-        <h4>Existing Customer Review</h4>
-        <p>One-click meeting brief → coverage gaps with dollar exposure → recommend products → answer questions instantly</p>
+        <h4 data-i18n="s5.c2.title">Existing Customer Review</h4>
+        <p data-i18n="s5.c2.body">One-click meeting brief → coverage gaps with dollar exposure → recommend products → answer questions instantly</p>
       </div>
       <div class="card">
-        <h4>New Prospect Onboarding</h4>
-        <p>Needs assessment → competitive comparison → tailored recommendation</p>
+        <h4 data-i18n="s5.c3.title">New Prospect Onboarding</h4>
+        <p data-i18n="s5.c3.body">Needs assessment → competitive comparison → tailored recommendation</p>
       </div>
     </div>
     <div class="grid grid-3" style="margin-top:14px;">
       <div class="card">
-        <h4>Real-time Advisor Support</h4>
-        <p>During customer calls (chat or voice), AI provides instant answers — no more callbacks</p>
+        <h4 data-i18n="s5.c4.title">Real-time Advisor Support</h4>
+        <p data-i18n="s5.c4.body">During customer calls (chat or voice), AI provides instant answers — no more callbacks</p>
       </div>
       <div class="card">
-        <h4>Competitive Positioning</h4>
-        <p>Know what competitors offer and position your products effectively</p>
+        <h4 data-i18n="s5.c5.title">Competitive Positioning</h4>
+        <p data-i18n="s5.c5.body">Know what competitors offer and position your products effectively</p>
       </div>
       <div class="card">
-        <h4>Simplify Complexity</h4>
-        <p>Turn complicated insurance language into clear, customer-friendly explanations</p>
+        <h4 data-i18n="s5.c6.title">Simplify Complexity</h4>
+        <p data-i18n="s5.c6.body">Turn complicated insurance language into clear, customer-friendly explanations</p>
       </div>
     </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n6.b1">Upload and understand: key terms, coverage, exclusions and benefits are extracted from any insurer's policy documents.</li>
+      <li data-i18n="n6.b2">Existing customer review: a one-click meeting brief, coverage gaps with dollar exposure, product recommendations and instant answers.</li>
+      <li data-i18n="n6.b3">New prospect onboarding: needs assessment, competitive comparison and a tailored recommendation.</li>
+      <li data-i18n="n6.b4">During calls, in chat or by voice, the AI answers at once, helps position against competitors and turns complicated insurance language into clear explanations.</li>
+    </ul>
+    </aside>
   </section>
 
-  <!-- ============== SLIDE 5: EVERY MEETING ============== -->
-  <!-- ============== SLIDE: YOUR DAY ============== -->
-  <section class="has-bar">
-    <span class="pill pill-grad">Every day</span>
-    <h2>Start the Day Knowing <span class="grad-text">Who to Call</span></h2>
+  <!-- ============== 7: EVERY DAY ============== -->
+  <section class="dense">
+    <span data-i18n="s6.pill" class="pill pill-grad">Every day</span>
+    <h2 data-i18n="s6.title" data-i18n-html>Start the Day Knowing <span class="grad-text">Who to Call</span></h2>
     <div class="grid grid-3" style="margin-top:14px;">
       <div class="card">
-        <h4>Today's priorities</h4>
-        <p>The home screen ranks the customers who need attention, with every reason and one click to Draft email or Annual review. The rules run in code, so the list is the same every time</p>
+        <h4 data-i18n="s6.c1.title">Today's priorities</h4>
+        <p data-i18n="s6.c1.body">The home screen ranks the customers who need attention, with every reason and one click to Draft email or Annual review. The rules run in code, so the list is the same every time</p>
       </div>
       <div class="card">
-        <h4>Practise a conversation</h4>
-        <p>The voice assistant plays the customer from their record, friendly, neutral or sceptical, then scores the advisor on seven criteria and checks product claims against the sheets. Nothing is recorded or saved</p>
+        <h4 data-i18n="s6.c2.title">A note when you want one</h4>
+        <p data-i18n="s6.c2.body">After a voice session, one click drafts a Summary, Concerns and Next actions note from the conversation. The advisor edits it and presses Save; nothing is stored unless they do</p>
       </div>
       <div class="card">
-        <h4>One login per line</h4>
-        <p>Life, General and Health advisors see their own customers, and the comparator and gap analysis switch by line. A customer with no Awesome policy is treated as a prospect</p>
+        <h4 data-i18n="s6.c3.title">One login per line</h4>
+        <p data-i18n="s6.c3.body">Life, General and Health advisors see their own customers, and the comparator and gap analysis switch by line. A customer with no Awesome policy is treated as a prospect</p>
       </div>
     </div>
     <div class="grid grid-3" style="margin-top:14px;">
       <div class="card">
-        <h4>Gaps and forms from the profile</h4>
-        <p>One click gives a coverage-gap analysis for Life, General, Health or all, or opens any of the ten application forms filled in with the customer's details</p>
+        <h4 data-i18n="s6.c4.title">Gaps and forms from the profile</h4>
+        <p data-i18n="s6.c4.body">One click gives a coverage-gap analysis for Life, General, Health or all, or opens any of the ten application forms filled in with the customer's details</p>
       </div>
       <div class="card">
-        <h4>A form that keeps its answers</h4>
-        <p>Opened from the profile or from the assistant, it is the same form. Answers typed or spoken stay put when it is closed or the advisor moves between pages</p>
+        <h4 data-i18n="s6.c5.title">A form that keeps its answers</h4>
+        <p data-i18n="s6.c5.body">Opened from the profile or from the assistant, it is the same form. Answers typed or spoken stay put when it is closed or the advisor moves between pages</p>
       </div>
       <div class="card">
-        <h4>Test files for every customer</h4>
-        <p>Download a sample third-party policy and upload it to see the document read into structured fields the advisor confirms before anything is saved</p>
+        <h4 data-i18n="s6.c6.title">Test files for every customer</h4>
+        <p data-i18n="s6.c6.body">Download a sample third-party policy and upload it to see the document read into structured fields the advisor confirms before anything is saved</p>
       </div>
     </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n7.b1">The home screen ranks the customers who need attention, with every reason and one click to Draft email or Annual review. The rules run in code, so the list is the same every time.</li>
+      <li data-i18n="n7.b2">After a voice session one click drafts a note. The advisor edits it, and nothing is stored unless they press Save.</li>
+      <li data-i18n="n7.b3">Life, General and Health advisors see their own customers. A customer with no Awesome policy is treated as a prospect.</li>
+      <li data-i18n="n7.b4">One click gives a coverage gap analysis or opens an application form filled with the customer's details, and the form keeps its answers when closed.</li>
+    </ul>
+    </aside>
   </section>
 
-  <section class="has-bar">
-    <span class="pill pill-grad">In every meeting</span>
-    <h2>Ready Before the Customer <span class="grad-text">Sits Down</span></h2>
+  <!-- ============== 8: EVERY MEETING ============== -->
+  <section class="dense">
+    <span data-i18n="s7.pill" class="pill pill-grad">In every meeting</span>
+    <h2 data-i18n="s7.title" data-i18n-html>Ready Before the Customer <span class="grad-text">Sits Down</span></h2>
     <div class="grid grid-3" style="margin-top:14px;">
       <div class="card">
-        <h4>Meeting prep in one click</h4>
-        <p>A structured brief — customer snapshot, goals, discovery questions, products to discuss, objection handling, and a close — built from the profile, notes, other insurers' policies, promotions, and competitor material</p>
+        <h4 data-i18n="s7.c1.title">Meeting prep in one click</h4>
+        <p data-i18n="s7.c1.body">A structured brief — customer snapshot, goals, discovery questions, products to discuss, objection handling, and a close — built from the profile, notes, other insurers' policies, promotions, and competitor material</p>
       </div>
       <div class="card">
-        <h4>Indicative pricing</h4>
-        <p>Premium estimates for all ten products, calculated from rate tables in code and never by the model, with an affordability check against 10% of income. Always an estimate, never a quote</p>
+        <h4 data-i18n="s7.c2.title">Indicative pricing</h4>
+        <p data-i18n="s7.c2.body">Premium estimates for all ten products, calculated from rate tables in code and never by the model, with an affordability check against 10% of income. Always an estimate, never a quote</p>
       </div>
       <div class="card">
-        <h4>Notes that stay with the customer</h4>
-        <p>Life events and interactions are kept on the customer's record. The assistant can add a note when asked, and never deletes one</p>
+        <h4 data-i18n="s7.c3.title">Notes that stay with the customer</h4>
+        <p data-i18n="s7.c3.body">Life events and interactions are kept on the customer's record. The assistant can add a note when asked, and never deletes one</p>
       </div>
     </div>
     <div class="grid grid-3" style="margin-top:14px;">
       <div class="card">
-        <h4>Carrier strength at a glance</h4>
-        <p>AM Best, S&amp;P, and Moody's ratings sit beside every compared product, on screen and in the customer PDF</p>
+        <h4 data-i18n="s7.c4.title">Carrier strength at a glance</h4>
+        <p data-i18n="s7.c4.body">AM Best, S&amp;P, and Moody's ratings sit beside every compared product, on screen and in the customer PDF</p>
       </div>
       <div class="card">
-        <h4>A competitor brochure on the spot</h4>
-        <p>Upload a competitor's PDF brochure, compare it side by side with Awesome products, and let it delete itself within a day</p>
+        <h4 data-i18n="s7.c5.title">A competitor brochure on the spot</h4>
+        <p data-i18n="s7.c5.body">Upload a competitor's PDF brochure, compare it side by side with Awesome products, and let it delete itself within a day</p>
       </div>
       <div class="card">
-        <h4>Beyond the documents</h4>
-        <p>General insurance questions get a live web search, with page titles and links shown. Awesome products, prices, and competitors never come from the web</p>
+        <h4 data-i18n="s7.c6.title">Beyond the documents</h4>
+        <p data-i18n="s7.c6.body">General insurance questions get a live web search, with page titles and links shown. Awesome products, prices, and competitors never come from the web</p>
       </div>
     </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n8.b1">Meeting prep in one click: a structured brief with snapshot, goals, discovery questions, products, objection handling and a close.</li>
+      <li data-i18n="n8.b2">Indicative pricing for all ten products comes from rate tables in code, never from the model, with an affordability check against 10% of income. It is an estimate, never a quote.</li>
+      <li data-i18n="n8.b3">AM Best, S&amp;P and Moody's ratings sit beside every compared product. A competitor brochure can be uploaded and compared side by side, and it deletes itself within a day.</li>
+      <li data-i18n="n8.b4">General insurance questions get a live web search with titles and links. Awesome products, prices and competitors never come from the web.</li>
+    </ul>
+    </aside>
   </section>
 
-  <!-- ============== SLIDE 6: APPLICATIONS ============== -->
-  <section class="has-bar">
-    <span class="pill pill-grad">Flagship capability</span>
-    <h2>The Application Fills <span class="grad-text">Itself</span></h2>
-    <p style="margin-bottom:16px;">When the advisor and customer agree to start an application, the form opens beside the conversation and populates from it. In chat or by voice, the advisor keeps talking and fields land as they speak.</p>
-    <div class="grid grid-3" style="margin-top:8px;">
+  <!-- ============== 9: APPLICATIONS, PART 1 ============== -->
+  <section class="roomy">
+    <div class="pill-row">
+      <span data-i18n="s8.pill" class="pill pill-grad">Flagship capability</span>
+      <span class="part-tag" data-i18n="ui.part1of2">Part 1 of 2</span>
+    </div>
+    <h2 data-i18n="s8.title" data-i18n-html>The Application Fills <span class="grad-text">Itself</span></h2>
+    <p data-i18n="s8.intro">When the advisor and customer agree to start an application, the form opens beside the conversation and populates from it. In chat or by voice, the advisor keeps talking and fields land as they speak.</p>
+    <div class="grid grid-3">
       <div class="card">
-        <h4>Ten Awesome products</h4>
-        <p>Term, whole, universal, and variable life, critical illness, health, home, auto, travel, and disability — each with a published form of sections, fields, types, and mandatory flags</p>
+        <h4 data-i18n="s8.c1.title">Ten Awesome products</h4>
+        <p data-i18n="s8.c1.body">Term, whole, universal, and variable life, critical illness, health, home, auto, travel, and disability — each with a published form of sections, fields, types, and mandatory flags</p>
       </div>
       <div class="card">
-        <h4>Answers carry over</h4>
-        <p>All ten forms share the applicant details, and the four life forms share 18 of about 20 fields. Switch product mid-conversation and nobody is asked their date of birth twice</p>
+        <h4 data-i18n="s8.c2.title">Answers carry over</h4>
+        <p data-i18n="s8.c2.body">All ten forms share the applicant details, and the four life forms share 18 of about 20 fields. Switch product mid-conversation and nobody is asked their date of birth twice</p>
       </div>
       <div class="card">
-        <h4>Confidence you can see</h4>
-        <p>High-confidence answers fill green; anything less fills amber with a "Looks right" confirmation. Nothing is hidden from the advisor</p>
+        <h4 data-i18n="s8.c3.title">Confidence you can see</h4>
+        <p data-i18n="s8.c3.body">High-confidence answers fill green; anything less fills amber with a "Looks right" confirmation. Nothing is hidden from the advisor</p>
       </div>
     </div>
-    <div class="grid grid-3" style="margin-top:14px;">
-      <div class="card">
-        <h4>Known details prefilled</h4>
-        <p>Fields already on the customer record arrive filled and labelled as such. Precedence is manual &gt; conversation &gt; profile, so typed corrections are never overwritten</p>
-      </div>
-      <div class="card">
-        <h4>The schema never touches the model</h4>
-        <p>Forms are read from S3 server-side and pushed straight to the browser. The model only receives the field paths — no wasted tokens, no invented fields</p>
-      </div>
-      <div class="card">
-        <h4>Guarded by design</h4>
-        <p>A field write is rejected unless its path exists in the form actually open, and refused outright if no form is open. A printable PDF is one click away</p>
-      </div>
-    </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n9.b1">When advisor and customer agree to start an application, the form opens beside the conversation and fills from it, in chat or by voice.</li>
+      <li data-i18n="n9.b2">Ten Awesome products, each with a published form of sections, fields, types and mandatory flags.</li>
+      <li data-i18n="n9.b3">Answers carry over between forms, so nobody is asked their date of birth twice.</li>
+      <li data-i18n="n9.b4">High-confidence answers fill green. Anything less fills amber with a Looks right confirmation, so nothing is hidden from the advisor.</li>
+    </ul>
+    </aside>
   </section>
 
-  <!-- ============== SLIDE 7: TRUST ============== -->
-  <section class="has-bar">
-    <span class="pill">Trust and control</span>
-    <h2>Built to Be <span class="grad-text">Trusted</span></h2>
-    <div class="grid grid-3" style="margin-top:14px;">
+  <!-- ============== 10: APPLICATIONS, PART 2 ============== -->
+  <section class="roomy">
+    <div class="pill-row">
+      <span data-i18n="s8.pill" class="pill pill-grad">Flagship capability</span>
+      <span class="part-tag" data-i18n="ui.part2of2">Part 2 of 2</span>
+    </div>
+    <h2 data-i18n="s8.title" data-i18n-html>The Application Fills <span class="grad-text">Itself</span></h2>
+    <div class="grid grid-3">
       <div class="card">
-        <h4>Consent comes first</h4>
-        <p>In voice, nothing is remembered, filled in, or transcribed until the advisor confirms the customer agreed. Declining ends the session and saves nothing</p>
+        <h4 data-i18n="s8.c4.title">Known details prefilled</h4>
+        <p data-i18n="s8.c4.body">Fields already on the customer record arrive filled and labelled as such. Precedence is manual &gt; conversation &gt; profile, so typed corrections are never overwritten</p>
       </div>
       <div class="card">
-        <h4>Transcripts that expire</h4>
-        <p>Voice transcripts go to a private store, are readable only by the advisor who held the conversation, and expire after a day</p>
+        <h4 data-i18n="s8.c5.title">The schema never touches the model</h4>
+        <p data-i18n="s8.c5.body">Forms are read from S3 server-side and pushed straight to the browser. The model only receives the field paths — no wasted tokens, no invented fields</p>
       </div>
       <div class="card">
-        <h4>Answers you can check</h4>
-        <p>Sources are built from what the tools actually returned, so the AI cannot invent a citation</p>
+        <h4 data-i18n="s8.c6.title">Guarded by design</h4>
+        <p data-i18n="s8.c6.body">A field write is rejected unless its path exists in the form actually open, and refused outright if no form is open. A printable PDF is one click away, and Send for Signature saves the finished application. Sending it again replaces that save instead of adding a duplicate</p>
       </div>
     </div>
-    <div class="grid grid-3" style="margin-top:14px;">
-      <div class="card">
-        <h4>One shared guardrail</h4>
-        <p>The same content, personal-data, and denied-topic policy (legal, investment, and tax advice) applies to chat, comparison, recommendations, and document reading. Voice runs under its system prompt and tool checks</p>
-      </div>
-      <div class="card">
-        <h4>Estimates, not promises</h4>
-        <p>No binding quotes, approvals, or claim payouts. Prices are labelled indicative and calculated in code</p>
-      </div>
-      <div class="card">
-        <h4>The advisor stays in control</h4>
-        <p>Policies and notes are saved only when the advisor asks or confirms, deletion stays in the app, and low-confidence document readings are checked field by field. Every tool call is tied to the signed-in advisor's own token, so one advisor's assistant can never act as another</p>
-      </div>
-    </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n10.b1">Details already on the customer record arrive prefilled and labelled. Manual entries win over conversation, and conversation wins over profile.</li>
+      <li data-i18n="n10.b2">Forms are read from S3 on the server and pushed to the browser. The model only receives the field paths.</li>
+      <li data-i18n="n10.b3">A field write is rejected unless its path exists in the form that is open.</li>
+      <li data-i18n="n10.b4">A printable PDF is one click away. Send for Signature saves the finished application, and sending it again replaces that save.</li>
+    </ul>
+    </aside>
   </section>
 
-  <!-- ============== APPENDIX: ARCHITECTURE ============== -->
-  <section class="has-bar">
-    <span class="pill">Appendix</span>
-    <h2>End-to-end on <span class="grad-text">Amazon Bedrock AgentCore</span></h2>
-    <svg class="arch" viewBox="0 0 1280 480" preserveAspectRatio="xMidYMid meet">
+  <!-- ============== 11: TRUST ============== -->
+  <section class="dense">
+    <span data-i18n="s9.pill" class="pill">Trust and control</span>
+    <h2 data-i18n="s9.title" data-i18n-html>Built to Be <span class="grad-text">Trusted</span></h2>
+    <div class="grid grid-3" style="grid-template-columns: 1.25fr 1fr 1fr;">
+      <div class="card">
+        <h4 data-i18n="s9.c1.title">Consent comes first</h4>
+        <p data-i18n="s9.c1.body">In voice, nothing is remembered, filled in, or transcribed until the advisor confirms the customer agreed. Declining ends the session and saves nothing</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s9.c2.title">Transcripts that expire</h4>
+        <p data-i18n="s9.c2.body">Voice transcripts go to a private store, are readable only by the advisor who held the conversation, and expire after a day</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s9.c3.title">Answers you can check</h4>
+        <p data-i18n="s9.c3.body">Sources are built from what the tools actually returned, so the AI cannot invent a citation</p>
+      </div>
+    </div>
+    <div class="grid grid-3" style="grid-template-columns: 1.4fr 0.9fr 1.4fr;">
+      <div class="card">
+        <h4 data-i18n="s9.c4.title">One shared guardrail</h4>
+        <p data-i18n="s9.c4.body">The same content, personal-data, and denied-topic policy (legal and tax advice) applies to chat, comparison, recommendations, and document reading. Voice runs under its system prompt and tool checks</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s9.c5.title">Estimates, not promises</h4>
+        <p data-i18n="s9.c5.body">No binding quotes, approvals, or claim payouts. Prices are labelled indicative and calculated in code</p>
+      </div>
+      <div class="card">
+        <h4 data-i18n="s9.c6.title">The advisor stays in control</h4>
+        <p data-i18n="s9.c6.body">Policies and notes are saved only when the advisor asks or confirms, deletion stays in the app, and low-confidence document readings are checked field by field. Every tool call is tied to the signed-in advisor's own token, so one advisor's assistant can never act as another</p>
+      </div>
+    </div>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n11.b1">Consent comes first in voice: nothing is remembered, filled in or transcribed until the advisor confirms the customer agreed.</li>
+      <li data-i18n="n11.b2">Voice transcripts go to a private store, are readable only by the advisor who held the conversation, and expire after a day.</li>
+      <li data-i18n="n11.b3">Sources are built from what the tools returned, so the AI cannot invent a citation. There are no binding quotes, approvals or claim payouts.</li>
+      <li data-i18n="n11.b4">One shared guardrail covers content, personal data and denied topics such as legal and tax advice. Policies and notes are saved only when the advisor asks or confirms.</li>
+    </ul>
+    </aside>
+  </section>
+
+  <!-- ============== 12: APPENDIX: ARCHITECTURE ============== -->
+  <section>
+    <span data-i18n="s10.pill" class="pill">Appendix</span>
+    <h2 data-i18n="s10.title" data-i18n-html>End-to-end on <span class="grad-text">Amazon Bedrock AgentCore</span></h2>
+    <svg class="arch" viewBox="0 -12 1280 482" preserveAspectRatio="xMidYMid meet">
       <defs>
-        <linearGradient id="archGrad" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="archGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1280" y2="0">
           <stop offset="0%" stop-color="#2563EB" />
           <stop offset="50%" stop-color="#4F46E5" />
           <stop offset="100%" stop-color="#0D9488" />
@@ -460,205 +708,198 @@
       </defs>
 
       <!-- Lanes -->
-      <rect class="lane" x="14"   y="36" width="220" height="430" rx="12" />
-      <text class="lane-title" x="28" y="56">Frontend</text>
-      <rect class="lane" x="246"  y="36" width="200" height="430" rx="12" />
-      <text class="lane-title" x="260" y="56">Identity</text>
-      <rect class="lane" x="458"  y="36" width="370" height="430" rx="12" />
-      <text class="lane-title" x="472" y="56">AgentCore</text>
-      <rect class="lane" x="840"  y="36" width="426" height="430" rx="12" />
-      <text class="lane-title" x="854" y="56">Tools &amp; data</text>
+      <rect class="lane" x="10" y="44" width="234" height="420" rx="12" />
+      <text data-i18n="s10.svg.laneFrontend" class="lane-title" x="24" y="68">Frontend</text>
+      <rect class="lane" x="250" y="44" width="210" height="420" rx="12" />
+      <text data-i18n="s10.svg.laneIdentity" class="lane-title" x="264" y="68">Identity</text>
+      <rect class="lane" x="466" y="44" width="288" height="420" rx="12" />
+      <text class="lane-title" x="480" y="68">AgentCore</text>
+      <rect class="lane" x="770" y="44" width="500" height="420" rx="12" />
+      <text data-i18n="s10.svg.laneTools" class="lane-title" x="784" y="68">Tools &amp; data</text>
 
       <!-- Frontend -->
-      <rect class="box box-front" x="32" y="92"  width="184" height="74" />
-      <text class="label-bold" x="48" y="116">React + Vite SPA</text>
-      <text class="label-mute" x="48" y="134">CloudFront · 4 tabs · 9 locales</text>
-      <text class="label-mute" x="48" y="150">Cognito JWT only — no IAM creds</text>
+      <rect class="box box-front" x="20" y="78" width="218" height="84" />
+      <text class="label-bold" x="34" y="103">React + Vite SPA</text>
+      <text data-i18n="s10.svg.frontendTabs" class="label-mute" x="34" y="123">CloudFront · 5 tabs · 10 locales</text>
+      <text data-i18n="s10.svg.frontendJwt" class="label-mute" x="34" y="141">Cognito JWT only — no IAM creds</text>
 
-      <!-- Identity boxes -->
-      <rect class="box box-id" x="262" y="92"  width="170" height="58" />
-      <text class="label-bold" x="278" y="114">Cognito</text>
-      <text class="label-mute" x="278" y="132">User pool · advisors</text>
-
-      <rect class="box box-id" x="262" y="172" width="170" height="58" />
-      <text class="label-bold" x="278" y="194">Cognito</text>
-      <text class="label-mute" x="278" y="212">Gateway pool · M2M</text>
-
-      <rect class="box box-id" x="262" y="252" width="170" height="74" />
-      <text class="label-bold" x="278" y="274">AgentCore Identity</text>
-      <text class="label-mute" x="278" y="292">Token vault</text>
-      <text class="label-mute" x="278" y="308">OAuth2 providers</text>
+      <!-- Identity -->
+      <rect class="box box-id" x="262" y="78" width="186" height="56" />
+      <text class="label-bold" x="276" y="101">Cognito</text>
+      <text data-i18n="s10.svg.userPool" class="label-mute" x="276" y="121">User pool · advisors</text>
+      <rect class="box box-id" x="262" y="154" width="186" height="56" />
+      <text class="label-bold" x="276" y="177">Cognito</text>
+      <text data-i18n="s10.svg.gatewayPool" class="label-mute" x="276" y="197">Gateway pool · M2M</text>
+      <rect class="box box-id" x="262" y="230" width="186" height="82" />
+      <text class="label-bold" x="276" y="253">AgentCore Identity</text>
+      <text data-i18n="s10.svg.tokenVault" class="label-mute" x="276" y="273">Token vault</text>
+      <text data-i18n="s10.svg.oauthProviders" class="label-mute" x="276" y="291">OAuth2 providers</text>
 
       <!-- AgentCore stack -->
-      <rect class="box box-rt" x="476" y="76"  width="220" height="70" />
-      <text class="label-bold" x="492" y="98">Runtime — text</text>
-      <text class="label-mute" x="492" y="116">Strands · Claude Haiku 5.5</text>
-      <text class="label-mute" x="492" y="132">Streaming SSE</text>
+      <rect class="box box-rt" x="478" y="78" width="264" height="72" />
+      <text data-i18n="s10.svg.runtimeText" class="label-bold" x="492" y="102">Runtime — text</text>
+      <text class="label-mute" x="492" y="121">Strands · Claude Haiku 5.5</text>
+      <text data-i18n="s10.svg.streaming" class="label-mute" x="492" y="139">Streaming SSE</text>
+      <rect class="box box-rt" x="478" y="158" width="264" height="72" />
+      <text data-i18n="s10.svg.runtimeVoice" class="label-bold" x="492" y="182">Runtime — voice</text>
+      <text class="label-mute" x="492" y="201">Strands BidiAgent · Nova 2.5 Sonic</text>
+      <text data-i18n="s10.svg.wsAudio" class="label-mute" x="492" y="219">WebSocket bidi audio</text>
+      <rect class="box box-rt" x="478" y="238" width="264" height="72" />
+      <text class="label-bold" x="492" y="262">AgentCore Gateway</text>
+      <text data-i18n="s10.svg.gatewayTools" class="label-mute" x="492" y="281">MCP · 12 targets · 20 tools</text>
+      <text data-i18n="s10.svg.gatewayAuth" class="label-mute" x="492" y="299">JWT auth · request interceptor</text>
+      <rect class="box box-rt" x="478" y="318" width="264" height="72" />
+      <text class="label-bold" x="492" y="342">AgentCore Memory</text>
+      <text data-i18n="s10.svg.memoryKinds" class="label-mute" x="492" y="361">Summaries · preferences · facts</text>
+      <text data-i18n="s10.svg.memoryScope" class="label-mute" x="492" y="379">Per-customer · 90-day TTL</text>
+      <rect class="box box-rt" x="478" y="398" width="264" height="52" />
+      <text class="label-bold" x="492" y="422">Bedrock Guardrail</text>
+      <text data-i18n="s10.svg.guardrailShared" class="label-mute" x="492" y="441">Shared · 6 Claude surfaces (not voice)</text>
 
-      <rect class="box box-rt" x="476" y="156" width="220" height="70" />
-      <text class="label-bold" x="492" y="178">Runtime — voice</text>
-      <text class="label-mute" x="492" y="196">Strands BidiAgent · Nova 2.5 Sonic</text>
-      <text class="label-mute" x="492" y="212">WebSocket bidi audio</text>
-
-      <rect class="box box-rt" x="476" y="236" width="220" height="70" />
-      <text class="label-bold" x="492" y="258">AgentCore Gateway</text>
-      <text class="label-mute" x="492" y="276">MCP · 12 targets · 20 tools</text>
-      <text class="label-mute" x="492" y="292">JWT auth · request interceptor</text>
-
-      <rect class="box box-rt" x="476" y="316" width="220" height="70" />
-      <text class="label-bold" x="492" y="338">AgentCore Memory</text>
-      <text class="label-mute" x="492" y="356">Summaries · preferences · facts</text>
-      <text class="label-mute" x="492" y="372">Per-customer · 90-day TTL</text>
-
-      <rect class="box box-rt" x="476" y="396" width="220" height="58" />
-      <text class="label-bold" x="492" y="418">Bedrock Guardrail</text>
-      <text class="label-mute" x="492" y="436">Shared · 5 Claude surfaces (not voice)</text>
-
-      <!-- Tools / data -->
-      <rect class="box box-tool" x="858" y="88"  width="170" height="36" />
-      <text class="label-bold" x="874" y="111">API Gateway + WAF</text>
-
+      <!-- Tools and data -->
+      <rect class="box box-tool" x="782" y="78" width="224" height="36" />
+      <text class="label-bold" x="796" y="101">API Gateway + WAF</text>
       <!-- Reached through API Gateway (Cognito-authorized) -->
-      <rect class="box box-tool" x="858" y="130" width="170" height="26" />
-      <text class="label-bold" x="874" y="147">&#955; profile &#183; notes</text>
-      <rect class="box box-tool" x="858" y="161" width="170" height="26" />
-      <text class="label-bold" x="874" y="178">&#955; policies</text>
-      <rect class="box box-tool" x="858" y="192" width="170" height="26" />
-      <text class="label-bold" x="874" y="209">&#955; data &#183; compare &#183; recommend</text>
-
+      <rect class="box box-tool" x="782" y="120" width="224" height="26" />
+      <text class="label-bold label-lam" x="794" y="138">&#955; profile &#183; notes</text>
+      <rect class="box box-tool" x="782" y="148" width="224" height="26" />
+      <text class="label-bold label-lam" x="794" y="166">&#955; policies</text>
+      <rect class="box box-tool" x="782" y="176" width="224" height="26" />
+      <text class="label-bold label-lam" x="794" y="194">&#955; data &#183; compare &#183; recommend</text>
       <!-- Invoked directly by the gateway with its own IAM role -->
-      <rect class="box box-tool" x="858" y="228" width="170" height="22" />
-      <text class="label-bold" x="874" y="243">&#955; portfolio</text>
-      <rect class="box box-tool" x="858" y="253" width="170" height="22" />
-      <text class="label-bold" x="874" y="268">&#955; promotions</text>
-      <rect class="box box-tool" x="858" y="278" width="170" height="22" />
-      <text class="label-bold" x="874" y="293">&#955; company</text>
-      <rect class="box box-tool" x="858" y="303" width="170" height="22" />
-      <text class="label-bold" x="874" y="318">&#955; competitive</text>
-      <rect class="box box-tool" x="858" y="328" width="170" height="22" />
-      <text class="label-bold" x="874" y="343">&#955; competitors</text>
-      <rect class="box box-tool" x="858" y="353" width="170" height="22" />
-      <text class="label-bold" x="874" y="368">&#955; formschema</text>
-      <rect class="box box-tool" x="858" y="378" width="170" height="22" />
-      <text class="label-bold" x="874" y="393">&#955; pricing</text>
-      <rect class="box box-tool" x="858" y="403" width="170" height="22" />
-      <text class="label-bold" x="874" y="418">&#955; extract_policy</text>
-      <rect class="box box-rt" x="858" y="428" width="170" height="22" />
-      <text class="label-bold" x="874" y="443">Web search &#183; text only</text>
+      <rect class="box box-tool" x="782" y="212" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="228.5">&#955; portfolio</text>
+      <rect class="box box-tool" x="782" y="238" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="254.5">&#955; promotions</text>
+      <rect class="box box-tool" x="782" y="264" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="280.5">&#955; company</text>
+      <rect class="box box-tool" x="782" y="290" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="306.5">&#955; competitive</text>
+      <rect class="box box-tool" x="782" y="316" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="332.5">&#955; competitors</text>
+      <rect class="box box-tool" x="782" y="342" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="358.5">&#955; formschema</text>
+      <rect class="box box-tool" x="782" y="368" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="384.5">&#955; pricing</text>
+      <rect class="box box-tool" x="782" y="394" width="224" height="23" />
+      <text class="label-bold label-lam" x="794" y="410.5">&#955; extract_policy</text>
+      <rect class="box box-rt" x="782" y="420" width="224" height="23" />
+      <text data-i18n="s10.svg.webSearch" class="label-bold label-lam" x="794" y="436.5">Web search &#183; text only</text>
 
-      <rect class="box box-data" x="1054" y="130" width="190" height="70" />
-      <text class="label-bold" x="1070" y="152">DynamoDB</text>
-      <text class="label-mute" x="1070" y="170">profiles &#183; notes &#183; policies</text>
-      <text class="label-mute" x="1070" y="186">catalog</text>
-
-      <rect class="box box-data" x="1054" y="212" width="190" height="238" />
-      <text class="label-bold" x="1070" y="234">S3 buckets</text>
-      <text class="label-mute" x="1070" y="256">portfolio</text>
-      <text class="label-mute" x="1070" y="274">promotion</text>
-      <text class="label-mute" x="1070" y="292">company</text>
-      <text class="label-mute" x="1070" y="310">competitive</text>
-      <text class="label-mute" x="1070" y="328">competitors</text>
-      <text class="label-mute" x="1070" y="346">forms</text>
-      <text class="label-mute" x="1070" y="364">pricing</text>
-      <text class="label-mute" x="1070" y="382">uploads (1 day)</text>
-      <text class="label-mute" x="1070" y="400">brochures</text>
-      <text class="label-mute" x="1070" y="418">voice transcripts (1 day)</text>
+      <rect class="box box-data" x="1034" y="120" width="224" height="66" />
+      <text class="label-bold" x="1048" y="142">DynamoDB</text>
+      <text data-i18n="s10.svg.ddbTables" class="label-mute" x="1048" y="160">profiles &#183; notes &#183; policies</text>
+      <text data-i18n="s10.svg.ddbCatalog" class="label-mute" x="1048" y="177">catalog</text>
+      <rect class="box box-data" x="1034" y="196" width="224" height="254" />
+      <text data-i18n="s10.svg.s3Buckets" class="label-bold" x="1048" y="218">S3 buckets</text>
+      <text data-i18n="s10.svg.b.portfolio" class="label-mute" x="1048" y="240">portfolio</text>
+      <text data-i18n="s10.svg.b.promotion" class="label-mute" x="1048" y="258">promotion</text>
+      <text data-i18n="s10.svg.b.company" class="label-mute" x="1048" y="276">company</text>
+      <text data-i18n="s10.svg.b.competitive" class="label-mute" x="1048" y="294">competitive</text>
+      <text data-i18n="s10.svg.b.competitors" class="label-mute" x="1048" y="312">competitors</text>
+      <text data-i18n="s10.svg.b.forms" class="label-mute" x="1048" y="330">forms</text>
+      <text data-i18n="s10.svg.b.pricing" class="label-mute" x="1048" y="348">pricing</text>
+      <text data-i18n="s10.svg.b.uploads" class="label-mute" x="1048" y="366">uploads (1 day)</text>
+      <text data-i18n="s10.svg.b.brochures" class="label-mute" x="1048" y="384">brochures</text>
+      <text data-i18n="s10.svg.b.transcripts" class="label-mute" x="1048" y="402">voice transcripts (1 day)</text>
+      <text data-i18n="s10.svg.b.savedApps" class="label-mute" x="1048" y="420">saved applications (2 days)</text>
 
       <!-- API Gateway bus -> the Cognito-authorized lambdas -->
-      <path class="edge" d="M866,124 L848,124 L848,205" />
-      <path class="edge" d="M848,143 L858,143" />
-      <path class="edge" d="M848,174 L858,174" />
-      <path class="edge" d="M848,205 L858,205" />
+      <path class="edge" d="M782,108 L774,108 L774,189" />
+      <path class="edge" d="M774,133 L782,133" />
+      <path class="edge" d="M774,161 L782,161" />
+      <path class="edge" d="M774,189 L782,189" />
 
       <!-- Gateway -> the IAM-invoked targets -->
-      <path class="edge" d="M696,262 C 770,262 810,239 858,239" />
-      <path class="edge" d="M696,266 C 770,266 810,264 858,264" />
-      <path class="edge" d="M696,270 C 770,270 810,289 858,289" />
-      <path class="edge" d="M696,274 C 770,274 810,314 858,314" />
-      <path class="edge" d="M696,278 C 770,278 810,339 858,339" />
-      <path class="edge" d="M696,282 C 770,282 810,364 858,364" />
-      <path class="edge" d="M696,286 C 770,286 810,389 858,389" />
-      <path class="edge" d="M696,290 C 770,290 810,414 858,414" />
-      <path class="edge" d="M696,294 C 770,294 810,439 858,439" />
-      <text class="edge-label" x="726" y="330">IAM</text>
+      <path class="edge" d="M742,266 C 756,266 768,223.5 782,223.5" />
+      <path class="edge" d="M742,268 C 756,268 768,249.5 782,249.5" />
+      <path class="edge" d="M742,270 C 756,270 768,275.5 782,275.5" />
+      <path class="edge" d="M742,272 C 756,272 768,301.5 782,301.5" />
+      <path class="edge" d="M742,274 C 756,274 768,327.5 782,327.5" />
+      <path class="edge" d="M742,276 C 756,276 768,353.5 782,353.5" />
+      <path class="edge" d="M742,278 C 756,278 768,379.5 782,379.5" />
+      <path class="edge" d="M742,280 C 756,280 768,405.5 782,405.5" />
+      <path class="edge" d="M742,282 C 756,282 768,431.5 782,431.5" />
+      <rect x="745" y="296" width="36" height="16" rx="4" fill="#FFFFFF" />
+      <text class="edge-label" x="750" y="308">IAM</text>
 
       <!-- Lambdas -> datastores -->
-      <path class="edge" d="M1028,143 C 1042,143 1046,166 1054,166" />
-      <path class="edge" d="M1028,174 C 1042,174 1046,172 1054,172" />
-      <path class="edge" d="M1028,205 C 1042,205 1046,396 1054,396" />
-      <path class="edge" d="M1028,239 C 1042,239 1046,252 1054,252" />
-      <path class="edge" d="M1028,264 C 1042,264 1046,270 1054,270" />
-      <path class="edge" d="M1028,289 C 1042,289 1046,288 1054,288" />
-      <path class="edge" d="M1028,314 C 1042,314 1046,306 1054,306" />
-      <path class="edge" d="M1028,339 C 1042,339 1046,324 1054,324" />
-      <path class="edge" d="M1028,364 C 1042,364 1046,342 1054,342" />
-      <path class="edge" d="M1028,389 C 1042,389 1046,360 1054,360" />
-      <path class="edge" d="M1028,414 C 1042,414 1046,378 1054,378" />
+      <path class="edge" d="M1006,133 C 1020,133 1027,150 1034,160" />
+      <path class="edge" d="M1006,161 C 1020,161 1027,158 1034,168" />
+      <path class="edge" d="M1006,189 C 1020,189 1027,380 1034,420" />
+      <path class="edge" d="M1006,223.5 C 1020,223.5 1027,236 1034,236" />
+      <path class="edge" d="M1006,249.5 C 1020,249.5 1027,254 1034,254" />
+      <path class="edge" d="M1006,275.5 C 1020,275.5 1027,272 1034,272" />
+      <path class="edge" d="M1006,301.5 C 1020,301.5 1027,290 1034,290" />
+      <path class="edge" d="M1006,327.5 C 1020,327.5 1027,308 1034,308" />
+      <path class="edge" d="M1006,353.5 C 1020,353.5 1027,326 1034,326" />
+      <path class="edge" d="M1006,379.5 C 1020,379.5 1027,344 1034,344" />
+      <path class="edge" d="M1006,405.5 C 1020,405.5 1027,362 1034,362" />
 
       <!-- Edges: browser -> runtimes (JWT), and browser -> REST API over the top -->
-      <path class="edge-grad" d="M216,111 C 340,111 380,111 476,111" />
-      <path class="edge-dashed" d="M124,92 C 124,0 900,0 900,88" />
-      <text class="edge-label" x="486" y="12">Same Cognito JWT · REST</text>
+      <path class="edge-grad" d="M238,144 L478,144" />
+      <path class="edge-dashed" d="M129,78 C 129,-12 894,-12 894,78" />
+      <rect x="474" y="-9" width="215" height="16" rx="4" fill="#FFFFFF" />
+      <text data-i18n="s10.svg.restEdge" class="edge-label" x="482" y="4">Same Cognito JWT · REST</text>
 
       <!-- Gateway -> API Gateway (OAuth2 via Identity token vault) -->
-      <path class="edge-grad" d="M696,258 C 770,200 810,140 858,110" />
-      <text class="edge-label" x="742" y="182">OAuth2</text>
-
-      <!-- API Gateway bus -> the Cognito-authorized lambdas -->
-      <path class="edge" d="M866,124 L848,124 L848,205" />
-      <path class="edge" d="M848,143 L858,143" />
-      <path class="edge" d="M848,174 L858,174" />
-      <path class="edge" d="M848,205 L858,205" />
-
-      <!-- Gateway -> the 7 IAM-invoked tool lambdas -->
-      <path class="edge" d="M696,268 C 770,250 810,238 858,241" />
-      <path class="edge" d="M696,272 C 770,268 810,268 858,272" />
-      <path class="edge" d="M696,276 C 770,286 810,298 858,303" />
-      <path class="edge" d="M696,280 C 770,300 810,326 858,334" />
-      <path class="edge" d="M696,284 C 770,316 810,352 858,365" />
-      <path class="edge" d="M696,288 C 770,332 810,382 858,396" />
-      <path class="edge" d="M696,292 C 770,348 810,410 858,427" />
-      <text class="edge-label" x="726" y="330">IAM</text>
-
-      <!-- Lambdas -> datastores -->
-      <path class="edge" d="M1028,143 C 1042,143 1046,166 1054,166" />
-      <path class="edge" d="M1028,174 C 1042,174 1046,172 1054,172" />
-      <path class="edge" d="M1028,205 C 1042,205 1046,250 1054,250" />
-      <path class="edge" d="M1028,241 C 1042,241 1046,256 1054,256" />
-      <path class="edge" d="M1028,272 C 1042,272 1046,274 1054,274" />
-      <path class="edge" d="M1028,303 C 1042,303 1046,292 1054,292" />
-      <path class="edge" d="M1028,334 C 1042,334 1046,310 1054,310" />
-      <path class="edge" d="M1028,365 C 1042,365 1046,328 1054,328" />
-      <path class="edge" d="M1028,427 C 1042,427 1046,346 1054,346" />
-      <path class="edge" d="M1028,396 C 1042,396 1046,364 1054,364" />
+      <path class="edge-grad" d="M742,262 C 766,200 766,90 782,90" />
+      <rect x="743" y="160" width="38" height="16" rx="4" fill="#FFFFFF" />
+      <text class="edge-label" x="744" y="172">OAuth2</text>
 
       <!-- Guardrail applies to the text runtime (Nova Sonic has no guardrail setting) -->
-      <path class="edge-dashed" d="M476,425 L466,425 L466,111 L476,111" />
+      <path class="edge-dashed" d="M478,424 L472,424 L472,114 L478,114" />
     </svg>
-    <p class="muted" style="margin-top:8px;">
+    <p data-i18n="s10.footnote" data-i18n-html class="muted arch-note">
       Models: <strong>Claude Haiku 5.5</strong> (chat, comparator, recommendations, document and brochure reading) · <strong>Nova 2.5 Sonic</strong> (voice).
-      One shared Bedrock Guardrail — content filters, PII handling, denied topics and contextual grounding — gates the five Claude surfaces (voice is not covered).
-      Before every tool call the gateway's request interceptor checks the advisor's own sign-in token, so a tool only ever acts as the signed-in advisor. Voice traces carry timings and tool names, not conversation content. Five CDK stacks; every AgentCore resource is stable CloudFormation.
+      One shared Bedrock Guardrail gates the six Claude surfaces; voice is not covered. Before every tool call, the gateway checks the advisor's own sign-in token. Five CDK stacks; every AgentCore resource is stable CloudFormation.
     </p>
+    <aside class="notes">
+    <ul>
+      <li data-i18n="n12.b1">The React + Vite app runs on CloudFront and holds only a Cognito JWT, no IAM credentials.</li>
+      <li data-i18n="n12.b2">The text runtime uses Strands with Claude Haiku 5.5. The voice runtime uses Strands BidiAgent with Nova 2.5 Sonic over WebSocket.</li>
+      <li data-i18n="n12.b3">The AgentCore Gateway offers 12 targets and 20 tools over MCP, and its request interceptor checks the advisor's token before every tool call. Memory is per customer with a 90-day TTL.</li>
+      <li data-i18n="n12.b4">One shared Bedrock Guardrail covers the six Claude surfaces, not voice. Voice traces carry timings and tool names, not conversation content. Five CDK stacks.</li>
+    </ul>
+    </aside>
   </section>
-
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"
-        integrity="sha384-M/JtqCVlLcK9lwVnBnMXP0V577CBULkjodKsR/PITOe4MSKNbbwqCemEyluOw0+5"
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="vendor/reveal-5.1.0/dist/reveal.js"></script>
+<script src="vendor/reveal-5.1.0/plugin/notes/notes.js"></script>
 <script>
+  // 16:9 canvas that reveal scales to the window (up to 3x for projectors and 4K). Slides are top-aligned flex
+  // columns (center: false, display: flex) so the content fills the canvas instead of floating in the middle.
+  var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   Reveal.initialize({
     hash: true,
     slideNumber: 'c/t',
-    transition: 'fade',
+    progress: true,
+    controls: true,
+    controlsLayout: 'bottom-right',
+    controlsBackArrows: 'faded',
+    transition: reduceMotion ? 'none' : 'fade',
+    backgroundTransition: 'none',
     width: 1366,
-    height: 800,
-    margin: 0.045,
-    minScale: 0.4,
-    maxScale: 1.6,
+    height: 768,
+    margin: 0.02,
+    minScale: 0.2,
+    maxScale: 3,
+    center: false,
+    display: 'flex',
+    plugins: [RevealNotes],
+    // Arrow keys on the focused language picker belong to the picker, not to the slides.
+    // Space and Enter on a focused button belong to that button.
+    keyboardCondition: function (event) {
+      var t = event.target;
+      if (t && t.tagName === 'SELECT') return false;
+      if (t && t.tagName === 'BUTTON' && (event.key === ' ' || event.key === 'Enter')) return false;
+      return true;
+    },
   });
 </script>
+<script src="deck-i18n.js" defer></script>
+<script src="deck-ui.js" defer></script>
 </body>
 </html>

@@ -5,23 +5,89 @@
   "title": "Awesome Universal Life Application",
   "sections": [
     {
-      "id": "applicant",
-      "title": "Applicant",
+      "id": "coverage",
+      "title": "Coverage",
       "fields": [
         {
-          "path": "applicant.full_name",
-          "label": "Full name",
+          "path": "coverage.face_amount",
+          "label": "Face amount (death benefit)",
+          "type": "currency",
+          "required": true,
+          "hint": "250k / 500k / 1M / 2M / up to 5M"
+        },
+        {
+          "path": "coverage.death_benefit_option",
+          "label": "Death benefit option",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "option_a",
+              "label": "Option A: level"
+            },
+            {
+              "value": "option_b",
+              "label": "Option B: increasing"
+            }
+          ]
+        },
+        {
+          "path": "coverage.nlg_to_age",
+          "label": "Guarantee to age (no-lapse guarantee)",
+          "type": "select",
+          "required": true,
+          "hint": "The age to which the death benefit is guaranteed if the required premium is paid on time.",
+          "options": [
+            {
+              "value": "90",
+              "label": "Age 90"
+            },
+            {
+              "value": "95",
+              "label": "Age 95"
+            },
+            {
+              "value": "100",
+              "label": "Age 100"
+            },
+            {
+              "value": "121",
+              "label": "Lifetime (age 121)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insured",
+      "title": "Proposed insured",
+      "fields": [
+        {
+          "path": "insured.first_name",
+          "label": "First name",
           "type": "text",
           "required": true
         },
         {
-          "path": "applicant.date_of_birth",
+          "path": "insured.middle_name",
+          "label": "Middle name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "insured.last_name",
+          "label": "Last name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "insured.date_of_birth",
           "label": "Date of birth",
           "type": "date",
           "required": true
         },
         {
-          "path": "applicant.gender",
+          "path": "insured.gender",
           "label": "Gender",
           "type": "select",
           "required": true,
@@ -37,67 +103,363 @@
           ]
         },
         {
-          "path": "applicant.occupation",
+          "path": "insured.address_line1",
+          "label": "Street address",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "insured.city",
+          "label": "City",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "insured.state",
+          "label": "State",
+          "type": "text",
+          "required": true,
+          "hint": "Two-letter code, e.g. TX"
+        },
+        {
+          "path": "insured.zip",
+          "label": "ZIP code",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "insured.ssn",
+          "label": "Social Security number",
+          "type": "text",
+          "required": true,
+          "hint": "Typed by the applicant only. Never filled or read by the assistant. The printed form shows the last 4 digits.",
+          "sensitive": "secret"
+        },
+        {
+          "path": "insured.marital_status",
+          "label": "Marital status",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "Single",
+              "label": "Single"
+            },
+            {
+              "value": "Married",
+              "label": "Married"
+            },
+            {
+              "value": "Divorced",
+              "label": "Divorced"
+            },
+            {
+              "value": "Widowed",
+              "label": "Widowed"
+            }
+          ]
+        },
+        {
+          "path": "insured.citizenship",
+          "label": "Citizenship",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "us_citizen",
+              "label": "U.S. citizen"
+            },
+            {
+              "value": "permanent_resident",
+              "label": "Permanent resident"
+            },
+            {
+              "value": "other",
+              "label": "Other"
+            }
+          ]
+        },
+        {
+          "path": "insured.occupation",
           "label": "Occupation",
           "type": "text",
           "required": true
         },
         {
-          "path": "applicant.annual_income",
+          "path": "insured.annual_income",
           "label": "Annual income",
           "type": "currency",
           "required": true
         },
         {
-          "path": "applicant.email",
+          "path": "insured.tobacco_status",
+          "label": "Tobacco / nicotine use",
+          "type": "select",
+          "required": true,
+          "hint": "A current user is rated as a smoker.",
+          "options": [
+            {
+              "value": "never",
+              "label": "Never used"
+            },
+            {
+              "value": "former",
+              "label": "Former (quit more than 12 months ago)"
+            },
+            {
+              "value": "current",
+              "label": "Current (used in the last 12 months)"
+            }
+          ]
+        },
+        {
+          "path": "insured.email",
           "label": "Email",
           "type": "text",
           "required": false
         },
         {
-          "path": "applicant.phone",
-          "label": "Phone",
-          "type": "text",
-          "required": false
-        },
-        {
-          "path": "applicant.address",
-          "label": "Address",
+          "path": "insured.phone",
+          "label": "Mobile phone",
           "type": "text",
           "required": false
         }
       ]
     },
     {
-      "id": "coverage",
-      "title": "Coverage",
+      "id": "owner",
+      "title": "Owner and payor (if not the insured)",
       "fields": [
         {
-          "path": "coverage.sum_assured",
-          "label": "Death benefit",
-          "type": "currency",
-          "required": true,
-          "hint": "250k / 500k / 1M / 2M / up to 5M"
+          "path": "owner.name",
+          "label": "Owner name or entity",
+          "type": "text",
+          "required": false,
+          "hint": "Leave blank if the owner is the insured. Name the trust if a trust owns the policy."
         },
         {
-          "path": "coverage.death_benefit_option",
-          "label": "Death benefit option",
+          "path": "owner.relationship",
+          "label": "Owner's relationship to the insured",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "owner.type",
+          "label": "Owner type",
           "type": "select",
-          "required": true,
+          "required": false,
           "options": [
             {
-              "value": "option_a",
-              "label": "Option A — level"
+              "value": "individual",
+              "label": "Individual"
             },
             {
-              "value": "option_b",
-              "label": "Option B — face + cash value"
+              "value": "trust",
+              "label": "Trust"
+            },
+            {
+              "value": "business",
+              "label": "Business"
+            },
+            {
+              "value": "other",
+              "label": "Other"
             }
           ]
         },
         {
-          "path": "coverage.premium_frequency",
-          "label": "Premium frequency",
+          "path": "payor.name",
+          "label": "Payor name",
+          "type": "text",
+          "required": false,
+          "hint": "Leave blank if the payor is the owner."
+        },
+        {
+          "path": "payor.relationship",
+          "label": "Payor's relationship to the insured",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "beneficiaries",
+      "title": "Beneficiaries",
+      "fields": [
+        {
+          "path": "beneficiary1.name",
+          "label": "Beneficiary 1: full name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "beneficiary1.relationship",
+          "label": "Beneficiary 1: relationship to the insured",
+          "type": "text",
+          "required": true
+        },
+        {
+          "path": "beneficiary1.type",
+          "label": "Beneficiary 1: type",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "contingent",
+              "label": "Contingent"
+            }
+          ]
+        },
+        {
+          "path": "beneficiary1.pct",
+          "label": "Beneficiary 1: allocation (%)",
+          "type": "number",
+          "required": true,
+          "hint": "Each group of primary beneficiaries adds up to 100."
+        },
+        {
+          "path": "beneficiary1.revocable",
+          "label": "Beneficiary 1: revocable?",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "path": "beneficiary2.name",
+          "label": "Beneficiary 2: full name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "beneficiary2.relationship",
+          "label": "Beneficiary 2: relationship to the insured",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "beneficiary2.type",
+          "label": "Beneficiary 2: type",
+          "type": "select",
+          "required": false,
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "contingent",
+              "label": "Contingent"
+            }
+          ]
+        },
+        {
+          "path": "beneficiary2.pct",
+          "label": "Beneficiary 2: allocation (%)",
+          "type": "number",
+          "required": false,
+          "hint": "Each group of primary beneficiaries adds up to 100."
+        },
+        {
+          "path": "beneficiary2.revocable",
+          "label": "Beneficiary 2: revocable?",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "path": "beneficiary3.name",
+          "label": "Beneficiary 3: full name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "beneficiary3.relationship",
+          "label": "Beneficiary 3: relationship to the insured",
+          "type": "text",
+          "required": false
+        },
+        {
+          "path": "beneficiary3.type",
+          "label": "Beneficiary 3: type",
+          "type": "select",
+          "required": false,
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "contingent",
+              "label": "Contingent"
+            }
+          ]
+        },
+        {
+          "path": "beneficiary3.pct",
+          "label": "Beneficiary 3: allocation (%)",
+          "type": "number",
+          "required": false,
+          "hint": "Each group of primary beneficiaries adds up to 100."
+        },
+        {
+          "path": "beneficiary3.revocable",
+          "label": "Beneficiary 3: revocable?",
+          "type": "boolean",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "riders",
+      "title": "Riders and premium",
+      "fields": [
+        {
+          "path": "riders.waiver_of_premium",
+          "label": "Waiver of premium (WP)",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "path": "riders.accidental_death",
+          "label": "Accidental death benefit (ADB)",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "path": "riders.long_term_care",
+          "label": "Long-term care / chronic illness (LTC)",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "path": "riders.purchase_option",
+          "label": "Guaranteed purchase option (GPO)",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "path": "riders.no_lapse_guarantee",
+          "label": "No-lapse guarantee rider (NLGR)",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "path": "riders.overloan_protection",
+          "label": "Overloan protection",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "path": "premium.planned_amount",
+          "label": "Planned premium per payment",
+          "type": "currency",
+          "required": true
+        },
+        {
+          "path": "premium.mode",
+          "label": "Premium mode",
           "type": "select",
           "required": true,
           "options": [
@@ -120,86 +482,454 @@
           ]
         },
         {
-          "path": "coverage.premium_level",
-          "label": "Premium level",
+          "path": "premium.payment_method",
+          "label": "Payment method",
           "type": "select",
-          "required": false,
+          "required": true,
           "options": [
             {
-              "value": "target",
-              "label": "Target premium"
+              "value": "bank_draft",
+              "label": "Bank draft"
             },
             {
-              "value": "minimum",
-              "label": "Minimum to keep in force"
+              "value": "credit_card",
+              "label": "Credit card"
             },
             {
-              "value": "overfund",
-              "label": "Overfund to IRS limit"
+              "value": "check",
+              "label": "Check"
+            },
+            {
+              "value": "payroll_deduction",
+              "label": "Payroll deduction"
             }
           ]
         },
         {
-          "path": "coverage.riders",
-          "label": "Optional riders",
-          "type": "text",
-          "required": false,
-          "hint": "e.g. no-lapse guarantee, long-term care acceleration, waiver of monthly deduction"
+          "path": "premium.exchange_1035",
+          "label": "Is a 1035 exchange involved?",
+          "type": "boolean",
+          "required": true
         }
       ]
     },
     {
-      "id": "health",
-      "title": "Health",
+      "id": "existing",
+      "title": "Existing insurance and replacement",
       "fields": [
         {
-          "path": "health.smoker",
-          "label": "Smoker",
+          "path": "existing.has_coverage",
+          "label": "Existing life insurance in force?",
           "type": "boolean",
           "required": true
         },
         {
-          "path": "health.height_cm",
-          "label": "Height (cm)",
-          "type": "number",
-          "required": false
-        },
-        {
-          "path": "health.weight_kg",
-          "label": "Weight (kg)",
-          "type": "number",
-          "required": false
-        },
-        {
-          "path": "health.existing_conditions",
-          "label": "Existing conditions",
-          "type": "text",
+          "path": "existing.total_amount",
+          "label": "Total existing life coverage",
+          "type": "currency",
           "required": false,
-          "hint": "Comma-separated, or 'none'"
+          "visible_when": {
+            "existing.has_coverage": true
+          },
+          "required_when": {
+            "existing.has_coverage": true
+          }
+        },
+        {
+          "path": "existing.replacing",
+          "label": "Will this policy replace existing coverage?",
+          "type": "boolean",
+          "required": false,
+          "visible_when": {
+            "existing.has_coverage": true
+          },
+          "required_when": {
+            "existing.has_coverage": true
+          }
+        },
+        {
+          "path": "existing.purpose",
+          "label": "Purpose of insurance",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "income_replacement",
+              "label": "Income replacement"
+            },
+            {
+              "value": "estate_planning",
+              "label": "Estate planning"
+            },
+            {
+              "value": "business",
+              "label": "Business"
+            },
+            {
+              "value": "other",
+              "label": "Other"
+            }
+          ]
         }
       ]
     },
     {
-      "id": "beneficiary",
-      "title": "Beneficiary",
+      "id": "medical",
+      "title": "Medical and lifestyle history",
       "fields": [
         {
-          "path": "beneficiary.name",
-          "label": "Full name",
-          "type": "text",
-          "required": true
+          "path": "medical.q1",
+          "label": "1. Ever diagnosed with or treated for heart disease, chest pain, or heart attack?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
         },
         {
-          "path": "beneficiary.relationship",
-          "label": "Relationship",
+          "path": "medical.q1_details",
+          "label": "1. Details",
           "type": "text",
-          "required": true
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q1": true
+          },
+          "required_when": {
+            "medical.q1": true
+          }
         },
         {
-          "path": "beneficiary.percentage",
-          "label": "Allocation (%)",
-          "type": "number",
-          "required": true
+          "path": "medical.q2",
+          "label": "2. Stroke, TIA, or other cerebrovascular event?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q2_details",
+          "label": "2. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q2": true
+          },
+          "required_when": {
+            "medical.q2": true
+          }
+        },
+        {
+          "path": "medical.q3",
+          "label": "3. High blood pressure or high cholesterol?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q3_details",
+          "label": "3. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q3": true
+          },
+          "required_when": {
+            "medical.q3": true
+          }
+        },
+        {
+          "path": "medical.q4",
+          "label": "4. Diabetes (Type 1 or Type 2) or elevated blood glucose?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q4_details",
+          "label": "4. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q4": true
+          },
+          "required_when": {
+            "medical.q4": true
+          }
+        },
+        {
+          "path": "medical.q5",
+          "label": "5. Cancer, tumor, or malignancy (excluding basal-cell skin cancer)?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q5_details",
+          "label": "5. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q5": true
+          },
+          "required_when": {
+            "medical.q5": true
+          }
+        },
+        {
+          "path": "medical.q6",
+          "label": "6. Kidney, liver, or respiratory disease (COPD, asthma)?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q6_details",
+          "label": "6. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q6": true
+          },
+          "required_when": {
+            "medical.q6": true
+          }
+        },
+        {
+          "path": "medical.q7",
+          "label": "7. Neurological or psychiatric disorder (including hospitalization)?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q7_details",
+          "label": "7. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q7": true
+          },
+          "required_when": {
+            "medical.q7": true
+          }
+        },
+        {
+          "path": "medical.q8",
+          "label": "8. HIV or any immune-system disorder?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q8_details",
+          "label": "8. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q8": true
+          },
+          "required_when": {
+            "medical.q8": true
+          }
+        },
+        {
+          "path": "medical.q9",
+          "label": "9. Tobacco or nicotine use in the past 12 months?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q9_details",
+          "label": "9. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q9": true
+          },
+          "required_when": {
+            "medical.q9": true
+          }
+        },
+        {
+          "path": "medical.q10",
+          "label": "10. Alcohol or drug treatment, or DUI in the past 5 years?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q10_details",
+          "label": "10. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q10": true
+          },
+          "required_when": {
+            "medical.q10": true
+          }
+        },
+        {
+          "path": "medical.q11",
+          "label": "11. Surgery, hospitalization, or ER visit in the past 10 years?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q11_details",
+          "label": "11. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q11": true
+          },
+          "required_when": {
+            "medical.q11": true
+          }
+        },
+        {
+          "path": "medical.q12",
+          "label": "12. Currently taking any prescription medication?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q12_details",
+          "label": "12. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q12": true
+          },
+          "required_when": {
+            "medical.q12": true
+          }
+        },
+        {
+          "path": "medical.q13",
+          "label": "13. Family history of heart disease, cancer, or diabetes before age 60?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q13_details",
+          "label": "13. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q13": true
+          },
+          "required_when": {
+            "medical.q13": true
+          }
+        },
+        {
+          "path": "medical.q14",
+          "label": "14. Aviation, scuba, motor racing, or other hazardous avocation?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q14_details",
+          "label": "14. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q14": true
+          },
+          "required_when": {
+            "medical.q14": true
+          }
+        },
+        {
+          "path": "medical.q15",
+          "label": "15. Foreign travel or residency outside the U.S. and Canada in the next 2 years?",
+          "type": "boolean",
+          "required": true,
+          "sensitive": "health"
+        },
+        {
+          "path": "medical.q15_details",
+          "label": "15. Details",
+          "type": "text",
+          "required": false,
+          "hint": "Diagnosis or reason, dates, treatment, current status.",
+          "sensitive": "health",
+          "visible_when": {
+            "medical.q15": true
+          },
+          "required_when": {
+            "medical.q15": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "financial",
+      "title": "Financial",
+      "fields": [
+        {
+          "path": "financial.net_worth",
+          "label": "Approximate net worth",
+          "type": "select",
+          "required": false,
+          "hint": "Needed to justify larger face amounts.",
+          "options": [
+            {
+              "value": "under_100k",
+              "label": "Under $100K"
+            },
+            {
+              "value": "100k_250k",
+              "label": "$100K to $250K"
+            },
+            {
+              "value": "250k_500k",
+              "label": "$250K to $500K"
+            },
+            {
+              "value": "500k_1m",
+              "label": "$500K to $1M"
+            },
+            {
+              "value": "1m_2_5m",
+              "label": "$1M to $2.5M"
+            },
+            {
+              "value": "over_2_5m",
+              "label": "Over $2.5M"
+            }
+          ]
         }
       ]
     }

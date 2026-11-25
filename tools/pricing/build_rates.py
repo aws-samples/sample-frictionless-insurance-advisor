@@ -47,7 +47,7 @@ INP_GENDER = {"type": "choice", "choices": ["male", "female"], "required": True,
 # Health, critical illness and disability: the gender input is described as working with the age band.
 INP_GENDER_BANDED = {**INP_GENDER, "description": "Used with the age band to apply the gender factor. Taken from the customer's profile; if it is missing (for example a new prospect), ask the advisor."}
 # Female multiplier per age band. Male is the reference (1.0) and equals the published sheet rate.
-# These are illustrative placeholders until the pricing factors are confirmed.
+# These are illustrative placeholders.
 def gender_band_factor(age_pairs, mults):
     assert len(age_pairs) == len(mults)
     out = []
@@ -79,7 +79,7 @@ def write(name, data):
 
 
 # ---------------------------------------------------------------- life family
-def life(product_type, name, rates, sum_lo, sum_hi, extra_inputs, extra_factors, notes, extra_required=None):
+def life(product_type, name, rates, sum_lo, sum_hi, extra_inputs, extra_factors, notes, extra_required=None, addons=None, reference=None):
     inputs = {
         "age": inp_age(18, 70),
         "gender": INP_GENDER,
@@ -103,6 +103,8 @@ def life(product_type, name, rates, sum_lo, sum_hi, extra_inputs, extra_factors,
                  "age_bands": bands(LIFE_BANDS), "rates": rates,
                  "label": "Annual rate per $1,000 of cover, male non-smoker, at the reference choices"},
         "factors": factors,
+        **({"addons": addons} if addons else {}),
+        **({"reference": reference} if reference else {}),
     })
 
 
@@ -125,16 +127,38 @@ life("whole_life", "Awesome Whole Life",
      ["Rates are for lifetime pay; shorter payment schedules cost more each year.",
       "Paid-up at 65 is not offered to applicants aged 60 or over."])
 
+def _rider(desc):
+    return {"type": "boolean", "description": desc}
+
+
 life("universal_life", "Awesome Universal Life",
      [2.2, 2.6, 3.2, 4.0, 5.0, 6.3, 8.0, 10.5, 14.0, 19.0], 250000, 5000000,
      {"death_benefit_option": {"type": "choice", "choices": ["option_a", "option_b"], "required": True,
                                "description": "option_a is a level face amount; option_b is face amount plus cash value."},
+      "nlg_to_age": {"type": "choice", "choices": ["90", "95", "100", "121"], "default": "95",
+                     "description": "The age to which the death benefit is guaranteed if the required premium is paid on time. 121 is lifetime."},
       "premium_level": {"type": "choice", "choices": ["minimum", "target", "overfund"], "default": "target",
-                        "description": "Minimum to keep the policy in force, the target premium, or overfunding to build cash value faster."}},
+                        "description": "Minimum is the required no-lapse premium (the least that keeps the guarantee), target is the standard premium, overfund builds cash value faster."},
+      "rider_wp": _rider("Waiver of premium: the monthly deduction is waived if the insured becomes totally disabled."),
+      "rider_adb": _rider("Accidental death benefit: an extra death benefit if death is caused by an accident."),
+      "rider_ltc": _rider("Long-term care / chronic illness: part of the death benefit can be taken early for qualifying care or a terminal diagnosis."),
+      "rider_gpo": _rider("Guaranteed purchase option: buy more cover at set future dates without new medical evidence."),
+      "rider_nlgr": _rider("No-lapse guarantee rider: a late or missed premium can be caught up within 12 months without losing the guarantee."),
+      "rider_olp": _rider("Overloan protection: stops the policy lapsing when policy loans grow larger than the cash value.")},
      [{"input": "death_benefit_option", "label": "Death benefit option", "map": {"option_a": 1.0, "option_b": 1.18}},
+      {"input": "nlg_to_age", "label": "No-lapse guarantee to age", "map": {"90": 0.92, "95": 1.0, "100": 1.12, "121": 1.35}},
       {"input": "premium_level", "label": "Premium level", "map": {"minimum": 0.6, "target": 1.0, "overfund": 1.6}}],
-     ["Rates are for the target premium. Cash value depends on the declared interest rate and is not projected here."])
-
+     ["Rates are for the target premium with the guarantee to age 95. A longer guarantee costs more.",
+      "Every estimate also reports the required no-lapse premium: the least that keeps the guarantee to the chosen age if paid on time. Paying less, or paying late without the no-lapse guarantee rider, can end the guarantee even while there is cash value.",
+      "Cash value depends on the declared interest rate and is not projected here."],
+     addons=[{"input": "rider_wp", "label": "Waiver of premium", "pct": 0.06},
+             {"input": "rider_adb", "label": "Accidental death benefit", "pct": 0.04},
+             {"input": "rider_ltc", "label": "Long-term care / chronic illness", "pct": 0.15},
+             {"input": "rider_gpo", "label": "Guaranteed purchase option", "pct": 0.05},
+             {"input": "rider_nlgr", "label": "No-lapse guarantee rider", "pct": 0.08},
+             {"input": "rider_olp", "label": "Overloan protection", "pct": 0.03}],
+     reference={"label": "Required no-lapse premium", "set": {"premium_level": "minimum"},
+                "note": "The least you can pay each year and still keep the guarantee to the chosen age, if paid on time."})
 life("variable_life", "Awesome Variable Life",
      [3.0, 3.6, 4.4, 5.4, 6.8, 8.6, 11.0, 14.5, 19.0, 25.0], 500000, 10000000,
      {"death_benefit_option": {"type": "choice", "choices": ["option_a", "option_b", "option_c"], "required": True,
@@ -448,6 +472,8 @@ EXAMPLES = {
     "universal_life": [
         ("Age 43, male, non-smoker, $2,000,000, level death benefit, target premium", {"age": 43, "gender": "male", "smoker": False, "sum_assured": 2000000, "death_benefit_option": "option_a"}),
         ("Same, minimum premium", {"age": 43, "gender": "male", "smoker": False, "sum_assured": 2000000, "death_benefit_option": "option_a", "premium_level": "minimum"}),
+        ("Same as the first, guaranteed to age 121", {"age": 43, "gender": "male", "smoker": False, "sum_assured": 2000000, "death_benefit_option": "option_a", "nlg_to_age": "121"}),
+        ("Same as the first, with waiver of premium and long-term care riders", {"age": 43, "gender": "male", "smoker": False, "sum_assured": 2000000, "death_benefit_option": "option_a", "rider_wp": True, "rider_ltc": True}),
     ],
     "variable_life": [
         ("Age 41, female, non-smoker, $1,500,000, level face amount, target premium", {"age": 41, "gender": "female", "smoker": False, "sum_assured": 1500000, "death_benefit_option": "option_a"}),

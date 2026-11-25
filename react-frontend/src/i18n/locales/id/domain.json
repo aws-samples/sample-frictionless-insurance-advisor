@@ -66,6 +66,36 @@
       "general": "Produk umum",
       "health": "Produk kesehatan",
       "all": "Semua produk"
+    },
+    "citizenship": {
+      "us_citizen": "Warga negara AS",
+      "permanent_resident": "Penduduk tetap",
+      "other": "Lainnya"
+    },
+    "tobaccoStatus": {
+      "never": "Tidak pernah",
+      "former": "Mantan",
+      "current": "Saat ini"
+    },
+    "netWorthBand": {
+      "under_100k": "Di bawah $100 rb",
+      "100k_250k": "$100 rb sampai $250 rb",
+      "250k_500k": "$250 rb sampai $500 rb",
+      "500k_1m": "$500 rb sampai $1 jt",
+      "1m_2_5m": "$1 jt sampai $2,5 jt",
+      "over_2_5m": "Di atas $2,5 jt"
+    },
+    "yesNo": {
+      "yes": "Ya",
+      "no": "Tidak"
+    },
+    "universalRider": {
+      "waiver_of_premium": "Pembebasan premi",
+      "accidental_death": "Manfaat meninggal karena kecelakaan",
+      "long_term_care": "Perawatan jangka panjang / penyakit kronis",
+      "guaranteed_purchase_option": "Opsi pembelian terjamin",
+      "no_lapse_guarantee": "Rider jaminan tidak lapse",
+      "overloan_protection": "Perlindungan pinjaman berlebih"
     }
   }
 }

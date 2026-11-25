@@ -161,6 +161,14 @@ def _event_args(event) -> dict:
 # get_pricing_table
 # --------------------------------------------------------------------------
 def handler_table(event, context):
+    try:
+        return _table_response(event)
+    except Exception as e:  # noqa: BLE001 - the caller gets a generic message, never the exception text
+        print(f"get_pricing_table failed: {type(e).__name__}")
+        return _response(500, {"message": "Pricing is temporarily unavailable"})
+
+
+def _table_response(event) -> dict:
     args = _event_args(event)
     product_type = args.get("product_type")
     if isinstance(product_type, str) and product_type.strip():
@@ -560,8 +568,10 @@ def estimate(args: dict, profile: dict | None, policies: list[dict], pricing: di
             age = _age_from_dob(profile["date_of_birth"])
             if age is not None:
                 raw["age"] = age
-        if "smoker" in inputs and profile.get("smoking") is not None:
-            raw["smoker"] = bool(profile["smoking"])
+        # Only a current user of tobacco is rated as a smoker. "former" means quit more than
+        # 12 months ago, which is the rate files' definition of a non-smoker.
+        if "smoker" in inputs and profile.get("tobacco_status") in ("never", "former", "current"):
+            raw["smoker"] = profile["tobacco_status"] == "current"
         if "gender" in inputs and profile.get("gender") in ("male", "female"):
             raw["gender"] = profile["gender"]
     for k, val in options.items():
@@ -621,6 +631,20 @@ def estimate(args: dict, profile: dict | None, policies: list[dict], pricing: di
     if assumptions:
         result["assumptions"] = assumptions
     result["breakdown"] = priced["steps"]
+    ref = pricing.get("reference")
+    if ref:
+        # A second premium for the same choices with some inputs overridden, e.g. the least that keeps a guarantee.
+        try:
+            ref_annual = compute_premium(pricing, {**values, **ref.get("set", {})})["annual_premium"]
+        except NotAvailable:
+            ref_annual = None
+        if ref_annual is not None:
+            reference = {"label": ref["label"], "annual_premium": ref_annual}
+            if "premium_frequency" in inputs:
+                reference.update(_instalments(ref_annual, freq, pricing.get("frequency_loading", {})))
+            if ref.get("note"):
+                reference["note"] = ref["note"]
+            result["reference_premium"] = reference
     if pricing.get("notes"):
         result["notes"] = pricing["notes"]
 
@@ -674,6 +698,6 @@ def handler_estimate(event, context):
 
         status, body = estimate(args, profile, policies, pricing, rule)
         return _response(status, body)
-    except Exception as e:  # noqa: BLE001
-        print(f"estimate_premium failed: {type(e).__name__}: {e}")
+    except Exception as e:  # noqa: BLE001 - the caller gets a generic message, never the exception text
+        print(f"estimate_premium failed: {type(e).__name__}")
         return _response(500, {"message": "Pricing is temporarily unavailable"})

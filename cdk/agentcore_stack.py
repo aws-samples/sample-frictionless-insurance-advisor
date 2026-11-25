@@ -7,6 +7,7 @@ from aws_cdk import (
     aws_ecr_assets as ecr_assets,
     aws_lambda as _lambda,
     aws_logs as logs,
+    custom_resources as cr,
     aws_ssm as ssm,
     Duration,
     RemovalPolicy,
@@ -14,8 +15,19 @@ from aws_cdk import (
 )
 from constructs import Construct
 from .auth_stack import AuthStack
+from .limits import TEXT_AGENT_LIMITS, limit_environment
 from .tools_stack import ToolsStack
 from .agentcore_oauth_provider import AgentCoreOAuth2Provider, AgentCoreOAuth2ProviderProps
+from .iam_helpers import (
+    RUNTIME_GATEWAY_PROVIDER_NAME,
+    agentcore_service_principal,
+    grant_runtime_agentcore_access,
+)
+
+# Name of the text runtime; the runtime's workload identity is named after it.
+RUNTIME_NAME = "insurance_advisor_agent"
+# Name of the gateway; the gateway's workload identity is named after it.
+GATEWAY_NAME = "insurance-advisor-gateway"
 
 
 class AgentCoreStack(Stack):
@@ -52,13 +64,24 @@ class AgentCoreStack(Stack):
                 removal_policy=RemovalPolicy.DESTROY,
             ),
         )
+        # After GetUser has accepted the token, the interceptor reads the user with
+        # AdminGetUser to check it is enabled and confirmed with a verified email.
+        self.interceptor_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["cognito-idp:AdminGetUser"],
+                resources=[auth_stack.user_pool.user_pool_arn],
+            )
+        )
         # {gateway target name: how the interceptor treats its calls}
         interceptor_modes: dict[str, str] = {}
 
         # Create IAM role for AgentCore Gateway with enhanced logging permissions
+        # The gateway's id is generated, so the source ARN names every gateway of this
+        # account and region.
         self.gateway_role = iam.Role(
             self, "AgentCoreGatewayRole",
-            assumed_by=iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
+            assumed_by=agentcore_service_principal(self, "gateway/*"),
             inline_policies={
                 "LambdaInvokePolicy": iam.PolicyDocument(
                     statements=[
@@ -93,7 +116,7 @@ class AgentCoreStack(Stack):
                                 "logs:DescribeLogStreams"
                             ],
                             resources=[
-                                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/bedrock-agentcore/gateways/insurance-advisor-gateway*"
+                                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/bedrock-agentcore/gateways/{GATEWAY_NAME}*"
                             ]
                         ),
                         iam.PolicyStatement(
@@ -125,7 +148,7 @@ class AgentCoreStack(Stack):
                             effect=iam.Effect.ALLOW,
                             actions=["bedrock-agentcore:GetWorkloadAccessToken"],
                             resources=[
-                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/*",
+                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/{GATEWAY_NAME}-*",
                                 f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default"
                             ]
                         ),
@@ -134,7 +157,7 @@ class AgentCoreStack(Stack):
                             effect=iam.Effect.ALLOW,
                             actions=["bedrock-agentcore:GetResourceOauth2Token"],
                             resources=[
-                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/*",
+                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/{GATEWAY_NAME}-*",
                                 f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default",
                                 f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:token-vault/default"
                             ]
@@ -144,23 +167,12 @@ class AgentCoreStack(Stack):
             }
         )
 
-        # AgentCore Gateway — stable L1 (AWS::BedrockAgentCore::Gateway).
+        # AgentCore Gateway — L1 (AWS::BedrockAgentCore::Gateway).
         #
-        # Previously the `Gateway` L2 from aws_bedrock_agentcore_alpha. The
-        # stable module ships L1 only, so this is a deliberate L2 -> L1
-        # downgrade: we hand-write the CloudFormation the L2 used to generate
-        # in exchange for dropping a pre-release dependency that had to stay
-        # version-locked to an exact aws-cdk-lib release and is slated for
-        # removal in CDK v3.
-        #
-        # The construct tree is shaped to match what the L2 produced: a
-        # wrapper scope named `InsuranceAdvisorGateway` whose resource child
-        # is `Resource`, and one child scope per target. CDK derives logical
-        # IDs from the construct path, not the construct class, so this keeps
-        # every logical ID byte-identical (InsuranceAdvisorGateway066E037D and
-        # friends) and the migration synthesises to an empty diff.
-        #
-        # That preservation is load-bearing, not cosmetic: the auto-generated
+        # The construct tree is a wrapper scope named `InsuranceAdvisorGateway`
+        # whose resource child is `Resource`, and one child scope per target.
+        # CDK derives logical IDs from the construct path, so the names of these
+        # scopes fix the logical IDs. They must stay stable: the auto-generated
         # cross-stack exports consumed by insadv-04-voice embed the gateway's
         # logical ID, and a replacement would mint a new gateway URL that
         # cascades into both runtimes' environment variables.
@@ -169,7 +181,7 @@ class AgentCoreStack(Stack):
         # Gateway Pool is used for machine-to-machine authentication (Runtime → Gateway)
         self.agentcore_gateway = agentcore.CfnGateway(
             gateway_scope, "Resource",
-            name="insurance-advisor-gateway",
+            name=GATEWAY_NAME,
             description="AgentCore Gateway for Insurance Advisor services with enhanced logging",
             role_arn=self.gateway_role.role_arn,
             protocol_type="MCP",
@@ -185,10 +197,8 @@ class AgentCoreStack(Stack):
                     allowed_clients=[auth_stack.runtime_client.user_pool_client_id],
                 )
             ),
-            # The alpha L2 injected these MCP defaults whenever no protocol
-            # configuration was supplied, and the deployed gateway is running
-            # with them. Pinned explicitly so this migration is a no-op rather
-            # than silently handing the service a different configuration.
+            # The MCP protocol configuration is stated explicitly instead of
+            # relying on service defaults.
             protocol_configuration=agentcore.CfnGateway.GatewayProtocolConfigurationProperty(
                 mcp=agentcore.CfnGateway.MCPGatewayConfigurationProperty(
                     instructions="Default gateway to connect to external MCP tools",
@@ -196,8 +206,6 @@ class AgentCoreStack(Stack):
                     supported_versions=["2025-03-26"],
                 )
             ),
-            # Debug-level exception messages for detailed troubleshooting.
-            exception_level="DEBUG",
             # Runs before every tool call. passRequestHeaders is required: the
             # advisor's token arrives in a header. The function never logs it.
             interceptor_configurations=[
@@ -219,7 +227,13 @@ class AgentCoreStack(Stack):
         # the voice stack) reads these rather than reaching into the construct,
         # so the L1 attribute names stay an implementation detail here.
         self.gateway_url = self.agentcore_gateway.attr_gateway_url
+        # REST API address, handed to both runtimes (see API_BASE_URL).
+        self.api_base_url = tools_stack.api.url
         self.gateway_id = self.agentcore_gateway.attr_gateway_identifier
+        # Also exported under the name CDK generates. No stack in this app imports the
+        # export; it stays because CloudFormation refuses to remove an export while another
+        # stack still imports it.
+        self.export_value(self.gateway_id)
 
         # Create OpenAPI specification for the Insurance Advisor API
         openapi_spec = {
@@ -288,18 +302,27 @@ class AgentCoreStack(Stack):
                                         "type": "object",
                                         "required": ["name"],
                                         "properties": {
-                                            "name": {"type": "string", "description": "Full name of the prospect (required)"},
+                                            "name": {"type": "string", "description": "Full name of the prospect (required, or send first_name and last_name)"},
                                             "email": {"type": "string", "description": "Email address"},
                                             "phone": {"type": "string", "description": "Phone number"},
                                             "address": {"type": "string", "description": "Mailing address"},
                                             "date_of_birth": {"type": "string", "description": "Date of birth (YYYY-MM-DD)"},
-                                            "marital_status": {"type": "string", "description": "Marital status (Single, Married, Divorced, Widowed)"},
+                                            "marital_status": {"type": "string", "enum": ["Single", "Married", "Divorced", "Widowed"], "description": "Marital status"},
                                             "dependents": {"type": "integer", "description": "Number of dependents"},
                                             "occupation": {"type": "string", "description": "Job title or occupation"},
                                             "employment_status": {"type": "string", "description": "Employment status (employed, self-employed, unemployed, retired)"},
                                             "annual_income": {"type": "integer", "description": "Annual income in USD"},
                                             "home_owner": {"type": "boolean", "description": "Whether the prospect owns their home"},
-                                            "smoking": {"type": "boolean", "description": "Whether the prospect smokes"},
+                                            "first_name": {"type": "string", "description": "Given name. Optional: if only 'name' is sent, the service splits it."},
+                                            "middle_name": {"type": "string", "description": "Middle name or initial (optional)"},
+                                            "last_name": {"type": "string", "description": "Family name"},
+                                            "address_line1": {"type": "string", "description": "Street address, for example '5 Mesquite Road'. Optional: if only 'address' is sent, the service splits it."},
+                                            "city": {"type": "string", "description": "City"},
+                                            "state": {"type": "string", "description": "Two-letter US state code, for example TX"},
+                                            "zip": {"type": "string", "description": "ZIP code, 5 digits"},
+                                            "citizenship": {"type": "string", "enum": ["us_citizen", "permanent_resident", "other"], "description": "Citizenship: us_citizen, permanent_resident or other. Ask the advisor; never assume."},
+                                            "tobacco_status": {"type": "string", "enum": ["never", "former", "current"], "description": "Tobacco and nicotine use: never, former (quit more than 12 months ago) or current (used in the last 12 months)."},
+                                            "net_worth_band": {"type": "string", "enum": ["under_100k", "100k_250k", "250k_500k", "500k_1m", "1m_2_5m", "over_2_5m"], "description": "Approximate net worth in USD (optional, sensitive: ask only when the advisor needs it)."},
                                             "gender": {"type": "string", "enum": ["male", "female"], "description": "Gender, male or female. Needed for life-insurance rates and application forms. Ask the advisor; never work it out from a name."},
                                             "medical_conditions": {"type": "string", "description": "Known medical conditions"},
                                             "financial_objective": {"type": "string", "description": "Primary financial objective"},
@@ -353,13 +376,22 @@ class AgentCoreStack(Stack):
                                             "phone": {"type": "string", "description": "Phone number"},
                                             "address": {"type": "string", "description": "Mailing address"},
                                             "date_of_birth": {"type": "string", "description": "Date of birth (YYYY-MM-DD)"},
-                                            "marital_status": {"type": "string", "description": "Marital status"},
+                                            "marital_status": {"type": "string", "enum": ["Single", "Married", "Divorced", "Widowed"], "description": "Marital status"},
                                             "dependents": {"type": "integer", "description": "Number of dependents"},
                                             "occupation": {"type": "string", "description": "Job title or occupation"},
                                             "employment_status": {"type": "string", "description": "Employment status"},
                                             "annual_income": {"type": "integer", "description": "Annual income in USD"},
                                             "home_owner": {"type": "boolean", "description": "Whether they own their home"},
-                                            "smoking": {"type": "boolean", "description": "Whether they smoke"},
+                                            "first_name": {"type": "string", "description": "Given name. Optional: if only 'name' is sent, the service splits it."},
+                                            "middle_name": {"type": "string", "description": "Middle name or initial (optional)"},
+                                            "last_name": {"type": "string", "description": "Family name"},
+                                            "address_line1": {"type": "string", "description": "Street address, for example '5 Mesquite Road'. Optional: if only 'address' is sent, the service splits it."},
+                                            "city": {"type": "string", "description": "City"},
+                                            "state": {"type": "string", "description": "Two-letter US state code, for example TX"},
+                                            "zip": {"type": "string", "description": "ZIP code, 5 digits"},
+                                            "citizenship": {"type": "string", "enum": ["us_citizen", "permanent_resident", "other"], "description": "Citizenship: us_citizen, permanent_resident or other. Ask the advisor; never assume."},
+                                            "tobacco_status": {"type": "string", "enum": ["never", "former", "current"], "description": "Tobacco and nicotine use: never, former (quit more than 12 months ago) or current (used in the last 12 months)."},
+                                            "net_worth_band": {"type": "string", "enum": ["under_100k", "100k_250k", "250k_500k", "500k_1m", "1m_2_5m", "over_2_5m"], "description": "Approximate net worth in USD (optional, sensitive: ask only when the advisor needs it)."},
                                             "gender": {"type": "string", "enum": ["male", "female"], "description": "Gender, male or female. Needed for life-insurance rates and application forms. Ask the advisor; never work it out from a name."},
                                             "medical_conditions": {"type": "string", "description": "Known medical conditions"},
                                             "financial_objective": {"type": "string", "description": "Primary financial objective"},
@@ -578,7 +610,7 @@ class AgentCoreStack(Stack):
                                         "required": ["customer_id", "type", "insurer"],
                                         "properties": {
                                             "customer_id": {"type": "string", "description": "Customer the policy belongs to (required)"},
-                                            "type": {"type": "string", "description": "Policy type, e.g. Auto Insurance, Home Insurance, Life Insurance (required)"},
+                                            "type": {"type": "string", "description": "Policy type (required). Use one of: Life Insurance, Health Insurance, Critical Illness Insurance, Disability Insurance, Auto Insurance, Home Insurance, Travel Insurance. Use Other only when none fits. A value from extract_policy_from_document can be passed as it is."},
                                             "insurer": {"type": "string", "description": "Name of the insurance carrier holding the policy (required)"},
                                             "product_name": {"type": "string", "description": "Insurer's product name for this policy"},
                                             "premium_amount": {"type": "number", "description": "Premium amount per period"},
@@ -693,23 +725,20 @@ class AgentCoreStack(Stack):
             AgentCoreOAuth2ProviderProps(
                 provider_name="insurance-advisor-api-oauth",
                 client_id=auth_stack.gateway_client.user_pool_client_id,
-                client_secret=auth_stack.gateway_client.user_pool_client_secret.unsafe_unwrap(),
                 token_endpoint=f"https://{auth_stack.user_pool_domain.domain_name}.auth.{self.region}.amazoncognito.com/oauth2/token",
                 user_pool_id=auth_stack.user_pool.user_pool_id,
                 scopes=["insurance-advisor-api/api.access"]  # Custom scope from User Pool resource server
             )
         )
 
-        # --- Gateway Targets — stable L1 (AWS::BedrockAgentCore::GatewayTarget)
+        # --- Gateway Targets — L1 (AWS::BedrockAgentCore::GatewayTarget)
         #
-        # The alpha L2 exposed `add_open_api_target` / `add_lambda_target`
-        # helpers that also wired up the gateway role's IAM grants. On L1 the
-        # resources and the grants are both explicit; the grants are added in
-        # the same order the L2 added them so the role's inline policy
-        # serialises identically (statement order is significant in a
-        # CloudFormation policy document).
+        # The target resources and the gateway role's IAM grants are both
+        # explicit. The grants are added in a fixed order so the role's inline
+        # policy serialises the same way on every synth (statement order is
+        # significant in a CloudFormation policy document).
         def _target_scope(target_id: str) -> Construct:
-            """Child scope per target, matching the alpha L2's construct tree."""
+            """Child scope per target, under the gateway scope."""
             return Construct(gateway_scope, target_id)
 
         # API Gateway Target with AgentCore OAuth credentials
@@ -750,9 +779,8 @@ class AgentCoreStack(Stack):
         # the machine token's scope, so the call fails rather than running unattributed.
         interceptor_modes["InsuranceAdvisorApiService"] = "forward_token"
         # The gateway assumes its role to fetch the OAuth token (and the
-        # client secret behind it) before calling API Gateway. The alpha L2
-        # granted this implicitly when given an OAuth credential provider.
-        # Note the secret ARN is only needed here — it is deliberately not
+        # client secret behind it) before calling API Gateway.
+        # The secret ARN is only needed here — it is deliberately not
         # part of the target's credential provider configuration.
         self.gateway_role.add_to_policy(
             iam.PolicyStatement(
@@ -771,9 +799,8 @@ class AgentCoreStack(Stack):
         )
 
         # The OpenAPI target cannot be created until the role can actually
-        # fetch that token, so it waits on the role's inline policy. The alpha
-        # L2 emitted this dependency on the OpenAPI target only — the Lambda
-        # targets have none — and that asymmetry is preserved here.
+        # fetch that token, so it waits on the role's inline policy. Only the
+        # OpenAPI target needs this; the Lambda targets do not.
         self.api_gateway_target.node.add_dependency(
             self.gateway_role.node.find_child("DefaultPolicy")
         )
@@ -788,11 +815,10 @@ class AgentCoreStack(Stack):
         ) -> agentcore.CfnGatewayTarget:
             """A Lambda-backed MCP target invoked with the gateway's own role.
 
-            Also grants the gateway role permission to invoke that Lambda,
-            which is what the alpha L2's add_lambda_target did implicitly.
+            Also grants the gateway role permission to invoke that Lambda.
             CDK's grant_invoke covers both the function ARN and its `:*`
-            qualified form; all seven grants merge into a single sorted
-            statement on the role's inline policy.
+            qualified form; the grants of all Lambda targets merge into a
+            single sorted statement on the role's inline policy.
             """
             target = agentcore.CfnGatewayTarget(
                 _target_scope(target_id), "Resource",
@@ -817,8 +843,12 @@ class AgentCoreStack(Stack):
             )
             lambda_function.grant_invoke(self.gateway_role)
             # A tool that takes `advisor_id` gets it from the interceptor, never from the model.
+            # Every other Lambda target is listed as verified_only: the interceptor
+            # refuses a target that has no mode.
             if any("advisor_id" in (getattr(getattr(t, "input_schema", None), "properties", None) or {}) for t in tools):
                 interceptor_modes[name] = "set_argument"
+            else:
+                interceptor_modes[name] = "verified_only"
             return target
 
         def _no_arg_tool(name: str, description: str) -> agentcore.CfnGatewayTarget.ToolDefinitionProperty:
@@ -867,7 +897,7 @@ class AgentCoreStack(Stack):
         self.company_target = _lambda_target(
             "CompanyTarget",
             name="CompanyInfoService",
-            description="Information about Awesome Insurance — history, ratings, claims process, customer service",
+            description="Information about Awesome Insurance - history, ratings, claims process, customer service",
             lambda_function=tools_stack.company_lambda,
             tools=[_no_arg_tool(
                 "get_company_info",
@@ -1041,7 +1071,7 @@ class AgentCoreStack(Stack):
                     "including other insurers', plus this one) against the 10% of "
                     "income affordability guide. Use it whenever the advisor asks what "
                     "a cover would cost or whether the customer can afford it. "
-                    "Age and smoker status are taken from the customer's profile; the "
+                    "Age and tobacco status are taken from the customer's profile; the "
                     "other options go in `options`, a JSON object whose names and "
                     "allowed values come from get_pricing_table(product_type). If "
                     "details are missing the result has status needs_input and lists "
@@ -1066,7 +1096,7 @@ class AgentCoreStack(Stack):
                             "prospects with no profile."
                         ),
                         "customer_id": _string_field(
-                            "Customer ID, to read age and smoker status and to run the affordability check. Omit for a prospect with no profile."
+                            "Customer ID, to read age and tobacco status and to run the affordability check. Omit for a prospect with no profile."
                         ),
                         "advisor_id": _string_field(
                             "Set automatically from the signed-in advisor. You do not need to "
@@ -1131,10 +1161,10 @@ class AgentCoreStack(Stack):
         # Domains: the open web minus a short list of social and Q&A sites,
         # set on the target so neither agent can widen it. CloudFormation's
         # ConnectorSource has no `version` property, so the target takes the
-        # connector's default version (1.2.0 when this was deployed; checked
-        # against a live target). Its target-level exclude list is used here.
-        # 1.2.0 also lets the model pass per-request filters; those can only
-        # narrow results, and the system prompt tells the model not to.
+        # connector's default version (1.2.0), and its target-level exclude list
+        # is used here. That version also lets the model pass per-request
+        # filters; those can only narrow results, and the system prompt tells
+        # the model not to.
         self.web_search_target = agentcore.CfnGatewayTarget(
             _target_scope("WebSearchTarget"), "Resource",
             name="WebSearchService",
@@ -1189,13 +1219,15 @@ class AgentCoreStack(Stack):
         self.web_search_target.node.add_dependency(
             self.gateway_role.node.find_child("DefaultPolicy")
         )
+        # The connector takes no advisor argument.
+        interceptor_modes["WebSearchService"] = "verified_only"
         # Tell the interceptor how to treat each target, now that all are defined.
         self.interceptor_lambda.add_environment(
             "TARGET_MODES", json.dumps(interceptor_modes, sort_keys=True)
         )
-        # Guard against regressions: the REST tools identify the advisor by the token the
-        # interceptor forwards. A re-added `advisor_id` parameter would invite a
-        # caller-chosen identity back in, so fail the build instead.
+        # Guard: the REST tools identify the advisor by the token the interceptor
+        # forwards. An `advisor_id` parameter would invite a caller-chosen
+        # identity, so the build fails if the spec contains one.
         assert '"advisor_id"' not in json.dumps(openapi_spec), (
             "The REST API tools must not take advisor_id; the advisor is the signed-in token."
         )
@@ -1209,7 +1241,8 @@ class AgentCoreStack(Stack):
         # an SSM parameter (rather than passing the version string through
         # a CFN export). This decouples policy updates from the cross-
         # stack graph and avoids the "Cannot update export … in use by …"
-        # deadlock that broke every guardrail-policy change.
+        # deadlock that a CloudFormation export would cause on every
+        # guardrail-policy change.
         self.guardrail_version_param = tools_stack.guardrail_version_param
         self.guardrail_version_param_name = tools_stack.guardrail_version_param_name
 
@@ -1231,7 +1264,7 @@ class AgentCoreStack(Stack):
         # IAM role for AgentCore Runtime with enhanced logging permissions
         self.runtime_role = iam.Role(
             self, "AgentCoreRuntimeRole",
-            assumed_by=iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
+            assumed_by=agentcore_service_principal(self),
             inline_policies={
                 "BedrockModelAccessPolicy": iam.PolicyDocument(
                     statements=[
@@ -1276,13 +1309,6 @@ class AgentCoreStack(Stack):
                 ),
                 "AgentCoreRuntimePolicy": iam.PolicyDocument(
                     statements=[
-                        # AgentCore (memory, token vault, gateway, workload identity):
-                        # limited to this account and region.
-                        iam.PolicyStatement(
-                            effect=iam.Effect.ALLOW,
-                            actions=["bedrock-agentcore:*"],
-                            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:*"],
-                        ),
                         # Pull the container image: the token call has no resource-level scope;
                         # the layer calls are limited to this account's repositories.
                         iam.PolicyStatement(
@@ -1355,7 +1381,7 @@ class AgentCoreStack(Stack):
         # IAM role for AgentCore Memory
         self.memory_role = iam.Role(
             self, "AgentCoreMemoryRole",
-            assumed_by=iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
+            assumed_by=agentcore_service_principal(self),
             inline_policies={
                 "MemoryPolicy": iam.PolicyDocument(
                     statements=[
@@ -1386,10 +1412,9 @@ class AgentCoreStack(Stack):
             self, "InsuranceAdvisorLTM", 
             name="insurance_advisor_ltm",
             description="Long-term memory for Insurance Advisor agent - extracts and summarizes key information across sessions",
-            # Retention: 90 days. Originally 365 (the platform max).
-            # Bounding the retention window limits the GDPR right-to-erasure
-            # window for chat history that DynamoDB profile/policy deletes
-            # don't reach (M16 would couple them properly; deferred for now).
+            # Retention: 90 days. Bounding the retention window limits the
+            # GDPR right-to-erasure window for chat history that DynamoDB
+            # profile/policy deletes don't reach.
             event_expiry_duration=90,
             memory_execution_role_arn=self.memory_role.role_arn,
             memory_strategies=[
@@ -1430,36 +1455,41 @@ class AgentCoreStack(Stack):
         self.runtime_gateway_oauth_provider = AgentCoreOAuth2Provider(
             self, "RuntimeGatewayOAuthProvider",
             AgentCoreOAuth2ProviderProps(
-                provider_name="insurance-advisor-runtime-gateway-auth",
+                provider_name=RUNTIME_GATEWAY_PROVIDER_NAME,
                 client_id=auth_stack.runtime_client.user_pool_client_id,
-                client_secret=auth_stack.runtime_client.user_pool_client_secret.unsafe_unwrap(),
                 token_endpoint=f"https://{auth_stack.gateway_pool_domain.domain_name}.auth.{self.region}.amazoncognito.com/oauth2/token",
                 user_pool_id=auth_stack.gateway_pool.user_pool_id,
                 scopes=["agentcore-gateway/gateway.access"]
             )
         )
 
-        # AgentCore Runtime — stable L1 (AWS::BedrockAgentCore::Runtime).
+        # AgentCore Runtime — L1 (AWS::BedrockAgentCore::Runtime).
         #
-        # Previously an AwsCustomResource wrapper (cdk/agentcore_runtime_custom.py)
-        # because requestHeaderConfiguration was not exposed by CloudFormation.
-        # It is now a first-class property, so the runtime is plain CloudFormation:
-        # no provider Lambda, no npm-installed SDK whose version determined whether
-        # the Authorization allowlist silently vanished, and therefore no
-        # post-deploy assertion script.
+        # requestHeaderConfiguration is a CloudFormation property, so the
+        # Authorization header allowlist is part of the template: there is no
+        # provider Lambda and no post-deploy assertion script.
         #
-        # Note on MMDSv2: AgentCore requires requireMMDSV2 on every runtime as of
-        # 2026-06-30, but metadataConfiguration is Update-only in the API and is not
-        # a CloudFormation property. The service defaults it to true for
-        # newly-created runtimes (verified against a throwaway runtime), so there is
-        # nothing to set here.
+        # Note on MMDSv2: AgentCore requires requireMMDSV2 on every runtime, but
+        # metadataConfiguration is Update-only in the API and is not a
+        # CloudFormation property. The service defaults it to true for newly
+        # created runtimes, so there is nothing to set here.
+        # Guardrail stream mode of the text agent: CDK context `guardrail_stream_mode`,
+        # "async" (default) or "sync". Anything else stops the deploy.
+        guardrail_stream_mode = str(
+            self.node.try_get_context("guardrail_stream_mode") or "async"
+        ).strip().lower()
+        if guardrail_stream_mode not in ("async", "sync"):
+            raise ValueError(
+                f"Invalid context guardrail_stream_mode={guardrail_stream_mode!r}: use 'async' or 'sync' "
+                "(for example: -c guardrail_stream_mode=sync)"
+            )
+
         self.agentcore_runtime = agentcore.CfnRuntime(
-            self, "InsuranceAdvisorRuntimeL1",
-            # Renamed from `insurance_advisor_runtime`. AgentRuntimeName is unique
-            # per account/region and CloudFormation creates the replacement before
-            # deleting the custom resource, so reusing the old name would fail with
-            # ConflictException. The ARN changes on replacement regardless.
-            agent_runtime_name="insurance_advisor_agent",
+            self, "InsuranceAdvisorRuntime",
+            # Changing the name replaces the runtime: AgentRuntimeName is unique
+            # per account/region, and CloudFormation creates the replacement
+            # before deleting the original. The ARN changes on replacement.
+            agent_runtime_name=RUNTIME_NAME,
             description="AgentCore Runtime for Insurance Advisor Agent with gateway integration and OAuth JWT authentication",
             role_arn=self.runtime_role.role_arn,
             agent_runtime_artifact=agentcore.CfnRuntime.AgentRuntimeArtifactProperty(
@@ -1472,6 +1502,27 @@ class AgentCoreStack(Stack):
             ),
             # Plain string in CloudFormation (MCP | HTTP | A2A | AGUI), not a struct.
             protocol_configuration="HTTP",
+            # Platform V2 (snapshot-restore starts), always stated explicitly: leaving the
+            # property out would keep the current version on an update but pick the
+            # service default on a new runtime. V2 restores every session from a snapshot
+            # taken once per runtime version, so nothing may be created at import time that
+            # must differ between sessions (README, "Snapshot-safety rules"; agent/app.py
+            # draws OpenTelemetry ids from the OS, container_cache.py keeps time on the wall
+            # clock, the mask client is created by the first message). To run on V1 instead,
+            # set "V1" here (do not delete the line: omitting it on an update keeps the
+            # current version) and redeploy; a V1 update takes seconds, a V2 update about
+            # 3 minutes.
+            platform_version="V2",
+            # A session id has its own container, and the agent keeps per-container
+            # caches (signing keys, advisor lookup, gateway connection and tool list; see
+            # agent/container_cache.py). A returning advisor finds the container still
+            # warm if the pause was shorter than the idle timeout. Idle timeout is 30
+            # minutes (service default: 15). The maximum lifetime is stated so it stays
+            # at the service default of 8 hours.
+            lifecycle_configuration=agentcore.CfnRuntime.LifecycleConfigurationProperty(
+                idle_runtime_session_timeout=1800,
+                max_lifetime=28800,
+            ),
             # Forward the caller's JWT into the container so the agent derives the
             # advisor identity from a verified token instead of a client-supplied
             # advisor_id (which would let one advisor impersonate another).
@@ -1488,12 +1539,17 @@ class AgentCoreStack(Stack):
             environment_variables={
                 "AWS_REGION": self.region,
                 "AGENTCORE_GATEWAY_URL": self.gateway_url,
+                # REST API base address. Before a customer's AgentCore Memory is used, the runtime asks
+                # GET /profile?customer_id=... with the advisor's own token to confirm the customer is theirs.
+                "API_BASE_URL": self.api_base_url,
                 # Raise to DEBUG only while troubleshooting: DEBUG logs contain prompts and customer data.
                 "AGENT_LOG_LEVEL": self.node.try_get_context("agent_log_level") or "INFO",
                 # AgentCore Identity provider name for runtime-to-gateway M2M auth
                 # The SDK's @requires_access_token decorator resolves this name via the Token Vault
-                "GATEWAY_CREDENTIAL_PROVIDER_NAME": "insurance-advisor-runtime-gateway-auth",
+                "GATEWAY_CREDENTIAL_PROVIDER_NAME": RUNTIME_GATEWAY_PROVIDER_NAME,
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                # The web app's client: the runtime accepts only access tokens issued to it.
+                "APP_CLIENT_ID": auth_stack.app_client.user_pool_client_id,
                 # Memory ID for AgentCore Memory integration
                 "BEDROCK_AGENTCORE_MEMORY_ID": self.ltm_memory.attr_memory_id,
                 # Bedrock Guardrail. The runtime resolves the
@@ -1503,89 +1559,115 @@ class AgentCoreStack(Stack):
                 # redeploy.
                 "BEDROCK_GUARDRAIL_ID": self.guardrail.attr_guardrail_id,
                 "BEDROCK_GUARDRAIL_VERSION_PARAM_NAME": self.guardrail_version_param_name,
+                # "async" (default) streams the answer while the guardrail checks it in the
+                # background; "sync" holds the answer back until it is checked. Switch with
+                #   cdk deploy insadv-03-agentcore --exclusively -c guardrail_stream_mode=sync
+                # (see the README, "Guardrail stream mode").
+                "BEDROCK_GUARDRAIL_STREAM_MODE": guardrail_stream_mode,
                 # Form schemas are read directly by the open_application_form
                 # tool (agent/form_tools.py), the same way the voice agent does.
                 "FORMS_BUCKET": self.forms_bucket.bucket_name,
+                # Limits on one chat message: prompt size, agent turns, tokens (see cdk/limits.py and
+                # agent/limits.py). Change with, for example, -c max_agent_turns=30.
+                **limit_environment(self.node, TEXT_AGENT_LIMITS),
+                # Traces. The runtime starts under OpenTelemetry auto-instrumentation (see the
+                # Dockerfile). Without this setting the model-call spans and the Strands log
+                # records carry the advisor's questions, the system prompt and tool results. An
+                # empty value for gen_ai_unredacted_attributes turns that off: traces keep timing,
+                # tool names and token counts, and the content is replaced by "[REDACTED]".
+                # Same setting as the voice runtime (cdk/voice_stack.py). Leave both set.
+                "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_unredacted_attributes=",
+                # The AWS distro also adds a span for every MCP call that copies the tool's
+                # arguments and full result (customer profile, income, advisor address). It has no
+                # redaction setting, and Strands already records each tool call (name, status,
+                # timing) without content, so this one is switched off. It only adds spans; the
+                # MCP calls themselves are not affected.
+                "OTEL_PYTHON_DISABLED_INSTRUMENTATIONS": "aws_mcp",
+                # This runtime calls Bedrock through botocore, and the AWS distro switches on the
+                # botocore Bedrock instrumentation's message capture by default. That writes every
+                # prompt, answer and tool call/result to the OTLP log records of the runtime log
+                # group (stream otel-rt-logs), and the first setting above does not cover it.
+                # "false" turns it off. Leave all three set.
+                "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "false",
             },
         )
         self.forms_bucket.grant_read(self.runtime_role)
 
-        # Grant runtime role explicit permission to invoke the gateway
-        self.runtime_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agentcore:InvokeGateway",
-                    "bedrock-agentcore:GetGateway",
-                    "bedrock-agentcore:ListGatewayTargets"
-                ],
-                resources=[
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{self.gateway_id}",
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{self.gateway_id}/*"
-                ]
-            )
+        # Log retention of the text runtime: 90 days.
+        #
+        # The service creates the runtime's log group on first use
+        # (/aws/bedrock-agentcore/runtimes/<runtime id>-DEFAULT), so CloudFormation does not
+        # own it and a logs.LogGroup here would clash with it. Two custom resources instead:
+        # the first creates the group if it is not there yet (a fresh deployment, before the
+        # first chat; "already exists" is ignored and the service then uses this group), the
+        # second sets the retention. Both only run when the runtime id changes (a replaced
+        # runtime has a new log group) or when the days change. Neither deletes anything on
+        # stack removal. The voice runtime's group is handled the same way in voice_stack.py (also 90 days).
+        text_log_group_name = f"/aws/bedrock-agentcore/runtimes/{self.agentcore_runtime.attr_agent_runtime_id}-DEFAULT"
+        text_log_group_arn = f"arn:aws:logs:{self.region}:{self.account}:log-group:{text_log_group_name}"
+        text_log_retention_days = 90
+        text_log_group_ensure = cr.AwsCustomResource(
+            self, "TextRuntimeLogGroupEnsure",
+            on_create=cr.AwsSdkCall(
+                service="CloudWatchLogs",
+                action="createLogGroup",
+                parameters={"logGroupName": text_log_group_name},
+                physical_resource_id=cr.PhysicalResourceId.of(f"TextRuntimeLogGroup-{self.agentcore_runtime.attr_agent_runtime_id}"),
+                ignore_error_codes_matching="ResourceAlreadyExistsException",
+            ),
+            on_update=cr.AwsSdkCall(
+                service="CloudWatchLogs",
+                action="createLogGroup",
+                parameters={"logGroupName": text_log_group_name},
+                physical_resource_id=cr.PhysicalResourceId.of(f"TextRuntimeLogGroup-{self.agentcore_runtime.attr_agent_runtime_id}"),
+                ignore_error_codes_matching="ResourceAlreadyExistsException",
+            ),
+            policy=cr.AwsCustomResourcePolicy.from_statements([
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["logs:CreateLogGroup"],
+                    resources=[text_log_group_arn],
+                )
+            ]),
+            install_latest_aws_sdk=False,
         )
-
-        # Grant runtime role permissions needed for AgentCore Identity Token Vault access
-        # The SDK's @requires_access_token decorator calls these APIs internally:
-        # - GetOauth2CredentialProvider: resolves provider name to Token Vault configuration
-        # - GetResourceOauth2Token: retrieves cached M2M token or triggers fresh Cognito token issuance
-        # - GetWorkloadAccessToken: resolves the runtime's workload identity for token scoping
-        self.runtime_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agentcore:GetOauth2CredentialProvider",
-                ],
-                resources=[
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:token-vault/default/oauth2credentialprovider/*"
-                ]
-            )
+        text_log_group_ensure.node.add_dependency(self.agentcore_runtime)
+        text_log_retention = cr.AwsCustomResource(
+            self, "TextRuntimeLogRetention",
+            on_create=cr.AwsSdkCall(
+                service="CloudWatchLogs",
+                action="putRetentionPolicy",
+                parameters={"logGroupName": text_log_group_name, "retentionInDays": text_log_retention_days},
+                physical_resource_id=cr.PhysicalResourceId.of(f"TextRuntimeLogRetention-{text_log_retention_days}-{self.agentcore_runtime.attr_agent_runtime_id}"),
+                ignore_error_codes_matching="ResourceNotFoundException",
+            ),
+            on_update=cr.AwsSdkCall(
+                service="CloudWatchLogs",
+                action="putRetentionPolicy",
+                parameters={"logGroupName": text_log_group_name, "retentionInDays": text_log_retention_days},
+                physical_resource_id=cr.PhysicalResourceId.of(f"TextRuntimeLogRetention-{text_log_retention_days}-{self.agentcore_runtime.attr_agent_runtime_id}"),
+                ignore_error_codes_matching="ResourceNotFoundException",
+            ),
+            policy=cr.AwsCustomResourcePolicy.from_statements([
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["logs:PutRetentionPolicy"],
+                    resources=[text_log_group_arn],
+                )
+            ]),
+            install_latest_aws_sdk=False,
         )
+        text_log_retention.node.add_dependency(text_log_group_ensure)
 
-        self.runtime_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agentcore:GetResourceOauth2Token",
-                    "bedrock-agentcore:GetWorkloadAccessToken",
-                ],
-                resources=[
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:token-vault/default",
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:token-vault/default/*",
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default",
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/*",
-                ]
-            )
-        )
-
-        # IAM delegation for AgentCore Identity to read the client_secret on behalf of the runtime.
-        # When the Token Vault needs a fresh token (cache miss), it reads the Identity-managed
-        # secret using the runtime's role rather than its own service role. This prevents
-        # privilege escalation via the Token Vault.
-        self.runtime_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=["secretsmanager:GetSecretValue"],
-                resources=[
-                    f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:bedrock-agentcore-identity!default/oauth2/*"
-                ]
-            )
-        )
-
-        # Grant runtime role permission to use AgentCore Memory
-        self.runtime_role.add_to_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock-agentcore:RetrieveMemory",
-                    "bedrock-agentcore:CreateMemoryEvent",
-                    "bedrock-agentcore:GetMemory"
-                ],
-                resources=[
-                    f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:memory/{self.ltm_memory.attr_memory_id}"
-                ]
-            )
+        # AgentCore calls of the text runtime: its memory, the gateway token from the token
+        # vault, and the workload identity. The gateway accepts the Cognito JWT the runtime
+        # presents (CUSTOM_JWT), so the role needs no permission on the gateway itself.
+        grant_runtime_agentcore_access(
+            self.runtime_role,
+            stack=self,
+            runtime_name=RUNTIME_NAME,
+            memory_id=self.ltm_memory.attr_memory_id,
+            delete_memory_events=True,
         )
 
         # Store infrastructure variables in SSM Parameters
@@ -1640,7 +1722,7 @@ class AgentCoreStack(Stack):
             description="Long-term Memory ID for Insurance Advisor agent"
         )
 
-        # Outputs (keep for backwards compatibility)
+        # Outputs
         CfnOutput(
             self, "AgentCoreGatewayId",
             value=self.gateway_id,

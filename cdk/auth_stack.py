@@ -1,4 +1,5 @@
 from aws_cdk import (
+    Duration,
     Stack,
     aws_cognito as cognito,
     aws_ssm as ssm,
@@ -16,8 +17,8 @@ class AuthStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # Generate unique suffix from account ID hash (first 8 chars of MD5)
-        # Use environment variable or STS to get actual account ID at synth time
+        # Unique suffix from the account ID hash (first 8 chars of MD5).
+        # The account ID is CDK_DEFAULT_ACCOUNT when set, else the stack's account.
         account_id = os.environ.get('CDK_DEFAULT_ACCOUNT') or self.account
         unique_suffix = hashlib.md5(account_id.encode(), usedforsecurity=False).hexdigest()[:8]
 
@@ -42,9 +43,13 @@ class AuthStack(Stack):
                 require_symbols=True
             ),
             mfa=cognito.Mfa.OFF,  # Disable MFA for easier demo testing
+            # A changed email address stays unverified and the old address stays in
+            # place until the new address is confirmed with a code.
+            keep_original=cognito.KeepOriginalAttrs(email=True),
         )
         
-        # User Pool Domain for OAuth endpoints
+        # User Pool Domain: the token endpoint of the GatewayClient's client
+        # credentials flow below (the AgentCore Identity credential provider calls it)
         self.user_pool_domain = cognito.UserPoolDomain(
             self, "UserPoolDomain",
             user_pool=self.user_pool,
@@ -67,29 +72,39 @@ class AuthStack(Stack):
             scopes=[api_access_scope]
         )
 
-        # App Client for user-based OAuth (React SPA + AgentCore runtime JWT
-        # authorization).
+        # App Client for the React SPA (also the client the AgentCore runtime JWT
+        # authorization accepts). The SPA signs in with SRP through Amplify. The
+        # hosted UI and the OAuth flows are off. ADMIN_USER_PASSWORD_AUTH stays for
+        # scripted sign-in: it is an admin API call, so it needs IAM credentials and
+        # no browser can use it.
         self.app_client = cognito.UserPoolClient(
             self, "AppClient",
             user_pool=self.user_pool,
             user_pool_client_name="AppClient",
-            generate_secret=False,  # No secret needed for user flows
+            generate_secret=False,  # A browser app cannot keep a secret
             auth_flows=cognito.AuthFlow(
-                user_password=True,
                 user_srp=True,
-                admin_user_password=True  # ADMIN_USER_PASSWORD_AUTH: used by scripted sign-in (admin API, IAM-protected)
+                admin_user_password=True
             ),
-            o_auth=cognito.OAuthSettings(
-                flows=cognito.OAuthFlows(
-                    authorization_code_grant=True
-                ),
-                scopes=[cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE]
-            )
+            disable_o_auth=True,
+            # The app never updates a user attribute. The writable list holds one
+            # harmless attribute and excludes email and email_verified, so a signed-in
+            # user cannot change the address that identifies the advisor. Nothing is
+            # set for the readable attributes: the ID token carries the email claim.
+            write_attributes=cognito.ClientAttributes().with_standard_attributes(fullname=True),
+            prevent_user_existence_errors=True,
+            # Amplify refreshes the access and ID tokens with the refresh token when
+            # they expire.
+            access_token_validity=Duration.minutes(30),
+            id_token_validity=Duration.minutes(30),
+            refresh_token_validity=Duration.days(1),
         )
 
-        # Gateway Client for AgentCore Gateway OAuth (client credentials flow for API Gateway access)
+        # Gateway Client for AgentCore Gateway OAuth (client credentials flow for API Gateway access).
+        # The OAuth provider Lambda reads this client's secret with DescribeUserPoolClient, so the
+        # secret is replaced by replacing the client (a new construct id), not by adding a second one.
         self.gateway_client = cognito.UserPoolClient(
-            self, "GatewayClient",
+            self, "GatewayMachineClient",
             user_pool=self.user_pool,
             user_pool_client_name="GatewayClient",
             generate_secret=True,  # Secret required for client credentials flow
@@ -145,9 +160,10 @@ class AuthStack(Stack):
             scopes=[gateway_access_scope]
         )
 
-        # Runtime Client for AgentCore Runtime OAuth (client credentials flow only)
+        # Runtime Client for AgentCore Runtime OAuth (client credentials flow only). Same rule as the
+        # gateway client: the secret is replaced by replacing the client (a new construct id).
         self.runtime_client = cognito.UserPoolClient(
-            self, "RuntimeClient",
+            self, "RuntimeMachineClient",
             user_pool=self.gateway_pool,
             user_pool_client_name="RuntimeClient",
             generate_secret=True,  # Secret required for client credentials flow

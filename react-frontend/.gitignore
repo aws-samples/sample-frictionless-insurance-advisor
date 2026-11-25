@@ -10,3 +10,5 @@ dist-tsbuild/
 # Synced from s3-data/mock-policies/ at build time. Single source of truth
 # is s3-data/; do not edit copies in public/.
 public/mock-policies/
+# The pitch deck vendors reveal.js with its upstream folder layout (dist/ included)
+!public/presentation/vendor/reveal-5.1.0/dist/

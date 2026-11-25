@@ -25,13 +25,12 @@ interface UseCustomersResult {
  * Mounted once inside AuthedShell after Cognito sign-in completes, so the
  * /profile and /policy GETs run exactly once per session (instead of being
  * re-issued every time the advisor switches between the Text Assistant and
- * Voice+Text Assistant pages). Both pages consume from this store via the
+ * Voice Assistant pages). Both pages consume from this store via the
  * `useCustomers` hook below.
  *
  * Refreshes happen on demand via the sidebar's refresh button. New prospects
  * created by the agent through `create_profile` won't appear until the
- * advisor clicks refresh — same trade-off as before; we explicitly traded
- * staleness for speed.
+ * advisor clicks refresh. This trades staleness for speed on purpose.
  */
 const CustomersContext = createContext<UseCustomersResult | null>(null);
 

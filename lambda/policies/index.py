@@ -22,6 +22,7 @@ from decimal import Decimal
 
 import boto3
 from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 
 # Initialize DynamoDB connection
 dynamodb = boto3.resource('dynamodb')
@@ -63,6 +64,38 @@ DETAIL_BLOCK_FIELDS = {
 }
 
 
+# The names the whole app uses for a policy's type: the product lines, the recommender, the
+# translations and the seed data all key on these. A policy written with a short or loosely
+# worded type ("Critical Illness", "life", "Motor") would match none of them and show as an
+# unknown type, so the write paths map those onto the canonical name. Anything that is not a
+# known alias (including "Other") is kept as given.
+CANONICAL_POLICY_TYPES = (
+    'Life Insurance', 'Health Insurance', 'Critical Illness Insurance', 'Disability Insurance',
+    'Auto Insurance', 'Home Insurance', 'Travel Insurance',
+)
+_POLICY_TYPE_ALIASES = {
+    'life': 'Life Insurance', 'term life': 'Life Insurance', 'whole life': 'Life Insurance',
+    'universal life': 'Life Insurance', 'variable life': 'Life Insurance',
+    'health': 'Health Insurance', 'medical': 'Health Insurance',
+    'critical illness': 'Critical Illness Insurance', 'critical': 'Critical Illness Insurance',
+    'dread disease': 'Critical Illness Insurance',
+    'disability': 'Disability Insurance', 'income protection': 'Disability Insurance',
+    'auto': 'Auto Insurance', 'motor': 'Auto Insurance', 'car': 'Auto Insurance', 'vehicle': 'Auto Insurance',
+    'home': 'Home Insurance', 'homeowners': 'Home Insurance', 'property': 'Home Insurance',
+    'travel': 'Travel Insurance',
+}
+def normalise_policy_type(value):
+    """Map a policy type onto the canonical name; unknown values are returned unchanged."""
+    if not isinstance(value, str):
+        return value
+    text = ' '.join(value.strip().split())
+    key = text.lower()
+    for canonical in CANONICAL_POLICY_TYPES:
+        if key == canonical.lower():
+            return canonical
+    if key.endswith(' insurance'):
+        key = key[: -len(' insurance')].strip()
+    return _POLICY_TYPE_ALIASES.get(key, text or value)
 def create_response(status_code, body):
     """Create standardized API response with CORS headers."""
     return {
@@ -74,6 +107,44 @@ def create_response(status_code, body):
         },
         'body': json.dumps(body, default=str)
     }
+
+
+# The advisor's email comes from Cognito (access tokens do not carry it), one
+# AdminGetUser call per request. Remember the answer per container for a short
+# time. The key is the `username` claim API Gateway's authorizer verified, never
+# anything the caller sent. 60 seconds matches the gateway interceptor's cache.
+# Failures are not cached.
+ADVISOR_CACHE_SECONDS = 60
+ADVISOR_CACHE_MAX = 256
+_advisor_cache = {}
+_cognito = None
+
+
+def _cognito_client():
+    """One Cognito client per container instead of one per request."""
+    global _cognito
+    if _cognito is None:
+        _cognito = boto3.client('cognito-idp')
+    return _cognito
+
+
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
 
 
 def extract_advisor_id(event):
@@ -89,15 +160,26 @@ def extract_advisor_id(event):
     username = claims.get('username')
     if not username:
         return None
+    # Reuse an answer Cognito gave for this authorizer-verified username a
+    # moment ago (see ADVISOR_CACHE_SECONDS); the token itself is still checked
+    # by API Gateway on every request.
+    now = time.time()
+    hit = _advisor_cache.get(username) if isinstance(username, str) else None
+    if hit and hit[1] > now:
+        return hit[0]
     try:
-        response = boto3.client('cognito-idp').admin_get_user(
+        response = _cognito_client().admin_get_user(
             UserPoolId=os.environ.get('USER_POOL_ID'),
             Username=username
         )
-        for attr in response['UserAttributes']:
-            if attr['Name'] == 'email':
-                print("Resolved advisor_id from Cognito user email")
-                return attr['Value']
+        email = _verified_email(response)
+        if email:
+            print("Resolved advisor_id from Cognito user email")
+            if isinstance(username, str):
+                if len(_advisor_cache) >= ADVISOR_CACHE_MAX:
+                    _advisor_cache.clear()
+                _advisor_cache[username] = (email, now + ADVISOR_CACHE_SECONDS)
+            return email
     except Exception as e:
         print(f"Error fetching user from Cognito: {e}")
     return None
@@ -122,18 +204,70 @@ def _to_dynamodb_safe(obj):
     return obj
 
 
+# Longest text accepted per field. API Gateway's request model (cdk/api_models.py) bounds the same
+# fields a little wider.
+FIELD_MAX_CHARS = {
+    'id': 64, 'customer_id': 64, 'type': 100, 'insurer': 200, 'product_name': 200,
+    'premium_frequency': 40, 'status': 40, 'start_date': 40, 'renewal_date': 40,
+}
+NUMBER_FIELDS = ('premium_amount', 'coverage_amount')
+MAX_DETAIL_KEYS = 30
+
+
 def _parse_body(event):
+    """The JSON object in the request body, with floats as Decimal, or None if it is not a JSON object."""
     try:
         body = json.loads(event.get('body') or '{}')
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(body, dict):
         return None
     return _to_dynamodb_safe(body)
+
+
+def _field_problem(body):
+    """An error message if a field holds the wrong kind of value or too much text, else None.
+
+    Text fields take a string, the two amounts a finite number or numeric text, and the detail
+    blocks an object of at most MAX_DETAIL_KEYS keys. Null means "not given".
+    """
+    for field, limit in FIELD_MAX_CHARS.items():
+        value = body.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, str) or len(value) > limit:
+            return f"Field '{field}' must be text of at most {limit} characters"
+    for field in NUMBER_FIELDS:
+        value = body.get(field)
+        if value is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, (int, Decimal, str)):
+            return f"Field '{field}' must be a number"
+        if isinstance(value, str) and len(value) > 40:
+            return f"Field '{field}' must be a number"
+        if isinstance(value, Decimal) and not value.is_finite():
+            return f"Field '{field}' must be a number"
+    for block in DETAIL_BLOCK_FIELDS:
+        value = body.get(block)
+        if value is None:
+            continue
+        if not isinstance(value, dict) or len(value) > MAX_DETAIL_KEYS:
+            return f"Field '{block}' must be an object of at most {MAX_DETAIL_KEYS} entries"
+    return None
 
 
 def _get_policy(policy_id):
     """Read a single policy row by partition key."""
     response = table.get_item(Key={'id': policy_id})
     return response.get('Item')
+
+
+def _customer_belongs_to(advisor_id, customer_id):
+    """True when the customer's profile row names this advisor as its owner."""
+    if profiles_table is None:
+        return False
+    item = profiles_table.get_item(Key={'customer_id': customer_id}).get('Item')
+    return bool(item) and item.get('advisor_id') == advisor_id
 
 
 def handler(event, context):
@@ -280,15 +414,21 @@ def handle_create(event, advisor_id):
     """Create a third-party policy.
 
     Required body fields: customer_id, type, insurer.
+    The id is always generated here; an ``id`` in the body is ignored, and the
+    write fails if a row with that id exists, so a create can never replace
+    another row. The customer must belong to the calling advisor.
     Server-side enforces ``third_party=True``; the caller cannot create a
     Awesome-issued policy through this endpoint.
     """
     body = _parse_body(event)
     if body is None:
         return create_response(400, {'message': 'Invalid JSON body'})
+    problem = _field_problem(body)
+    if problem:
+        return create_response(400, {'message': problem})
 
     customer_id = body.get('customer_id')
-    policy_type = body.get('type')
+    policy_type = normalise_policy_type(body.get('type'))
     insurer = body.get('insurer')
     missing = [f for f, v in [('customer_id', customer_id),
                               ('type', policy_type),
@@ -296,7 +436,12 @@ def handle_create(event, advisor_id):
     if missing:
         return create_response(400, {'message': f"Missing required fields: {', '.join(missing)}"})
 
-    policy_id = body.get('id') or f"POL-3P-{uuid.uuid4().hex[:8].upper()}"
+    if not isinstance(customer_id, str):
+        return create_response(400, {'message': 'customer_id is not valid'})
+    if not _customer_belongs_to(advisor_id, customer_id):
+        return create_response(404, {'message': 'Customer not found for this advisor'})
+
+    policy_id = f"POL-3P-{uuid.uuid4().hex.upper()}"
 
     item = {
         'id': policy_id,
@@ -321,7 +466,12 @@ def handle_create(event, advisor_id):
         if isinstance(body.get(block), dict):
             item[block] = body[block]
 
-    table.put_item(Item=item)
+    try:
+        table.put_item(Item=item, ConditionExpression='attribute_not_exists(id)')
+    except ClientError as e:
+        if e.response.get('Error', {}).get('Code') == 'ConditionalCheckFailedException':
+            return create_response(409, {'message': 'Policy id already exists'})
+        raise
     print(f"Created third-party policy: id={policy_id}, customer={customer_id}, insurer={insurer}")
     return create_response(201, {
         'message': 'Third-party policy created',
@@ -339,6 +489,9 @@ def handle_update(event, advisor_id):
     body = _parse_body(event)
     if body is None:
         return create_response(400, {'message': 'Invalid JSON body'})
+    problem = _field_problem(body)
+    if problem:
+        return create_response(400, {'message': problem})
 
     policy_id = body.get('id')
     if not policy_id:
@@ -362,7 +515,7 @@ def handle_update(event, advisor_id):
     for field in WRITABLE_TOP_LEVEL_FIELDS:
         if field in body:
             expr_names[f'#{field}'] = field
-            expr_values[f':{field}'] = body[field]
+            expr_values[f':{field}'] = normalise_policy_type(body[field]) if field == 'type' else body[field]
             set_clauses.append(f'#{field} = :{field}')
     for block in DETAIL_BLOCK_FIELDS:
         if isinstance(body.get(block), dict):

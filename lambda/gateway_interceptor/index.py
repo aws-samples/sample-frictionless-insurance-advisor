@@ -6,8 +6,8 @@ The assistants reach the gateway with a machine token (client credentials). That
 token proves "this is our runtime"; it says nothing about which advisor is being
 served. If a tool's Lambda took the advisor from an argument, anyone holding the
 machine token, or any text that steers the model, could ask for another advisor's
-customers. The fix is to make the advisor's own sign-in token the only thing the
-services believe, and to have the gateway check it before anything runs.
+customers. So the advisor's own sign-in token is the only thing the services
+believe, and the gateway checks it before anything runs.
 
 What it does
 ------------
@@ -18,9 +18,11 @@ For every `tools/call` request:
 2. Verifies it with Cognito `GetUser` (which also catches signed-out and
    disabled users), and checks that it was issued by THIS user pool to THIS app
    client as an access token. GetUser alone accepts any pool's token, so the
-   issuer check is required.
+   issuer check is required. The user the token names is then read with
+   `AdminGetUser`: it must be enabled and CONFIRMED and its email address must
+   be verified, otherwise the call is refused.
 3. Without a verified advisor the call is refused. The machine token alone can
-   no longer run a single tool.
+   not run a single tool.
 4. With one, applies the target's mode (see TARGET_MODES):
    * forward_token: the REST API target. The advisor's token replaces the
      machine token on the outbound call, so API Gateway's Cognito authorizer
@@ -29,7 +31,11 @@ For every `tools/call` request:
      Lambdas the call came through the assistant.
    * set_argument: Lambda targets that take `advisor_id`. It is overwritten with
      the verified advisor's email, whatever the model sent.
-   * anything else: allowed once the advisor is verified; arguments untouched.
+   * verified_only: tools that take no advisor argument (reference data,
+     calculators, web search). Allowed once the advisor is verified; arguments
+     untouched.
+   * a target that is not listed in TARGET_MODES is refused. A new target must be
+     given a mode on purpose.
 
 Other MCP methods (initialize, tools/list, ping, notifications) carry no data
 and pass through unchanged.
@@ -62,6 +68,7 @@ VIA_GATEWAY_HEADER = "X-Advisor-Via-Gateway"
 TARGET_MODES = json.loads(os.environ.get("TARGET_MODES") or "{}")
 MODE_FORWARD_TOKEN = "forward_token"
 MODE_SET_ARGUMENT = "set_argument"
+MODE_VERIFIED_ONLY = "verified_only"
 
 # The gateway names a tool "<target>___<tool>".
 TARGET_SEPARATOR = "___"
@@ -73,15 +80,19 @@ CACHE_SECONDS = 60
 CACHE_MAX = 256
 _cache: dict[str, tuple[str, float]] = {}
 
-# GetUser is authenticated by the token itself, so the client needs no AWS
-# credentials and this function's role has no Cognito permissions.
+# GetUser is authenticated by the token itself, so that client needs no AWS
+# credentials. AdminGetUser is signed with this function's role, which may call it
+# on this user pool only.
 _cognito = boto3.client("cognito-idp", region_name=REGION, config=Config(signature_version=UNSIGNED))
+_cognito_admin = boto3.client("cognito-idp", region_name=REGION)
 
 NOT_SIGNED_IN = (
     "This request is not tied to a signed-in advisor, so the tool did not run. "
     "Ask the advisor to sign in again."
 )
 
+
+UNKNOWN_TOOL = "This tool is not available."
 
 # --------------------------------------------------------------------------
 # Verifying the advisor
@@ -100,6 +111,25 @@ def _unverified_claims(token: str) -> dict | None:
         return claims if isinstance(claims, dict) else None
     except (IndexError, ValueError, TypeError):
         return None
+
+
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
 
 
 def verify_advisor(token: str | None) -> str | None:
@@ -130,14 +160,14 @@ def verify_advisor(token: str | None) -> str | None:
     if not isinstance(exp, (int, float)) or exp <= now:
         return None
 
+    # GetUser proves the token is genuine and current. It does not report whether the
+    # user is enabled and confirmed, so the user it names is read again with AdminGetUser.
     try:
-        user = _cognito.get_user(AccessToken=token)
-    except (ClientError, BotoCoreError):
+        token_user = _cognito.get_user(AccessToken=token)
+        user = _cognito_admin.admin_get_user(UserPoolId=USER_POOL_ID, Username=token_user["Username"])
+    except (ClientError, BotoCoreError, KeyError, TypeError):
         return None
-    email = next(
-        (a.get("Value") for a in user.get("UserAttributes", []) if a.get("Name") == "email"),
-        None,
-    )
+    email = _verified_email(user)
     if not email:
         return None
 
@@ -237,8 +267,11 @@ def handler(event, context):
             print(json.dumps({"decision": "allowed", "mode": mode, "tool": tool}))
             return _pass_through(body)
 
-        print(json.dumps({"decision": "allowed", "mode": mode or "verified-only", "tool": tool}))
-        return _pass_through(body)
+        if mode == MODE_VERIFIED_ONLY:
+            print(json.dumps({"decision": "allowed", "mode": mode, "tool": tool}))
+            return _pass_through(body)
+        print(json.dumps({"decision": "refused", "reason": "target has no mode", "tool": tool}))
+        return _refuse(rpc_id, UNKNOWN_TOOL)
     except Exception as exc:  # noqa: BLE001 - never let an error turn into "allowed"
         print(json.dumps({"decision": "refused", "reason": "interceptor error", "error": type(exc).__name__}))
         return _refuse(rpc_id, NOT_SIGNED_IN)

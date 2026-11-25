@@ -66,6 +66,36 @@
       "general": "财产产品",
       "health": "健康产品",
       "all": "全部产品"
+    },
+    "citizenship": {
+      "us_citizen": "美国公民",
+      "permanent_resident": "永久居民",
+      "other": "其他"
+    },
+    "tobaccoStatus": {
+      "never": "从未使用",
+      "former": "已戒",
+      "current": "目前使用"
+    },
+    "netWorthBand": {
+      "under_100k": "10万美元以下",
+      "100k_250k": "10万至25万美元",
+      "250k_500k": "25万至50万美元",
+      "500k_1m": "50万至100万美元",
+      "1m_2_5m": "100万至250万美元",
+      "over_2_5m": "250万美元以上"
+    },
+    "yesNo": {
+      "yes": "是",
+      "no": "否"
+    },
+    "universalRider": {
+      "waiver_of_premium": "保费豁免",
+      "accidental_death": "意外身故保险金",
+      "long_term_care": "长期护理/慢性病",
+      "guaranteed_purchase_option": "保证购买选择权",
+      "no_lapse_guarantee": "不失效保证附加险",
+      "overloan_protection": "超额贷款保护"
     }
   }
 }

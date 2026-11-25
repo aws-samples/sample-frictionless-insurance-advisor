@@ -1,7 +1,7 @@
 import { Amplify } from 'aws-amplify';
 
-// Configure Amplify to authenticate against the existing Cognito user pool
-// that the backend CDK stacks provisioned. No Amplify backend (amplify init,
+// Configure Amplify to authenticate against the Cognito user pool
+// that the backend CDK stacks provision. No Amplify backend (amplify init,
 // DataStore, GraphQL, etc.) is used — this is purely the Amplify client
 // library pointed at our CDK-managed pool.
 //

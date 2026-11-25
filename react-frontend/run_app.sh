@@ -10,7 +10,7 @@ if [ ! -f .env.local ]; then
 fi
 
 echo "Installing dependencies..."
-npm install
+npm ci
 
 echo "Starting Vite dev server..."
 npm run dev

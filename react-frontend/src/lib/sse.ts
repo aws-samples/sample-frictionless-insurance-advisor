@@ -7,6 +7,9 @@
  *   - yields `{ kind: 'text' }` for `event.data` when it is a string
  *   - yields `{ kind: 'app_event' }` for the typed events the agent adds
  *     beside the text (`app_event`: form_open, form_fill, sources)
+ *   - yields `{ kind: 'tool_use' }` when the agent starts a tool call, so the
+ *     caller can tell that the next text belongs to a new model turn
+ *   - yields `{ kind: 'error' }` for an `error` event (its code and reference id only)
  *   - ignores everything else
  *
  * Non-JSON data, empty lines, and [DONE] markers are skipped. Partial lines
@@ -21,7 +24,29 @@ export interface AppEvent {
 
 export type StreamItem =
   | { kind: 'text'; text: string }
-  | { kind: 'app_event'; event: AppEvent };
+  | { kind: 'app_event'; event: AppEvent }
+  | { kind: 'tool_use'; name: string }
+  | { kind: 'error'; code?: string; correlationId?: string };
+
+/**
+ * Append a streamed text chunk to the answer shown so far.
+ *
+ * The agent writes a short lead-in, calls its tools, and then writes the real
+ * answer as a separate model turn. The two texts arrive as plain chunks with no
+ * separator, so "Checking the record." and "## Review pack" would be glued into
+ * one line and the heading would not render. When `afterTool` is true (a tool
+ * call came between the previous chunk and this one) and both sides have text,
+ * make sure a blank line separates them. Chunks of the same turn concatenate
+ * unchanged.
+ */
+export function appendChunk(content: string, chunk: string, afterTool: boolean): string {
+  if (!afterTool || content.trim() === '' || chunk === '') {
+    return content + chunk;
+  }
+  const trailing = /\n*$/.exec(content)?.[0].length ?? 0;
+  const leading = /^\n*/.exec(chunk)?.[0].length ?? 0;
+  return content + '\n'.repeat(Math.max(0, 2 - trailing - leading)) + chunk;
+}
 
 export async function* readSSEStream(response: Response): AsyncGenerator<StreamItem> {
   if (!response.body) {
@@ -76,6 +101,24 @@ function extractItem(line: string): StreamItem | null {
         if (typeof payload === 'string' && payload.length > 0) {
           return { kind: 'text', text: payload };
         }
+      }
+      if ('tool_use' in event) {
+        const name = (event as { tool_use: unknown }).tool_use;
+        if (typeof name === 'string') {
+          return { kind: 'tool_use', name };
+        }
+      }
+      if ('error' in event) {
+        // Only the code and the reference id are used: the sentence the runtime sends is not shown.
+        const { error_code: code, correlation_id: correlationId } = event as {
+          error_code?: unknown;
+          correlation_id?: unknown;
+        };
+        return {
+          kind: 'error',
+          code: typeof code === 'string' ? code : undefined,
+          correlationId: typeof correlationId === 'string' ? correlationId : undefined,
+        };
       }
       if ('app_event' in event) {
         const appEvent = (event as { app_event: unknown }).app_event;

@@ -4,8 +4,8 @@
       "title": "Conseiller en Assurance"
     },
     "nav": {
-      "assistant": "Assistant",
-      "voice": "Voix",
+      "assistant": "Assistant texte",
+      "voice": "Assistant vocal",
       "comparator": "Comparateur",
       "data": "Explorateur de données",
       "signOut": "Déconnexion",
@@ -25,7 +25,18 @@
       "comingSoon": "Bientôt disponible."
     },
     "errors": {
-      "loadFailed": "Échec du chargement des données : {{message}}"
+      "loadFailed": "Échec du chargement des données : {{message}}",
+      "requestFailed": "La requête n'a pas pu aboutir. Veuillez réessayer.",
+      "serviceUnavailable": "Le service est temporairement indisponible. Veuillez réessayer dans quelques minutes.",
+      "unauthorized": "Vous êtes déconnecté ou n'avez pas le droit de le faire. Veuillez vous reconnecter.",
+      "tooManyRequests": "Trop de requêtes. Patientez un instant puis réessayez.",
+      "reference": "Référence : {{id}}",
+      "chat": {
+        "guardrailUnavailable": "L'assistant est temporairement indisponible. Veuillez réessayer dans quelques minutes.",
+        "promptTooLong": "Votre message est trop long. Raccourcissez-le et réessayez.",
+        "limitReached": "Cette demande nécessitait plus d'étapes que l'assistant n'en autorise. Demandez-en une partie plus petite.",
+        "internal": "Un problème est survenu lors du traitement de votre demande. Veuillez réessayer."
+      }
     },
     "errorBoundary": {
       "title": "Une erreur est survenue",

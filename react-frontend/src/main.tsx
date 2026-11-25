@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 // Order matters: import Amplify configuration before anything that uses it.
 import './amplify-config';
-// i18n bootstraps language detection + Amplify Authenticator vocabulary wiring.
+// i18n bootstraps language detection.
 // Must run before App renders so the first paint is in the correct locale.
 import './i18n/config';
 

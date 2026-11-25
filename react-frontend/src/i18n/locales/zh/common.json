@@ -5,7 +5,7 @@
     },
     "nav": {
       "assistant": "文本助手",
-      "voice": "文本+语音助手",
+      "voice": "语音助手",
       "comparator": "产品对比",
       "data": "数据浏览器",
       "signOut": "退出登录",
@@ -25,7 +25,18 @@
       "comingSoon": "敬请期待。"
     },
     "errors": {
-      "loadFailed": "加载数据失败：{{message}}"
+      "loadFailed": "加载数据失败：{{message}}",
+      "requestFailed": "无法完成请求。请重试。",
+      "serviceUnavailable": "服务暂时不可用。请几分钟后再试。",
+      "unauthorized": "您已退出登录或无权执行此操作。请重新登录。",
+      "tooManyRequests": "请求过多。请稍候再试。",
+      "reference": "参考编号：{{id}}",
+      "chat": {
+        "guardrailUnavailable": "助手暂时不可用。请几分钟后再试。",
+        "promptTooLong": "您的消息太长。请缩短后重试。",
+        "limitReached": "该请求所需的步骤超过了助手允许的数量。请将请求拆小一些。",
+        "internal": "处理您的请求时出了问题。请重试。"
+      }
     },
     "errorBoundary": {
       "title": "出错了",

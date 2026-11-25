@@ -19,9 +19,26 @@ import base64
 import binascii
 from typing import Any
 
+from limits import MAX_AUDIO_CHUNK_BYTES
+
 # Largest audio chunk accepted from the browser, in bytes (about 3 s of 16 kHz
-# mono 16-bit PCM). A real frame is a few hundred bytes to a few kB.
-MAX_AUDIO_BYTES = 96_000
+# mono 16-bit PCM by default). A real frame is a few hundred bytes to a few kB.
+MAX_AUDIO_BYTES = MAX_AUDIO_CHUNK_BYTES
+
+
+class AudioBudget:
+    """Counts the microphone audio accepted on one connection against a byte limit."""
+
+    def __init__(self, max_bytes: int) -> None:
+        self.max_bytes = max_bytes
+        self.used = 0
+
+    def take(self, size: int) -> bool:
+        """Count `size` bytes. False (and nothing counted) when they would go over the limit."""
+        if self.used + size > self.max_bytes:
+            return False
+        self.used += size
+        return True
 
 
 def silence_input(sample_count: int = 1600) -> dict[str, Any]:

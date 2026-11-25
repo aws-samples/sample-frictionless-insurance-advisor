@@ -6,6 +6,7 @@ import os
 from aws_cdk import (
     CustomResource,
     Duration,
+    Stack,
     aws_lambda as lambda_,
     aws_iam as iam,
     aws_logs as logs,
@@ -16,20 +17,24 @@ from typing import List
 
 
 class AgentCoreOAuth2ProviderProps:
-    """Properties for AgentCore OAuth2 Credential Provider"""
+    """Properties for AgentCore OAuth2 Credential Provider.
+
+    There is deliberately no client secret: the provider's Lambda reads it from
+    Cognito (DescribeUserPoolClient on this one user pool) while it runs, so the
+    secret is never a template value, an output, a custom-resource property or
+    a stack event.
+    """
 
     def __init__(
         self,
         provider_name: str,
         client_id: str,
-        client_secret: str,
         token_endpoint: str,
         user_pool_id: str,
         scopes: List[str] = None
     ):
         self.provider_name = provider_name
         self.client_id = client_id
-        self.client_secret = client_secret
         self.token_endpoint = token_endpoint
         self.user_pool_id = user_pool_id
         self.scopes = scopes or []
@@ -45,6 +50,16 @@ class AgentCoreOAuth2Provider(Construct):
         props: AgentCoreOAuth2ProviderProps
     ):
         super().__init__(scope, construct_id)
+        stack = Stack.of(self)
+        user_pool_arn = f"arn:aws:cognito-idp:{stack.region}:{stack.account}:userpool/{props.user_pool_id}"
+        token_vault_arn = f"arn:aws:bedrock-agentcore:{stack.region}:{stack.account}:token-vault/default"
+        provider_resource_arn = f"{token_vault_arn}/oauth2credentialprovider/{props.provider_name}"
+        # AgentCore Identity keeps the client secret of a provider in Secrets Manager under
+        # the provider's name, followed by a generated suffix.
+        identity_secrets_arn = (
+            f"arn:aws:secretsmanager:{stack.region}:{stack.account}:"
+            f"secret:bedrock-agentcore-identity!default/oauth2/{props.provider_name}*"
+        )
 
         # Create log group for the Lambda function
         oauth_provider_log_group = logs.LogGroup(
@@ -73,30 +88,38 @@ class AgentCoreOAuth2Provider(Construct):
                         )
                     ]
                 ),
+                "DescribeAppClientPolicy": iam.PolicyDocument(
+                    statements=[
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=["cognito-idp:DescribeUserPoolClient"],
+                            resources=[user_pool_arn]
+                        )
+                    ]
+                ),
                 "AgentCoreOAuth2Policy": iam.PolicyDocument(
                     statements=[
                         iam.PolicyStatement(
                             effect=iam.Effect.ALLOW,
                             actions=[
-                                "bedrock-agentcore-control:CreateOAuth2CredentialProvider",
-                                "bedrock-agentcore-control:DeleteOAuth2CredentialProvider",
-                                "bedrock-agentcore-control:GetOAuth2CredentialProvider",
-                                "bedrock-agentcore-control:ListOAuth2CredentialProviders",
                                 "bedrock-agentcore:CreateOauth2CredentialProvider",
+                                "bedrock-agentcore:CreateTokenVault",
                                 "bedrock-agentcore:DeleteOauth2CredentialProvider",
                                 "bedrock-agentcore:GetOauth2CredentialProvider",
-                                "bedrock-agentcore:ListOauth2CredentialProviders",
-                                "bedrock-agentcore:CreateTokenVault",
-                                "bedrock-agentcore:DeleteTokenVault",
                                 "bedrock-agentcore:GetTokenVault",
-                                "bedrock-agentcore:ListTokenVaults",
+                            ],
+                            resources=[token_vault_arn, provider_resource_arn]
+                        ),
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=[
                                 "secretsmanager:CreateSecret",
                                 "secretsmanager:DeleteSecret",
                                 "secretsmanager:GetSecretValue",
                                 "secretsmanager:PutSecretValue",
                                 "secretsmanager:UpdateSecret"
                             ],
-                            resources=["*"]
+                            resources=[identity_secrets_arn]
                         )
                     ]
                 )
@@ -122,7 +145,6 @@ class AgentCoreOAuth2Provider(Construct):
             properties={
                 "ProviderName": props.provider_name,
                 "ClientId": props.client_id,
-                "ClientSecret": props.client_secret,
                 "TokenEndpoint": props.token_endpoint,
                 "Scopes": props.scopes,
                 "UserPoolId": props.user_pool_id
@@ -131,5 +153,8 @@ class AgentCoreOAuth2Provider(Construct):
         )
 
         # Expose attributes
+        self.provider_name = props.provider_name
+        self.lambda_role = lambda_role
+        self.function = oauth_provider_function
         self.provider_arn = self.custom_resource.get_att_string("ProviderArn")
         self.secret_arn = self.custom_resource.get_att_string("SecretArn")

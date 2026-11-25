@@ -4,7 +4,8 @@ Mirrors the insurance agent (agent/app.py) but uses Nova 2.5 Sonic via Strands
 BidiAgent instead of Claude via Agent. The two agents share:
 
 - The AgentCore Gateway (same MCP endpoint, same tools, same OAuth provider)
-- AgentCore Memory (same memory id, actor_id keyed by customerId)
+- AgentCore Memory (same memory id, actor_id keyed by customerId, used only for
+  a customer that belongs to the signed-in advisor)
 - Cognito User Pool (same JWT authorizer, same advisor_id resolution)
 
 The frontend opens /ws with the user's Cognito access token, and sends
@@ -23,9 +24,12 @@ import logging
 import os
 import re
 import sys
+import time
 from typing import Any
 
 import boto3
+import jwt as jwt_lib
+from jwt import PyJWKClient
 
 from bedrock_agentcore.memory.integrations.strands.config import (
     AgentCoreMemoryConfig,
@@ -36,21 +40,38 @@ from bedrock_agentcore.memory.integrations.strands.session_manager import (
 )
 from bedrock_agentcore.identity.auth import requires_access_token
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
-from starlette.websockets import WebSocketDisconnect
-import roleplay
+from starlette.websockets import WebSocketDisconnect, WebSocketState
+from form_rules import (
+    assistant_may_handle,
+    describe_condition,
+    is_required,
+    is_visible,
+    loggable_value,
+    newly_visible,
+)
 from identity_guard import attach_identity_guard
+from note_guard import attach_note_guard
+from write_guard import attach_write_guard
 from consent import (
     NOT_CONFIRMED_MESSAGE,
     ConsentState,
-    customer_changed,
+    consent_reset_needed,
     make_gated_session_manager,
+    memory_bound_to,
 )
+from container_cache import jwt_expiry
+from customer_access import advisor_owns_customer
+from verified_advisor import is_app_access_token, verified_email
 from transcripts import TranscriptRecorder
 from strands import tool
 from strands.bidi import BidiAgent
 from strands.bidi.models import BedrockNovaSonicModel
 from strands.tools.mcp.mcp_client import MCPClient
-from wire import BrowserEvents, silence_input, to_agent_input
+from limits import (
+    MAX_CUSTOMER_NAME_CHARS, MAX_SESSION_AUDIO_BYTES, MAX_SESSION_SECONDS, MAX_TEXT_INPUT_CHARS,
+    bounded_prefill, clipped_text, customer_id_from,
+)
+from wire import AudioBudget, BrowserEvents, silence_input, to_agent_input
 
 
 # --- Logging --------------------------------------------------------------
@@ -75,6 +96,36 @@ def _setup_logging() -> logging.Logger:
 
 logger = _setup_logging()
 
+
+def _draw_otel_ids_from_os() -> bool:
+    """Make OpenTelemetry draw trace and span ids from the operating system.
+
+    The SDK's id generators (the AWS X-Ray one the distro selects, and the
+    default random one) call the `random` module, which is seeded once when the
+    process starts. AgentCore Runtime V2 restores every session from the same
+    snapshot, so every session would walk the same sequence and span ids would
+    repeat across sessions. The AWS V2 guidance is to take randomness from the
+    OS (`os.urandom`, `secrets`), which returns fresh bytes after a restore.
+    Both generator modules look up the global name `random` on every call, so
+    swapping it takes effect for the tracer provider that
+    opentelemetry-instrument already built.
+    """
+    import random
+
+    try:
+        from opentelemetry.sdk.extension.aws.trace import aws_xray_id_generator
+        from opentelemetry.sdk.trace import id_generator
+    except ImportError:
+        return False
+    os_random = random.SystemRandom()
+    id_generator.random = os_random
+    aws_xray_id_generator.random = os_random
+    return True
+
+
+if not _draw_otel_ids_from_os():
+    logger.warning("OpenTelemetry id generators not found - trace ids keep the default source")
+
 # --- Config ---------------------------------------------------------------
 MODEL_ID = os.getenv("MODEL_ID", "amazon.nova-2-5-sonic")
 BEDROCK_REGION = os.getenv("BEDROCK_REGION", "us-east-1")
@@ -86,38 +137,42 @@ GATEWAY_CREDENTIAL_PROVIDER_NAME = os.getenv("GATEWAY_CREDENTIAL_PROVIDER_NAME",
 ADVISOR_TOKEN_HEADER = "X-Advisor-Token"
 MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID", "")
 USER_POOL_ID = os.getenv("USER_POOL_ID", "")
+# The web app's Cognito client. Only access tokens issued to it are accepted; without it nothing is.
+APP_CLIENT_ID = os.getenv("APP_CLIENT_ID", "")
+# Close code sent when the advisor's access token expires during a session. It is in the
+# application range (4000-4999); the browser reads it as "reconnect with a fresh token".
+TOKEN_EXPIRED_CLOSE_CODE = 4401
+# Base address of the REST API (profile, policies). Used to check, with the advisor's own token,
+# that a customer is theirs before memory is used.
+API_BASE_URL = os.getenv("API_BASE_URL", "")
 INPUT_SAMPLE_RATE = int(os.getenv("INPUT_SAMPLE_RATE", "16000"))
 OUTPUT_SAMPLE_RATE = int(os.getenv("OUTPUT_SAMPLE_RATE", "16000"))
 
 
 # --- Per-connection state -------------------------------------------------
 # Mutable container shared across all tasks spawned by BidiAgent for a single
-# WebSocket connection. See useVoiceChat/bug-note in prior revisions: contextvars
-# don't propagate after-the-fact to already-spawned child tasks, so we use a
-# plain dict. Each AgentCore session runs in its own microVM, so this process-
-# level dict cannot leak across users.
-_state: dict[str, Any] = {
-    "advisor_id": None,
-    "customer_id": None,
-    "customer_name": None,
-    # Form field paths already populated from the customer's CRM record, sent
-    # by the frontend with voice_init / voice_set_customer. Without this the
-    # agent has no idea the applicant's details are already on screen and asks
-    # the advisor to dictate them again.
-    "prefill": {},
-    # Practice mode (voice-agent/roleplay.py): set from voice_init, never changed
-    # mid-connection. None for a normal session.
-    "roleplay": None,
-}
+# WebSocket connection. contextvars don't propagate after the fact to
+# already-spawned child tasks, so a plain dict is used. voice_chat creates one
+# per connection and its closures read it, so it is never shared between
+# connections. A dict per process would not work: on AgentCore Runtime V2 two
+# handlers can run in the same process, and the second would reset or
+# overwrite the first one's advisor and customer.
+def _new_state() -> dict[str, Any]:
+    return {
+        "advisor_id": None,
+        "customer_id": None,
+        "customer_name": None,
+        # The customer AgentCore Memory was bound to when the connection started, or None
+        # when there is no memory for this connection.
+        "memory_customer_id": None,
+        # Form field paths already populated from the customer's CRM record, sent
+        # by the frontend with voice_init / voice_set_customer. Without this the
+        # agent has no idea the applicant's details are already on screen and asks
+        # the advisor to dictate them again.
+        "prefill": {},
+    }
 
 
-def _reset_state() -> None:
-    _state["advisor_id"] = None
-    _state["customer_id"] = None
-    _state["customer_name"] = None
-    _state["prefill"] = {}
-    _state["roleplay"] = None
-    _state["roleplay_started"] = False
 # --- Auth helpers ---------------------------------------------------------
 def _extract_jwt(request_headers: dict[str, str] | None, raw_websocket_headers) -> str | None:
     """Extract the caller's Cognito JWT.
@@ -153,18 +208,22 @@ def _extract_jwt(request_headers: dict[str, str] | None, raw_websocket_headers) 
     return None
 
 
-def _resolve_advisor_id(jwt_token: str | None) -> str | None:
-    """Verify the Cognito JWT and return the user's email (== advisor_id).
+# Built once at startup, with the imports above, so the first connection does not
+# pay for loading the service model and the JWT libraries between the platform's
+# first byte and accept(). AgentCore Runtime V2 expects that kind of work before
+# the snapshot ("build clients at startup"); the client's socket is re-created
+# after a restore and boto3 refreshes its credentials when they expire.
+_cognito = boto3.client("cognito-idp", region_name=AWS_REGION) if USER_POOL_ID else None
+
+
+def _resolve_advisor(jwt_token: str | None) -> tuple[str | None, str | None]:
+    """Verify the Cognito JWT and return (the user's email == advisor_id, the token subject).
 
     Mirrors the insurance agent's extract_advisor_id_from_jwt exactly.
     """
-    if not jwt_token or not USER_POOL_ID:
-        return None
+    if not jwt_token or not USER_POOL_ID or _cognito is None:
+        return None, None
     try:
-        import boto3
-        import jwt as jwt_lib
-        from jwt import PyJWKClient
-
         token = jwt_token.removeprefix("Bearer ").strip()
         jwks_url = (
             f"https://cognito-idp.{AWS_REGION}.amazonaws.com/{USER_POOL_ID}"
@@ -176,22 +235,45 @@ def _resolve_advisor_id(jwt_token: str | None) -> str | None:
             token,
             signing_key.key,
             algorithms=["RS256"],
-            options={"verify_exp": True, "verify_aud": False},
+            options={"verify_exp": True, "verify_aud": False, "require": ["exp"]},
         )
+        # Only an access token that this pool issued to the web app's client is an advisor's token.
+        issuer = f"https://cognito-idp.{AWS_REGION}.amazonaws.com/{USER_POOL_ID}"
+        if not is_app_access_token(claims, issuer, APP_CLIENT_ID):
+            logger.warning("Refusing a token that is not an access token of this app")
+            return None, None
         username = claims.get("username")
         if not username:
-            return None
-
-        cognito = boto3.client("cognito-idp", region_name=AWS_REGION)
-        resp = cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=username)
-        for attr in resp.get("UserAttributes", []):
-            if attr.get("Name") == "email":
-                email = attr.get("Value")
-                logger.info("Resolved advisor_id=%s", email)
-                return email
+            return None, None
+        resp = _cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=username)
+        # Only an enabled, confirmed user with a verified email is an advisor.
+        email = verified_email(resp)
+        if email:
+            logger.info("Resolved the advisor for subject %s", claims.get("sub"))
+            return email, claims.get("sub")
     except Exception:  # noqa: BLE001
         logger.exception("Failed to resolve advisor_id from JWT")
-    return None
+    return None, None
+
+
+async def _close_when_token_expires(websocket, token_exp: float | None) -> None:
+    """Close the websocket with TOKEN_EXPIRED_CLOSE_CODE when the access token expires.
+
+    The token is verified once, when the connection opens. Without this a session
+    would carry on after the token's `exp`, and the advisor's rights (or a disabled
+    account) would be re-checked only on the next connection. The browser takes the
+    close code as "reconnect with a fresh token". `token_exp` is the token's `exp`
+    claim in epoch seconds; with None nothing is scheduled and MAX_SESSION_SECONDS
+    still bounds the connection.
+    """
+    if token_exp is None:
+        return
+    await asyncio.sleep(max(0.0, token_exp - time.time()))
+    logger.info("Access token expired - closing the connection")
+    try:
+        await websocket.close(code=TOKEN_EXPIRED_CLOSE_CODE, reason="Session expired")
+    except Exception:  # noqa: BLE001 - the socket may already be closed
+        logger.info("Connection was already closed at token expiry")
 
 
 # --- Gateway / MCP tools --------------------------------------------------
@@ -221,9 +303,9 @@ def _streamable_http_transport_factory(mcp_url: str, advisor_token: str):
     `advisor_token` is the signed-in advisor's own access token (verified when
     the websocket was accepted); it goes in a second header, and the gateway's
     request interceptor checks it again, then runs the tool as that advisor.
-    Without it the gateway refuses every tool call. The token lives as long as
-    the websocket session; if it expires mid-session, tool calls are refused
-    and the advisor reconnects.
+    Without it the gateway refuses every tool call. The websocket is closed with
+    TOKEN_EXPIRED_CLOSE_CODE when the token expires (see _close_when_token_expires),
+    so the session never outlives the token and the advisor reconnects with a fresh one.
     """
     from contextlib import asynccontextmanager
 
@@ -352,13 +434,13 @@ def _system_prompt(
         "RECORDING CONSENT (this comes before everything else, including the greeting and prospect onboarding below)\n"
         "- Consent that this conversation may be transcribed is NOT CONFIRMED when a session starts. Your first reply in every session, "
         "whatever the advisor says first, is this one question: "
-        f"\"Before we start, can you confirm {who} has agreed to this conversation being transcribed?\" "
+        f"\"Before we start, can you confirm {who} has agreed to this conversation being transcribed, and to key points from it being "
+        "kept in memory for later conversations?\" "
         "Say nothing else until it is answered. If a [system note] says the advisor has just started the microphone, ask it then.\n"
-        "- When the advisor answers, call record_consent with decision \"confirmed\" or \"declined\". Call it only for a clear yes or no from "
-        "the advisor in their own words. Never assume consent, never infer it from silence or from a different statement, and never call it "
-        "to confirm on your own initiative.\n"
-        "- Confirmed: carry on normally. If a [system note] says consent was confirmed on screen, do not ask again.\n"
-        "- Declined: call record_consent with \"declined\" and say nothing more; the session ends.\n"
+        "- You cannot record the answer yourself. The advisor answers with the Confirmed or Declined button on screen. If they answer aloud, "
+        "tell them to press the button. Never assume consent and never treat a spoken yes or no as the answer.\n"
+        "- Confirmed: only when a [system note] says consent was confirmed on screen. Then carry on normally and do not ask again.\n"
+        "- Declined: the session ends on its own; say nothing more.\n"
         "- If a [system note] says the customer has changed to a different person, consent has been reset: ask the question again, for the "
         "new customer, before anything else.\n"
         "- Until consent is confirmed, do not open or fill application forms.\n"
@@ -489,7 +571,7 @@ PROSPECT ONBOARDING (when no customer is in scope)
   3. Date of birth or age
   4. Occupation, employment status, annual income
   5. Marital status, dependents
-  6. Home ownership, smoking status
+  6. Home ownership, tobacco use (never, former = quit more than 12 months ago, or current)
   7. Financial objective, time horizon, risk tolerance, liquidity needs
 - After getting the name, call create_profile with any other
   fields you have. As more details come in, call update_profile to add them.
@@ -534,7 +616,7 @@ FILLING AN APPLICATION FORM
 - PRODUCT TYPES available as application forms:
     term_life         Awesome Term Life — fixed term, no cash value
     whole_life        Awesome Whole Life — permanent, guaranteed cash value
-    universal_life    Awesome Universal Life — permanent, flexible premium
+    universal_life    Awesome Universal Life — permanent, no-lapse guarantee, flexible premium
     variable_life     Awesome Variable Life — permanent, sub-account investing
     critical_illness  Awesome Critical Illness — lump sum on diagnosis
     health            Awesome Health — medical expenses
@@ -575,8 +657,17 @@ FILLING AN APPLICATION FORM
 - KEEP IT NEUTRAL: do not announce that you are "pulling" or "fetching" the
   customer's profile, and do not comment on health or family history or on
   underwriting, acceptance or eligibility ("this will matter for
-  underwriting"). The shared safety filter blocks such remarks. Open the form,
+  underwriting"). Stay professional and do not make such remarks. Open the form,
   fill it, then say briefly what you entered and what is still needed.
+- TYPED BY THE ADVISOR: a field the tool lists as typed by the advisor on the
+  form (the Social Security number) is never asked for, filled or said aloud
+  by you. If the advisor starts to say the number, stop them and ask them to
+  type it into the form.
+- FIELDS THAT APPEAR LATER: some fields appear only after a related answer.
+  The tool lists them with the condition in words, and a fill result says
+  which fields it has just made apply. When an answer makes one apply, ask
+  for it. Health answers are filled like any other field, only from what the
+  advisor says.
 - Gender is filled from the customer's record. If it is missing, NEVER work
   it out from a name: ask the advisor. When the advisor's
   words only roughly match a choice ("under ten thousand miles" when the
@@ -597,18 +688,22 @@ FILLING AN APPLICATION FORM
 - SWITCHING PRODUCT MID-CONVERSATION: if the discussion moves to a
   different product, just call open_application_form with the new
   product_type. Do NOT start over.
-  - All ten forms ask the SAME applicant questions (name, date of birth,
+  - Nine of the forms ask the SAME applicant questions (name, date of birth,
     occupation, income, contact details), and the life, critical illness,
-    health and disability forms share the health questions. The four life
-    products also share the beneficiary questions, death benefit and premium
-    frequency. Those answers carry across automatically.
+    health and disability forms share the health questions. The term, whole
+    and variable life forms also share the beneficiary questions, death
+    benefit and premium frequency. Those answers carry across automatically.
+  - The universal_life form is longer and asks its own set (name in parts,
+    address in parts, three beneficiaries, riders, medical history), so
+    answers do not carry to or from it. The customer's record still fills
+    what it holds. Ask only for what the tool lists as still needed.
   - The tool's response lists what carried over and what is STILL NEEDED.
     Ask ONLY for what is still needed — re-asking for the customer's date of
     birth because the product changed is exactly the friction we are
     removing.
-  - Typically only 2-4 fields differ, e.g. term length for term_life,
-    premium schedule and dividend option for whole_life, death benefit
-    option for universal_life and variable_life.
+  - Between those nine, typically only 2-4 fields differ, e.g. term length
+    for term_life, premium schedule and dividend option for whole_life,
+    death benefit option for variable_life.
   - Say something brief like "I've switched it to the whole life
     application — I've kept everything we've covered, I just need the
     premium schedule."
@@ -669,12 +764,22 @@ PREMIUM ESTIMATES AND AFFORDABILITY
 - Pass product_type, the customer_id in scope, and options: JSON
   text of the choices, for example {{"sum_assured": 500000, "term_years":
   "20", "gender": "female"}}. If you do not know the option names, call
-  get_pricing_table with the product_type first. Age and smoker status come
+  get_pricing_table with the product_type first. Age and tobacco status come
   from the customer's record.
 - If the result says needs_input, ask the advisor for what is missing in one
   short question. Gender comes from the customer's profile; it is only
   missing for a new prospect or an older record, and then it is needed for
   life, health, critical illness and disability products. Never guess a value to get a number out.
+- UNIVERSAL LIFE: the result also has a reference_premium, the required
+  no-lapse premium: the least the customer can pay each year and still keep
+  the death benefit guaranteed to the chosen age, if paid on time. Say it
+  after the estimate. The guarantee age is 90, 95, 100 or 121 (121 means
+  lifetime); if none was chosen, say which was assumed. Riders are add-ons:
+  pass rider_wp, rider_adb, rider_ltc, rider_gpo, rider_nlgr or rider_olp as
+  true only when the advisor asked for that rider. If the form is open and
+  the planned premium is below the required premium for the same frequency,
+  tell the advisor once that the guarantee may not hold at that amount, and
+  leave the field alone.
 - Say the answer in one or two sentences: the yearly premium, and the monthly
   amount if useful, with the main choices. Always say it is an estimate and
   not a quote, and that Awesome sets the final premium after the application
@@ -685,6 +790,25 @@ PREMIUM ESTIMATES AND AFFORDABILITY
   income and the headroom. If it is over the guide, say so plainly in one
   sentence and offer one or two ways to bring it down. If income is unknown,
   ask the advisor for it; never assume one.
+FINANCIAL GUIDANCE
+- The advisor is a life insurance advisor, and financial advice is part of
+  the job. You may give general financial guidance to the advisor: needs
+  analysis, how life insurance fits the customer's financial plan, education
+  and retirement funding, and protection compared with savings-linked
+  products (term, whole, universal and variable life), using the product
+  sheets and the pricing and calculator tools. Suitability questions are
+  fine when they help; ask only for what the record does not show.
+- Never promise or imply guaranteed returns or performance. The only
+  guarantees you may state are those in the product sheet. Say projections
+  and premium figures are illustrative or indicative.
+- Never name or recommend specific third-party securities, funds or tickers.
+  Talk about types of option, such as an equity sub-account, and Awesome's
+  own products.
+- When you recommend something, remind the advisor once that suitability is
+  their responsibility.
+- Do not give tax or legal advice. For those, suggest a tax or legal
+  professional.
+
 BOUNDARIES
 - You're talking to the advisor, not the customer. You cannot give a binding
   quote or bind coverage to anyone. You can give an indicative premium
@@ -698,23 +822,57 @@ BOUNDARIES
 
 
 # --- Nova Sonic model -----------------------------------------------------
-# Built once per process on the stable `strands.bidi` API. Audio is mono PCM;
-# the input and output sample rates are fixed here, so the browser's per-frame
-# `sample_rate` is not used. Nova Sonic only accepts 8000, 16000 or 24000 Hz.
+# Built once per connection, on the stable `strands.bidi` API. The model holds
+# the state of one streaming session (its connection id, stream and pending tool
+# calls), so it cannot be shared: a second `start()` on the same object raises
+# "model already started", and one handler's `stop()` ends the other's stream.
+# AgentCore Runtime V2 can deliver a second WebSocket for one client connection,
+# which is when two handlers run in this process at the same time. The AWS
+# Strands + Nova Sonic sample builds its model per session for the same reason.
+# Credentials are read from a new boto3 session when the model starts, so every
+# connection begins with valid ones; nothing is cached across a snapshot restore.
 #
-# No Bedrock guardrail is attached to the voice model: the Nova Sonic
-# bidirectional stream has no guardrail setting, and the guardrail keys that
-# used to be passed in `client_config` were ignored by the library. Voice is
-# held to the system prompt and the tool-level checks instead.
-sonic_model = BedrockNovaSonicModel(
-    model_id=MODEL_ID,
-    region=BEDROCK_REGION,
-    voice="tiffany",
-    audio={
-        "input": {"sample_rate": INPUT_SAMPLE_RATE},
-        "output": {"sample_rate": OUTPUT_SAMPLE_RATE},
-    },
-)
+# Audio is mono PCM; the input and output sample rates are fixed here, so the
+# browser's per-frame `sample_rate` is not used. Nova Sonic only accepts 8000,
+# 16000 or 24000 Hz.
+#
+# No Bedrock guardrail is attached to the voice model, on purpose (README,
+# "Why the voice assistant has no guardrail"). The Nova Sonic bidirectional
+# stream (InvokeModelWithBidirectionalStream) has no guardrail field, AWS lists
+# Nova 2 Sonic and Nova 2.5 Sonic as models that do not support Bedrock
+# Guardrails, and the Strands bidi `BedrockNovaSonicModel` has no guardrail
+# option (guardrail keys passed in `client_config` are ignored by the
+# library). Voice is held to the system prompt, the tool-level checks
+# and Sonic's built-in safety filters, which cannot be configured.
+def _new_sonic_model() -> BedrockNovaSonicModel:
+    """A new Nova Sonic model for one connection."""
+    return BedrockNovaSonicModel(
+        model_id=MODEL_ID,
+        region=BEDROCK_REGION,
+        voice="tiffany",
+        audio={
+            "input": {"sample_rate": INPUT_SAMPLE_RATE},
+            "output": {"sample_rate": OUTPUT_SAMPLE_RATE},
+        },
+    )
+
+
+def _log_stream_started(event: Any, session_id: str) -> None:
+    """Log the ids of a Nova Sonic stream when the agent reports it, once per stream.
+
+    The agent emits `bidi_connection_start` for the first stream and again after every restart,
+    each time with a new connection id. The connection id is the `promptName` Nova Sonic sees, so
+    this line ties the AgentCore session to the stream AWS Support is asked about. Only ids are
+    logged. The Bedrock request id is not logged: the library does not expose the response
+    headers of the stream.
+    """
+    if isinstance(event, dict) and event.get("type") == "bidi_connection_start":
+        logger.info(
+            "session_id=<%s>, connection_id=<%s> | nova sonic stream started",
+            session_id, event.get("connection_id"),
+        )
+
+
 # --- BedrockAgentCoreApp --------------------------------------------------
 app = BedrockAgentCoreApp()
 
@@ -728,16 +886,20 @@ async def voice_chat(websocket, context) -> None:
       2. Resolve advisor_id from Cognito JWT.
       3. Connect the MCP client to the shared insurance gateway.
       4. Wire AgentCore Memory scoped to the AgentCore session id
-         (actor_id defaults to advisor_id; updated to customer_id once the
-         frontend sends voice_set_customer).
+         (actor_id is the customer_id of the first voice_init, and only when that
+         customer belongs to the advisor; a later change of customer switches
+         memory off for as long as another customer is in scope).
       5. Build a BidiAgent with the gateway tools + stop tool.
       6. Run - with a text-input bypass that sends typed messages straight
          to the model via agent.send(), avoiding Nova Sonic's VAD turn gate.
     """
-    _reset_state()
+    _state = _new_state()
 
     jwt = _extract_jwt(context.request_headers, websocket.headers)
-    advisor_id = _resolve_advisor_id(jwt)
+    # Verifying the token downloads the Cognito signing keys and calls Cognito: both
+    # block, so run them in a worker thread to keep /ping and any other connection
+    # responsive while this one is being checked.
+    advisor_id, advisor_sub = await asyncio.to_thread(_resolve_advisor, jwt)
     _state["advisor_id"] = advisor_id
 
     session_id = context.session_id or ""
@@ -760,8 +922,45 @@ async def voice_chat(websocket, context) -> None:
     await websocket.accept()
     logger.info(
         "WebSocket connected (session=%s, advisor=%s, auth=%s)",
-        session_id, advisor_id, "yes" if jwt else "no",
+        session_id, advisor_sub, "yes" if jwt else "no",
     )
+
+    # We need to know the customer_id before constructing BidiAgent so that
+    # its session_manager is valid for the whole turn. The frontend sends
+    # voice_init right after WS open, so we wait once here, before any of the
+    # expensive setup below.
+    #
+    # On AgentCore Runtime V2 the platform can open the websocket twice for one
+    # client connection and drop the first one before it sends anything. That
+    # handler finds its client gone on this first read. It must end here, with
+    # nothing started, instead of building a model and an agent on a dead socket
+    # (and holding the event loop for the gateway handshake while the live
+    # connection waits).
+    initial_cid: str | None = None
+    initial_cname: str | None = None
+    initial_prefill: dict[str, Any] = {}
+    try:
+        first_msg = await asyncio.wait_for(websocket.receive_json(), timeout=30.0)
+        if isinstance(first_msg, dict) and first_msg.get("type") in (
+            "voice_init",
+            "voice_set_customer",
+        ):
+            initial_cid = customer_id_from(first_msg.get("customerId"))
+            initial_cname = clipped_text(first_msg.get("customerName"), MAX_CUSTOMER_NAME_CHARS)
+            initial_prefill = bounded_prefill(first_msg.get("prefill"))
+    except WebSocketDisconnect:
+        logger.info(
+            "Client disconnected before its first message (session=%s) - ending this handler",
+            session_id,
+        )
+        return
+    except asyncio.TimeoutError:
+        logger.warning("No voice_init received within 30s - running without customer context")
+    except Exception:  # noqa: BLE001
+        logger.exception("Error reading first WS message")
+        if websocket.client_state != WebSocketState.CONNECTED:
+            logger.info("Socket is closed (session=%s) - ending this handler", session_id)
+            return
 
     # Consent for recording and the transcript it unlocks.
     # Both live only as long as this connection.
@@ -774,7 +973,9 @@ async def voice_chat(websocket, context) -> None:
     )
     recorder.start()
     GatedSessionManager = make_gated_session_manager(
-        AgentCoreMemorySessionManager, lambda: consent.confirmed
+        AgentCoreMemorySessionManager,
+        lambda: consent.confirmed,
+        lambda: memory_bound_to(_state.get("memory_customer_id"), _state.get("customer_id")),
     )
 
     mcp_client: MCPClient | None = None
@@ -799,8 +1000,10 @@ async def voice_chat(websocket, context) -> None:
     # Build AgentCore Memory session manager scoped to the current customer.
     # Mirrors the insurance agent exactly: memory uses customer_id as actor_id,
     # so per-customer memory namespaces stay aligned across voice and text
-    # surfaces. If no customer is in scope, we run without memory (greetings
-    # and chit-chat don't need to be stored).
+    # surfaces. If no customer is in scope, or the customer is not one of the
+    # signed-in advisor's own, we run without memory (greetings and chit-chat
+    # don't need to be stored). The customer id comes from the browser, so it
+    # is checked against the profile API with the advisor's own token first.
     #
     # Retrieval thresholds are deliberately strict (relevance_score >= 0.7)
     # to prevent cross-context bleed across past sessions for the same
@@ -821,41 +1024,33 @@ async def voice_chat(websocket, context) -> None:
         # Writes to memory wait for the advisor's confirmation of consent.
         return GatedSessionManager(memory_config, AWS_REGION)
 
-    # We need to know the customer_id before constructing BidiAgent so that
-    # its session_manager is valid for the whole turn. The frontend sends
-    # voice_init right after WS open, so we wait once here.
-    initial_cid: str | None = None
-    initial_cname: str | None = None
-    try:
-        first_msg = await asyncio.wait_for(websocket.receive_json(), timeout=30.0)
-        if isinstance(first_msg, dict) and first_msg.get("type") in (
-            "voice_init",
-            "voice_set_customer",
-        ):
-            initial_cid = first_msg.get("customerId") or None
-            initial_cname = first_msg.get("customerName") or None
-            if isinstance(first_msg.get("prefill"), dict):
-                _state["prefill"] = first_msg["prefill"]
-            if first_msg.get("type") == "voice_init" and first_msg.get("mode") == "roleplay":
-                _state["roleplay"] = roleplay.sanitise(first_msg.get("roleplay"))
-                if _state["roleplay"] is None:
-                    logger.warning("Practice session requested without a usable persona - running normally")
-    except asyncio.TimeoutError:
-        logger.warning("No voice_init received within 30s - running without customer context")
-    except Exception:  # noqa: BLE001
-        logger.exception("Error reading first WS message")
-
+    _state["prefill"] = initial_prefill
     _state["customer_id"] = initial_cid
     _state["customer_name"] = initial_cname
-    logger.info("Initial customer=%s (%s)", initial_cid, initial_cname)
+    logger.info("Initial customer=%s", initial_cid)
 
-    practice = _state["roleplay"]
-    # A practice session is not a conversation with the customer: it reads and
-    # writes no memory, records nothing, and has no tools but the stop tool.
-    session_manager = None if practice else _make_session_manager(initial_cid)
+    memory_owned = False
+    if MEMORY_ID and initial_cid and session_id:
+        bearer = jwt.removeprefix("Bearer ").strip() if jwt else None
+        memory_owned = await asyncio.to_thread(
+            advisor_owns_customer,
+            api_base_url=API_BASE_URL,
+            token=bearer,
+            subject=advisor_sub,
+            token_exp=jwt_expiry(bearer) if bearer else None,
+            customer_id=initial_cid,
+            user_pool_id=USER_POOL_ID,
+        )
+        if not memory_owned:
+            logger.warning(
+                "Running without memory: customer %r is not one of the signed-in advisor's customers, "
+                "or could not be verified (session=%s)",
+                str(initial_cid)[:64], session_id,
+            )
+    session_manager = _make_session_manager(initial_cid) if memory_owned else None
+    # The customer the memory session was built for; see consent.memory_bound_to.
+    _state["memory_customer_id"] = initial_cid if session_manager else None
     logger.info("Session manager: %s", "enabled" if session_manager else "disabled")
-    if practice:
-        logger.info("Practice session (difficulty=%s)", practice["difficulty"])
 
     # --- Application-form tools (local to this connection) ----------------
     #
@@ -881,6 +1076,7 @@ async def voice_chat(websocket, context) -> None:
         # they reach the browser.
         "fields": {},
         "filled": {},
+        "schema": None,
     }
 
     def _coerce_field_value(field: dict[str, Any], raw: str) -> tuple[str | None, str]:
@@ -981,6 +1177,7 @@ async def voice_chat(websocket, context) -> None:
         previous_product = form_session["product_type"]
         valid_paths = {f["path"] for f in fields}
         form_session["product_type"] = requested
+        form_session["schema"] = schema
         form_session["fields"] = {f["path"]: f for f in fields}
 
         await websocket.send_json({
@@ -1025,6 +1222,7 @@ async def voice_chat(websocket, context) -> None:
             p: v
             for p, v in (_state.get("prefill") or {}).items()
             if p in valid_paths and v not in (None, "")
+            and assistant_may_handle(form_session["fields"][p])
         }
         for p, v in prefilled.items():
             form_session["filled"].setdefault(p, str(v))
@@ -1034,9 +1232,18 @@ async def voice_chat(websocket, context) -> None:
             for p in form_session["filled"]
             if p in valid_paths and p not in prefilled
         ]
-        outstanding = [f for f in fields if f["path"] not in form_session["filled"]]
-        required = [f for f in outstanding if f.get("required")]
-        optional = [f for f in outstanding if not f.get("required")]
+        filled_now = form_session["filled"]
+        labels = {f["path"]: f["label"] for f in fields}
+        handled = [f for f in fields if assistant_may_handle(f)]
+        manual = [f for f in fields if not assistant_may_handle(f)]
+        # What applies right now, per the form rules (a detail box only after a Yes, and so on).
+        outstanding = [
+            f for f in handled
+            if f["path"] not in filled_now and is_visible(f, filled_now)
+        ]
+        required = [f for f in outstanding if is_required(f, filled_now)]
+        optional = [f for f in outstanding if not is_required(f, filled_now)]
+        waiting = [f for f in handled if not is_visible(f, filled_now)]
 
         lines = [
             f"The {schema.get('title', requested)} form is now open on the "
@@ -1068,6 +1275,19 @@ async def voice_chat(websocket, context) -> None:
         lines.extend(describe(f) for f in required) if required else lines.append("  none")
         lines.append("STILL NEEDED (optional):")
         lines.extend(describe(f) for f in optional) if optional else lines.append("  none")
+        if waiting:
+            lines.append("FIELDS THAT APPEAR ONCE A RELATED ANSWER CALLS FOR THEM:")
+            lines.extend(
+                f"{describe(f)} — appears when "
+                f"{describe_condition(f.get('visible_when'), labels)}"
+                for f in waiting
+            )
+        if manual:
+            lines.append(
+                "TYPED BY THE ADVISOR ON THE FORM, NOT AVAILABLE TO YOU (never ask "
+                "for these or say them aloud): "
+                + ", ".join(f["label"] for f in manual) + "."
+            )
         lines.append("")
         lines.append(
             "Call fill_form_field with the exact path and an accepted value as "
@@ -1111,13 +1331,21 @@ async def voice_chat(websocket, context) -> None:
                 "paths listed when the form was opened."
             )
 
+        if not assistant_may_handle(field):
+            # Never echo, store or log the value: the advisor types this field on the form.
+            logger.info("form_fill refused (path=%s): typed by the advisor only", path)
+            return (
+                f"{field['label']} is typed by the advisor directly on the form and "
+                "is not available to the assistant."
+            )
         coerced, why = _coerce_field_value(field, str(value))
         if coerced is None:
             # Nothing is sent to the UI, so the advisor never sees a field that
             # looks answered but is blank. Tell the model exactly what to retry
             # with.
             logger.info(
-                "form_fill rejected (path=%s, value=%r): %s", path, value, why
+                "form_fill rejected (path=%s, value=%r): %s",
+                path, loggable_value(field, value), why,
             )
             return (
                 f"Could not set {field['label']} to '{value}'. {why} "
@@ -1137,20 +1365,31 @@ async def voice_chat(websocket, context) -> None:
             "source": source,
         })
         # Remembered so a later product switch can report it as carried over.
+        before = dict(form_session["filled"])
         form_session["filled"][path] = coerced
         logger.info(
             "form_fill sent (path=%s, value=%r, confidence=%.2f)",
-            path, coerced, score,
+            path, loggable_value(field, coerced), score,
         )
-        return f"{field['label']} set to '{coerced}'."
+        note = ""
+        if form_session.get("schema"):
+            opened = [
+                f for f in newly_visible(form_session["schema"], before, form_session["filled"])
+                if assistant_may_handle(f)
+            ]
+            if opened:
+                note = " Now applicable: " + "; ".join(
+                    f'"{f["label"]}" -> {f["path"]}' for f in opened
+                ) + "."
+        return f"{field['label']} set to '{coerced}'.{note}"
 
     form_tools = [open_application_form, fill_form_field]
 
     async def _apply_consent(decision: str, source: str) -> str:
         """Record the advisor's answer and tell the browser.
 
-        Shared by the record_consent tool (the advisor said it) and the
-        on-screen buttons (the advisor pressed it).
+        Called only for the browser's consent message (the on-screen buttons).
+        The model has no tool that reaches this function.
         """
         cid = _state.get("customer_id")
         if not consent.apply(decision, cid):
@@ -1176,19 +1415,6 @@ async def voice_chat(websocket, context) -> None:
         return "Consent declined. The session is ending. Say nothing more."
 
     @tool
-    async def record_consent(decision: str) -> str:
-        """Record whether the customer has agreed to this conversation being transcribed.
-
-        Call this only after the advisor has clearly answered the consent
-        question in their own words. Never call it on your own initiative.
-
-        Args:
-            decision: "confirmed" if the advisor says the customer agreed,
-                "declined" if the advisor says the customer did not.
-        """
-        return await _apply_consent(decision, source="assistant")
-
-    @tool
     def stop_conversation() -> str:
         """Stop the voice conversation gracefully.
 
@@ -1203,22 +1429,20 @@ async def voice_chat(websocket, context) -> None:
         return "Ending conversation"
 
     agent = BidiAgent(
-        model=sonic_model,
-        tools=(
-            [stop_conversation]
-            if practice else
-            [*gateway_tools, stop_conversation, record_consent, *form_tools]
-        ),
-        system_prompt=(
-            roleplay.system_prompt(practice) if practice
-            else _system_prompt(advisor_id, initial_cid, initial_cname)
-        ),
+        model=_new_sonic_model(),
+        tools=[*gateway_tools, stop_conversation, *form_tools],
+        system_prompt=_system_prompt(advisor_id, initial_cid, initial_cname),
         session_manager=session_manager,
     )
     # The model never chooses which advisor a tool call is for: advisor_id is
     # overwritten with the identity verified from the Cognito token. This file
     # is a copy of agent/identity_guard.py: keep the two in sync.
     attach_identity_guard(agent, lambda: _state.get("advisor_id"))
+    # Writes to a customer's record (profile, third-party policies, notes) run only when the
+    # advisor asked for them or confirmed them: see write_guard.py and note_guard.py, which are
+    # copies of the text agent's files.
+    attach_note_guard(agent)
+    attach_write_guard(agent, lambda: not _state.get("customer_id"))
 
     async def _say_context_update(cid: str, cname: str | None) -> None:
         """Tell Sonic which customer is now in scope.
@@ -1236,6 +1460,8 @@ async def voice_chat(websocket, context) -> None:
         except Exception:  # noqa: BLE001
             logger.exception("Failed to send customer-context hint to Sonic")
 
+    session_timer: asyncio.Task | None = None
+    token_timer: asyncio.Task | None = None
     try:
         # Periodic silent-audio heartbeat to prevent Sonic's 55s "no audio
         # bytes or interactive content" timeout during text-only or idle
@@ -1261,20 +1487,6 @@ async def voice_chat(websocket, context) -> None:
                 msg = await websocket.receive_json()
                 msg_type = msg.get("type") if isinstance(msg, dict) else None
 
-                # Practice mode: there is no consent step and the customer cannot
-                # change; the only extra message is the start of the meeting.
-                if practice and msg_type in ("voice_consent", "voice_consent_prompt", "voice_set_customer", "voice_init"):
-                    continue
-                if msg_type == "voice_roleplay_start":
-                    if practice and not _state.get("roleplay_started"):
-                        _state["roleplay_started"] = True
-                        try:
-                            await agent.send(
-                                "[system note] The meeting has started. Greet the advisor now, in character."
-                            )
-                        except Exception:  # noqa: BLE001
-                            logger.exception("Failed to send practice start to Sonic")
-                    continue
                 # Consent buttons on screen. The advisor is authenticated, so
                 # pressing the button is as good as saying it.
                 if msg_type == "voice_consent":
@@ -1294,6 +1506,8 @@ async def voice_chat(websocket, context) -> None:
                 if msg_type == "voice_consent_prompt":
                     if not consent.confirmed and not consent.prompted:
                         consent.prompted = True
+                        if not consent.customer_id:
+                            consent.customer_id = _state.get("customer_id")
                         who = _state.get("customer_name") or (
                             "the customer" if _state.get("customer_id") else "the prospect"
                         )
@@ -1301,19 +1515,22 @@ async def voice_chat(websocket, context) -> None:
                             await agent.send(
                                 "[system note] The advisor has just started the microphone. "
                                 f"Ask now, in one sentence: Before we start, can you confirm {who} "
-                                "has agreed to this conversation being transcribed?"
+                                "has agreed to this conversation being transcribed, and to key points "
+                                "from it being kept in memory for later conversations? "
+                                "The advisor answers with the buttons on screen."
                             )
                         except Exception:  # noqa: BLE001
                             logger.exception("Failed to send consent prompt to Sonic")
                     continue
 
                 if msg_type in ("voice_init", "voice_set_customer"):
-                    cid = msg.get("customerId") or None
-                    cname = msg.get("customerName") or None
+                    cid = customer_id_from(msg.get("customerId"))
+                    cname = clipped_text(msg.get("customerName"), MAX_CUSTOMER_NAME_CHARS)
                     previous_cid = _state.get("customer_id")
-                    if customer_changed(previous_cid, cid):
+                    if consent_reset_needed(consent, previous_cid, cid):
                         # A different person is now being discussed: the old
-                        # answer does not cover them. Stop recording and ask again.
+                        # answer does not cover them, even if the scope passed
+                        # through "no customer" on the way. Stop recording and ask again.
                         consent.reset()
                         recorder.pause()
                         await websocket.send_json(consent.event(cid, reason="customer_changed"))
@@ -1325,16 +1542,15 @@ async def voice_chat(websocket, context) -> None:
                             )
                         except Exception:  # noqa: BLE001
                             logger.exception("Failed to send consent reset note to Sonic")
+                    consent.follow(cid)
                     _state["customer_id"] = cid
                     _state["customer_name"] = cname
                     # Prefill is customer-specific, so it travels with the
                     # customer context rather than being cached per session.
-                    _state["prefill"] = (
-                        msg["prefill"] if isinstance(msg.get("prefill"), dict) else {}
-                    )
+                    _state["prefill"] = bounded_prefill(msg.get("prefill"))
                     logger.info(
-                        "Context: customer=%s (%s), prefilled fields=%d",
-                        cid, cname, len(_state["prefill"]),
+                        "Context: customer=%s, prefilled fields=%d",
+                        cid, len(_state["prefill"]),
                     )
                     if cid:
                         await _say_context_update(cid, cname)
@@ -1345,8 +1561,12 @@ async def voice_chat(websocket, context) -> None:
                 # agent.send(text) injects the text directly into the model
                 # stream so the user gets a proper response.
                 if msg_type == "bidi_text_input":
-                    text = (msg.get("text") or "").strip()
+                    raw_text = msg.get("text")
+                    text = raw_text.strip() if isinstance(raw_text, str) else ""
                     if not text:
+                        continue
+                    if len(text) > MAX_TEXT_INPUT_CHARS:
+                        logger.warning("Dropping a typed message of %d characters (limit %d)", len(text), MAX_TEXT_INPUT_CHARS)
                         continue
                     logger.info("Text input (%d chars)", len(text))
                     recorder.add_user(
@@ -1358,7 +1578,7 @@ async def voice_chat(websocket, context) -> None:
                     # was set mid-conversation.
                     cid = _state.get("customer_id")
                     cname = _state.get("customer_name")
-                    if cid and not practice:
+                    if cid:
                         prefix = (
                             f"[advisor is asking about customer {cname or cid} "
                             f"(customerId: {cid})] "
@@ -1375,13 +1595,30 @@ async def voice_chat(websocket, context) -> None:
                 # handed to the model as an unknown input).
                 audio_input = to_agent_input(msg)
                 if audio_input is not None:
+                    if not audio_budget.take(len(audio_input["audio_delta"]["source"]["bytes"])):
+                        logger.warning("Audio limit of %d bytes reached - closing the connection", MAX_SESSION_AUDIO_BYTES)
+                        await websocket.close(code=1008, reason="Audio limit reached")
+                        raise WebSocketDisconnect(code=1008)
                     return audio_input
 
         browser_events = BrowserEvents()
+        audio_budget = AudioBudget(MAX_SESSION_AUDIO_BYTES)
+
+        async def end_session_when_time_is_up() -> None:
+            # A connection is closed after MAX_SESSION_SECONDS, whatever the browser keeps sending.
+            await asyncio.sleep(MAX_SESSION_SECONDS)
+            logger.warning("Session time limit of %d s reached - closing the connection", MAX_SESSION_SECONDS)
+            await websocket.close(code=1000, reason="Session time limit reached")
+
+        session_timer = asyncio.create_task(end_session_when_time_is_up())
+        token_timer = asyncio.create_task(
+            _close_when_token_expires(websocket, jwt_expiry(jwt.removeprefix("Bearer ").strip()))
+        )
 
         async def send_and_record(event: Any) -> None:
             # The recorder looks at the agent's own events (and is a no-op until
             # consent is confirmed); the browser gets its own message format.
+            _log_stream_started(event, session_id)
             recorder.observe(event, _state.get("customer_id"), _state.get("customer_name"))
             for out in browser_events.convert(event):
                 await websocket.send_json(out)
@@ -1396,6 +1633,10 @@ async def voice_chat(websocket, context) -> None:
     except Exception:  # noqa: BLE001
         logger.exception("Voice chat error")
     finally:
+        if session_timer is not None:
+            session_timer.cancel()
+        if token_timer is not None:
+            token_timer.cancel()
         try:
             await agent.stop()
         except Exception:  # noqa: BLE001

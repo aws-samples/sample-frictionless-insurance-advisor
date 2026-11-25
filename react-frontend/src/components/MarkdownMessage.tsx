@@ -26,6 +26,9 @@ interface MarkdownMessageProps {
  * - Memoized on content because parent chat panels re-render every streamed
  *   token; re-parsing the same string is wasted work.
  * - Links open in a new tab with `noopener noreferrer` for safety.
+ * - Images are never rendered. The browser fetches an image URL as soon as the
+ *   message appears, so a URL that carries data would leave the page without a
+ *   click. Markdown image syntax shows its alt text as plain text instead.
  *
  * Styling lives in MarkdownMessage.css so the component stays focused on
  * behavior.
@@ -40,6 +43,7 @@ function MarkdownMessageInner({ content, variant = 'chat' }: MarkdownMessageProp
             // nosemgrep: react-props-spreading -- typed forwarding via AnchorHTMLAttributes
             <a {...props} target="_blank" rel="noopener noreferrer" />
           ),
+          img: ({ alt }) => (alt ? <span>{alt}</span> : null),
         }}
       >
         {content}

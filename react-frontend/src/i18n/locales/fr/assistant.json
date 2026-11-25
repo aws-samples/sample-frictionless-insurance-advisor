@@ -27,7 +27,23 @@
         "policiesCount": "Contrats",
         "occupation": "Profession",
         "maritalStatus": "État civil",
-        "gender": "Genre"
+        "gender": "Genre",
+        "firstName": "Prénom",
+        "middleName": "Deuxième prénom",
+        "lastName": "Nom",
+        "dateOfBirth": "Date de naissance",
+        "street": "Adresse",
+        "city": "Ville",
+        "state": "État",
+        "zip": "Code postal",
+        "citizenship": "Citoyenneté",
+        "tobaccoStatus": "Consommation de tabac",
+        "dependents": "Personnes à charge",
+        "employmentStatus": "Situation professionnelle",
+        "annualIncome": "Revenu annuel",
+        "netWorthBand": "Patrimoine net",
+        "homeOwner": "Propriétaire",
+        "medicalConditions": "Affections médicales"
       },
       "dataFreshness": {
         "badge": "Vérifier les infos actuelles",
@@ -45,6 +61,10 @@
           "menuTitle": "Formulaire de souscription pour",
           "error": "Impossible d'ouvrir le formulaire : {{message}}"
         }
+      },
+      "details": {
+        "show": "Afficher les détails",
+        "hide": "Masquer les détails"
       }
     },
     "policies": {
@@ -100,7 +120,12 @@
           "currentCreditedRate": "Taux crédité actuel",
           "guaranteedMinimumRate": "Minimum garanti",
           "cashValueEstimate": "Valeur de rachat (est.)",
-          "subAccountAllocation": "Répartition des comptes"
+          "subAccountAllocation": "Répartition des comptes",
+          "guaranteeToAge": "Garantie de non-déchéance",
+          "guaranteeAge": "Jusqu'à {{age}} ans",
+          "guaranteeLifetime": "À vie (jusqu'à 121 ans)",
+          "requiredPremium": "Prime minimale requise (par an)",
+          "riders": "Garanties complémentaires"
         },
         "subAccounts": {
           "equity_growth": "Actions — Croissance",
@@ -113,7 +138,8 @@
       }
     },
     "chat": {
-      "heading": "Chat IA",
+      "textHeading": "Assistant texte",
+      "voiceHeading": "Assistant vocal",
       "selectCustomer": "Sélectionnez un client pour démarrer une conversation.",
       "emptyPlaceholder": "Posez une question ou choisissez une suggestion ci-dessous.",
       "messageLabel": "Message",
@@ -122,6 +148,7 @@
       "userBubbleLabel": "Vous",
       "assistantBubbleLabel": "Assistant",
       "thinking": "Réflexion en cours...",
+      "guardrailBlocked": "Le filtre de conformité a bloqué cette réponse. Veuillez réessayer ou reformuler votre question, par exemple en nommant un produit ou en demandant ce que montre le profil du client.",
       "quickQuestions": "Questions rapides",
       "attachDocument": "Joindre un document de police (PDF, image ou texte)",
       "removeAttachment": "Retirer la pièce jointe",
@@ -279,7 +306,8 @@
           "forms": "Formulaires de demande",
           "pricing": "Grilles tarifaires",
           "brochures": "Brochures",
-          "transcripts": "Transcriptions vocales"
+          "transcripts": "Transcriptions vocales",
+          "applications": "Demandes enregistrées"
         },
         "pdf": {
           "download": "Télécharger le PDF",
@@ -354,6 +382,22 @@
           "agencyCount": "{{count}} agences de notation",
           "carrier": "Assureur",
           "illustrative": "Illustratif"
+        },
+        "application": {
+          "status": "Envoyée pour signature",
+          "forCustomer": "Pour {{name}}",
+          "forProspect": "Pour un prospect",
+          "answerCount": "{{count}} réponses",
+          "hiddenCount": "{{count}} masquées à l'enregistrement",
+          "revision": "Révision {{revision}}, mise à jour {{time}}",
+          "expires": "Données de démonstration : supprimées automatiquement environ 2 à 3 jours après l'enregistrement.",
+          "omitted": "Non conservé : {{fields}}.",
+          "hidden": "Masqué",
+          "origin": {
+            "profile": "Du profil",
+            "voice": "Entendu dans la conversation",
+            "manual": "Saisi à la main"
+          }
         }
       }
     },
@@ -361,32 +405,36 @@
       "heading": "Conversation vocale",
       "selectCustomer": "Sélectionnez un client pour démarrer une conversation vocale.",
       "startVoice": "Démarrer la conversation vocale",
-      "stopVoice": "Arrêter la conversation vocale",
       "typePlaceholder": "Saisissez un message...",
       "connecting": "Connexion...",
       "emptyConnecting": "Connexion à l'agent...",
       "emptyConnected": "Saisissez un message ci-dessous ou appuyez sur Démarrer la conversation vocale pour parler. Effacer réinitialise la conversation.",
-      "hintText": "L'assistant répond uniquement par texte. Appuyez sur Démarrer la conversation vocale pour parler et entendre les réponses.",
-      "hintVoice": "La conversation vocale est active — l'assistant répondra par la voix et le texte. Appuyez sur Arrêter la conversation vocale pour saisir uniquement du texte.",
+      "hintVoice": "La conversation vocale est active — l'assistant répondra par la voix et le texte. Appuyez sur Mettre la conversation vocale en pause pour saisir uniquement du texte.",
       "status": {
         "connecting": "Connexion",
         "connected": "Connecté",
         "listening": "À l'écoute",
-        "speaking": "Parle"
+        "speaking": "Parle",
+        "paused": "En pause"
       },
-      "mute": "Couper la voix",
-      "unmute": "Réactiver la voix",
       "consent": {
-        "question": "Avant l'enregistrement : {{name}} a-t-il accepté que cette conversation soit transcrite ?",
+        "question": "Avant l'enregistrement : {{name}} a-t-il accepté que cette conversation soit transcrite et que les points clés soient conservés en mémoire pour les prochaines conversations ?",
         "theProspect": "le prospect",
-        "hint": "Rien n'est enregistré ni mémorisé, et aucun formulaire n'est rempli, tant que vous n'avez pas confirmé. Répondez à voix haute à l'assistant ou utilisez les boutons.",
+        "hint": "Rien n'est enregistré ni mémorisé, et aucun formulaire n'est rempli, tant que vous n'avez pas confirmé. Répondez avec les boutons : l'assistant ne peut pas répondre à votre place.",
         "changed": "Le client a changé : le consentement doit être confirmé à nouveau.",
         "confirm": "Confirmé",
         "decline": "Refusé",
-        "confirmed": "Consentement confirmé à {{time}}. Cette conversation est transcrite et conservée 24 heures.",
+        "confirmed": "Consentement confirmé à {{time}}. Cette conversation est transcrite et conservée environ un jour. Les points clés peuvent rester dans la mémoire du client 90 jours ou plus.",
         "declinedMessage": "Consentement refusé. La session est terminée et rien n'a été enregistré.",
         "startNew": "Démarrer une nouvelle session"
-      }
+      },
+      "pauseVoice": "Mettre la conversation vocale en pause",
+      "resumeVoice": "Reprendre la conversation vocale",
+      "pausedNotice": "Conversation vocale en pause : le microphone est coupé et la voix de l'assistant est silencieuse. Vous pouvez toujours écrire et recevoir des réponses en texte. La session se termine après environ 5 minutes sans parole ni saisie.",
+      "pausedExpired": "Les 5 minutes sont écoulées : la session a peut-être pris fin. Reprendre en ouvre une nouvelle si besoin et redemande le consentement à l'enregistrement.",
+      "sessionRestarted": "La session précédente s'est terminée pendant la pause, une nouvelle a donc été ouverte. Le consentement à l'enregistrement vous sera redemandé.",
+      "sessionRenewed": "Votre connexion a expiré, la session vocale s'est donc terminée et une nouvelle a été ouverte avec une connexion renouvelée. Le consentement à l'enregistrement vous sera redemandé, et le micro reste coupé jusqu'à ce que vous le démarriez.",
+      "sessionExpired": "Votre connexion a expiré et la session vocale est terminée. Déconnectez-vous puis reconnectez-vous pour continuer."
     },
     "recommendation": {
       "loading": "Analyse de la couverture et recherche de lacunes...",
@@ -403,8 +451,6 @@
       "stillNeeded": "Encore requis",
       "carriedOver": "{{count}} conservés",
       "sendForSignature": "Envoyer pour signature",
-      "sent": "Envoyé pour signature",
-      "sentHint": "Démo uniquement — rien n'a été envoyé.",
       "sendReadyHint": "Tous les champs obligatoires sont remplis.",
       "sendBlocked": "{{count}} champ(s) obligatoire(s) manquant(s).",
       "legendProfile": "Depuis le profil",
@@ -423,8 +469,21 @@
         "signatureApplicant": "Signature du demandeur",
         "signatureAdvisor": "Signature du conseiller",
         "date": "Date",
-        "disclaimer": "Brouillon préparé avec l'assistant conseiller d'Awesome Insurance. Il ne constitue pas une offre de garantie. La garantie ne débute que lorsqu'Awesome Insurance émet un contrat après souscription."
-      }
+        "disclaimer": "Brouillon préparé avec l'assistant conseiller d'Awesome Insurance. Il ne constitue pas une offre de garantie. La garantie ne débute que lorsqu'Awesome Insurance émet un contrat après souscription.",
+        "nlgAcknowledgment": "RECONNAISSANCE DE LA GARANTIE DE NON-DÉCHÉANCE : Ce contrat comporte une garantie de non-déchéance. Le capital décès est garanti jusqu'à l'âge indiqué sur cette demande uniquement si la prime requise est payée à temps. Ne payer que le minimum, ou payer en retard, peut réduire ou mettre fin définitivement à la garantie même s'il reste une valeur de rachat. En signant, le demandeur confirme avoir reçu une illustration indiquant la prime requise."
+      },
+      "secretNote": "Saisi uniquement ici. Les assistants ne peuvent pas voir ce champ.",
+      "saved": "Enregistrée",
+      "saving": "Enregistrement...",
+      "editAgain": "Modifier à nouveau",
+      "saveFailed": "Impossible d'enregistrer la demande : {{message}}",
+      "savedHint": "Enregistrée sous {{ref}}. Ouvrez-la dans l'explorateur de données, sous Demandes enregistrées.",
+      "savedHintReplaced": "Enregistrée à nouveau sous {{ref}}. Remplace l'enregistrement précédent (révision {{revision}}).",
+      "savedOmitted": "Non enregistré : {{fields}}.",
+      "fillDemo": "Remplir avec des données de démo",
+      "fillDemoHint": "Démo uniquement : remplit les champs vides avec les mêmes réponses d'exemple pour tous les clients. Les champs déjà remplis sont conservés.",
+      "demoFilled": "{{count}} champs remplis avec des données d'exemple.",
+      "demoNothing": "Rien à remplir : tous les champs ont déjà une réponse."
     },
     "notes": {
       "heading": "Notes",
@@ -483,55 +542,6 @@
       "saved": "Note enregistrée dans le dossier du client.",
       "trimmed": "Raccourcie pour respecter la limite de 1 000 caractères.",
       "dateLabel": "Date de suivi (facultatif)"
-    },
-    "roleplay": {
-      "button": "S'entraîner",
-      "setupTitle": "S'entraîner avec {{name}}",
-      "setupIntro": "L'assistant joue ce client à partir de son dossier. Menez l'échange comme un vrai, puis terminez-le pour recevoir un retour.",
-      "difficulty": "Difficulté",
-      "level": {
-        "friendly": "Aimable",
-        "neutral": "Neutre",
-        "sceptical": "Sceptique"
-      },
-      "focusLabel": "Objection principale",
-      "focus": {
-        "any": "Laisser varier",
-        "cost": "C'est trop cher",
-        "work": "J'ai déjà une couverture par mon travail",
-        "young": "Je suis trop jeune pour en avoir besoin",
-        "compare": "Je veux comparer avec mon assureur",
-        "think": "J'ai besoin de réfléchir"
-      },
-      "privacy": "Rien d'une séance d'entraînement n'est enregistré ni sauvegardé, et rien n'est ajouté au dossier du client. Les données de santé ne sont pas transmises à l'assistant.",
-      "start": "Commencer l'entraînement",
-      "banner": "Séance d'entraînement : l'assistant joue {{name}}",
-      "bannerHint": "Activez le micro et le client vous salue. Dites \"end exercise\" pour arrêter plus tôt.",
-      "leave": "Quitter l'entraînement",
-      "endAndScore": "Terminer et noter",
-      "feedbackTitle": "Retour de coaching",
-      "scoring": "Analyse de la conversation…",
-      "scoreError": "Impossible de produire le retour : {{message}}",
-      "insufficient": "La conversation était trop courte pour donner un retour. Réessayez en en disant un peu plus.",
-      "claimsTitle": "Affirmations sur les produits vérifiées",
-      "verdict": {
-        "supported": "Conforme à la fiche",
-        "contradicted": "Diffère de la fiche",
-        "not_in_sheets": "Absent des fiches"
-      },
-      "nextTime": "La prochaine fois",
-      "coachingNote": "Retour de coaching pour votre propre entraînement, généré par IA. Ce n'est pas une évaluation de performance et il n'est pas enregistré.",
-      "finish": "Terminer",
-      "again": "S'entraîner à nouveau",
-      "criteria": {
-        "rapport": "Ouverture et relation",
-        "discovery": "Questions de découverte",
-        "needs_link": "Relier besoins et garanties",
-        "objections": "Traitement des objections",
-        "accuracy": "Exactitude",
-        "compliance": "Conformité",
-        "closing": "Conclusion"
-      }
     }
   }
 }

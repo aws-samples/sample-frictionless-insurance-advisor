@@ -5,7 +5,7 @@
     },
     "nav": {
       "assistant": "Asisten Teks",
-      "voice": "Asisten Teks+Suara",
+      "voice": "Asisten Suara",
       "comparator": "Pembanding",
       "data": "Penjelajah Data",
       "signOut": "Keluar",
@@ -25,7 +25,18 @@
       "comingSoon": "Segera hadir."
     },
     "errors": {
-      "loadFailed": "Gagal memuat data: {{message}}"
+      "loadFailed": "Gagal memuat data: {{message}}",
+      "requestFailed": "Permintaan tidak dapat diselesaikan. Silakan coba lagi.",
+      "serviceUnavailable": "Layanan sementara tidak tersedia. Silakan coba lagi dalam beberapa menit.",
+      "unauthorized": "Anda telah keluar atau tidak diizinkan melakukan ini. Silakan masuk lagi.",
+      "tooManyRequests": "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.",
+      "reference": "Referensi: {{id}}",
+      "chat": {
+        "guardrailUnavailable": "Asisten sementara tidak tersedia. Silakan coba lagi dalam beberapa menit.",
+        "promptTooLong": "Pesan Anda terlalu panjang. Persingkat lalu coba lagi.",
+        "limitReached": "Permintaan itu membutuhkan lebih banyak langkah daripada yang diizinkan asisten. Mintalah bagian yang lebih kecil.",
+        "internal": "Terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi."
+      }
     },
     "errorBoundary": {
       "title": "Terjadi kesalahan",

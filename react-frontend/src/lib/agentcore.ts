@@ -1,6 +1,9 @@
 import { fetchAuthSession } from 'aws-amplify/auth';
 
+import { runtimeInvocationUrl, SESSION_HEADER } from './runtimeEndpoint';
+import { apiErrorFromResponse } from './errors';
 import { readSSEStream, type StreamItem } from './sse';
+import { markSessionWarm } from './warmup';
 
 /**
  * Stream a chat response from the AgentCore Runtime.
@@ -17,6 +20,8 @@ export async function* streamChat(opts: {
   form?: { productType: string; values: Record<string, string> };
   /** Field values the customer's record already supplies. */
   formPrefill?: Record<string, string>;
+  /** Base code of the language chosen in the app (for example `ko`): the assistant replies in it. */
+  language?: string;
 }): AsyncGenerator<StreamItem> {
   const session = await fetchAuthSession();
   const token = session.tokens?.accessToken?.toString();
@@ -30,23 +35,21 @@ export async function* streamChat(opts: {
   // the payload — that field would be client-controllable and would let an
   // authenticated user impersonate any other advisor. Trust only the signed
   // token.
-  const region = import.meta.env.VITE_AWS_REGION;
-  const runtimeArn = import.meta.env.VITE_AGENT_RUNTIME_ARN;
-  const url =
-    `https://bedrock-agentcore.${region}.amazonaws.com` +
-    `/runtimes/${encodeURIComponent(runtimeArn)}/invocations?qualifier=DEFAULT`;
+  // A real message wakes this session's container, so no warm-up is needed soon after.
+  markSessionWarm(opts.sessionId);
 
-  const response = await fetch(url, {
+  const response = await fetch(runtimeInvocationUrl(), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
-      'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id': opts.sessionId,
+      [SESSION_HEADER]: opts.sessionId,
     },
     body: JSON.stringify({
       prompt: opts.prompt,
       ...(opts.customerId && { customerId: opts.customerId }),
+      ...(opts.language && { language: opts.language }),
       ...(opts.form && { form: opts.form }),
       ...(opts.formPrefill && Object.keys(opts.formPrefill).length > 0 && {
         formPrefill: opts.formPrefill,
@@ -55,8 +58,7 @@ export async function* streamChat(opts: {
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`AgentCore ${response.status}: ${body}`);
+    throw apiErrorFromResponse('agent runtime', response.status, await response.text());
   }
 
   yield* readSSEStream(response);

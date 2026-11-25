@@ -6,8 +6,7 @@ import type { ChatSource } from '../types';
 /**
  * Sources under an assistant answer. Documents open in Data Explorer and web
  * pages open on their own site, both in a new browser tab so the conversation
- * stays where it is (the chat lives on the Assistant page and would be lost
- * by switching tabs inside the app).
+ * on screen is left as it is.
  */
 export function SourcesFooter({ sources }: { sources: ChatSource[] }) {
   const { t } = useTranslation();

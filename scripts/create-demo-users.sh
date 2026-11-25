@@ -7,7 +7,7 @@
 # printed ONCE on this terminal and is not stored anywhere: copy it now. Running
 # the script again skips users that already exist (passwords are never changed).
 #
-# The seeded customers belong to these two addresses, so sign in as one of them
+# The seeded customers belong to these three addresses, so sign in as one of them
 # to see data:
 #   john.doe@example.com (all lines: life, general and health products)
 #                        -> Marcus, Hannah, Carlos, Olivia, Ethan; prospects Sophie, Tom
@@ -18,7 +18,7 @@
 #
 # Usage:
 #   scripts/create-demo-users.sh
-#   DEMO_USER_PASSWORD='your own 12+ char password' scripts/create-demo-users.sh   # same password for both, not printed
+#   DEMO_USER_PASSWORD='your own 12+ char password' scripts/create-demo-users.sh   # same password for all, not printed
 #   AWS_PROFILE=... AWS_REGION=... scripts/create-demo-users.sh
 #
 # Needs: AWS credentials allowed to read the SSM parameter below and to call
@@ -26,7 +26,7 @@
 set -euo pipefail
 
 REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}"
-# The seeded customers belong to these two addresses. DEMO_USER_EMAILS (comma-separated)
+# The seeded customers belong to these three addresses. DEMO_USER_EMAILS (comma-separated)
 # overrides them, for example to test this script with a throwaway address.
 IFS=',' read -r -a EMAILS <<< "${DEMO_USER_EMAILS:-john.doe@example.com,life@example.com,general@example.com}"
 

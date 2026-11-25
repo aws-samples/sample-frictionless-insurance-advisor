@@ -27,7 +27,23 @@
         "policiesCount": "Policies",
         "occupation": "Occupation",
         "maritalStatus": "Marital status",
-        "gender": "Gender"
+        "gender": "Gender",
+        "firstName": "First name",
+        "middleName": "Middle name",
+        "lastName": "Last name",
+        "dateOfBirth": "Date of birth",
+        "street": "Street address",
+        "city": "City",
+        "state": "State",
+        "zip": "ZIP code",
+        "citizenship": "Citizenship",
+        "tobaccoStatus": "Tobacco use",
+        "dependents": "Dependents",
+        "employmentStatus": "Employment status",
+        "annualIncome": "Annual income",
+        "netWorthBand": "Net worth",
+        "homeOwner": "Home owner",
+        "medicalConditions": "Medical conditions"
       },
       "dataFreshness": {
         "badge": "Verify current info",
@@ -45,6 +61,10 @@
           "menuTitle": "Application form for",
           "error": "Could not open the form: {{message}}"
         }
+      },
+      "details": {
+        "show": "Show details",
+        "hide": "Hide details"
       }
     },
     "policies": {
@@ -100,7 +120,12 @@
           "currentCreditedRate": "Current credited rate",
           "guaranteedMinimumRate": "Guaranteed minimum",
           "cashValueEstimate": "Cash value (est.)",
-          "subAccountAllocation": "Sub-account allocation"
+          "subAccountAllocation": "Sub-account allocation",
+          "guaranteeToAge": "No-lapse guarantee",
+          "guaranteeAge": "To age {{age}}",
+          "guaranteeLifetime": "Lifetime (age 121)",
+          "requiredPremium": "Required no-lapse premium (per year)",
+          "riders": "Riders"
         },
         "subAccounts": {
           "equity_growth": "Equity — Growth",
@@ -113,7 +138,8 @@
       }
     },
     "chat": {
-      "heading": "AI Chat",
+      "textHeading": "Text Assistant",
+      "voiceHeading": "Voice Assistant",
       "selectCustomer": "Select a customer to start a chat.",
       "emptyPlaceholder": "Ask a question or pick a suggestion below.",
       "messageLabel": "Message",
@@ -122,6 +148,7 @@
       "userBubbleLabel": "You",
       "assistantBubbleLabel": "Assistant",
       "thinking": "Thinking...",
+      "guardrailBlocked": "The compliance filter blocked that answer. Please try again or rephrase your question, for example by naming a product or asking what the customer's profile shows.",
       "quickQuestions": "Quick questions",
       "attachDocument": "Attach a policy document (PDF, image, or text)",
       "removeAttachment": "Remove attachment",
@@ -279,7 +306,8 @@
           "forms": "Application Forms",
           "pricing": "Pricing Tables",
           "brochures": "Brochures",
-          "transcripts": "Voice transcripts"
+          "transcripts": "Voice transcripts",
+          "applications": "Saved applications"
         },
         "pdf": {
           "download": "Download PDF",
@@ -354,6 +382,22 @@
           "agencyCount": "{{count}} rating agencies",
           "carrier": "Carrier",
           "illustrative": "Illustrative"
+        },
+        "application": {
+          "status": "Sent for signature",
+          "forCustomer": "For {{name}}",
+          "forProspect": "For a prospect",
+          "answerCount": "{{count}} answers",
+          "hiddenCount": "{{count}} hidden when saved",
+          "revision": "Revision {{revision}}, updated {{time}}",
+          "expires": "Demo data: deleted automatically about 2 to 3 days after it was saved.",
+          "omitted": "Not stored: {{fields}}.",
+          "hidden": "Hidden",
+          "origin": {
+            "profile": "From profile",
+            "voice": "Heard in conversation",
+            "manual": "Entered by hand"
+          }
         }
       }
     },
@@ -361,32 +405,36 @@
       "heading": "Voice Chat",
       "selectCustomer": "Select a customer to start a voice conversation.",
       "startVoice": "Start voice chat",
-      "stopVoice": "Stop voice chat",
       "typePlaceholder": "Type a message...",
       "connecting": "Connecting...",
       "emptyConnecting": "Connecting to agent...",
       "emptyConnected": "Type a message below, or press Start voice chat to speak. Clear resets the conversation.",
-      "hintText": "The assistant responds in text only. Press Start voice chat to speak and hear responses.",
-      "hintVoice": "Voice chat is active — the assistant will respond with voice and text. Press Stop voice chat to type only.",
+      "hintVoice": "Voice chat is active — the assistant will respond with voice and text. Press Pause voice chat to type only.",
       "status": {
         "connecting": "Connecting",
         "connected": "Connected",
         "listening": "Listening",
-        "speaking": "Speaking"
+        "speaking": "Speaking",
+        "paused": "Paused"
       },
-      "mute": "Mute voice",
-      "unmute": "Unmute voice",
       "consent": {
-        "question": "Before recording: has {{name}} agreed to this conversation being transcribed?",
+        "question": "Before recording: has {{name}} agreed to this conversation being transcribed, and to key points from it being kept in memory for later conversations?",
         "theProspect": "the prospect",
-        "hint": "Nothing is saved or remembered, and no forms are filled, until you confirm. Answer to the assistant out loud or use the buttons.",
+        "hint": "Nothing is saved or remembered, and no forms are filled, until you confirm. Use the buttons to answer; the assistant cannot answer for you.",
         "changed": "The customer changed, so consent is needed again.",
         "confirm": "Confirmed",
         "decline": "Declined",
-        "confirmed": "Consent confirmed at {{time}}. This conversation is transcribed and kept for 24 hours.",
+        "confirmed": "Consent confirmed at {{time}}. This conversation is transcribed and kept for about a day. Key points may stay in the customer's memory for 90 days or longer.",
         "declinedMessage": "Consent declined. The session has ended and nothing was saved.",
         "startNew": "Start a new session"
-      }
+      },
+      "pauseVoice": "Pause voice chat",
+      "resumeVoice": "Resume voice chat",
+      "pausedNotice": "Voice chat paused: your microphone is off and the assistant's voice is silent. Typing still works, with text replies. The session ends after about 5 minutes without speech or typing.",
+      "pausedExpired": "The 5-minute limit has passed, so the session may have ended. Resume starts a new one if needed, and the recording consent question is asked again.",
+      "sessionRestarted": "The previous session ended while paused, so a new one was started. You will be asked for recording consent again.",
+      "sessionRenewed": "Your sign-in expired, so the voice session was ended and a new one was opened with a fresh sign-in. You will be asked for recording consent again, and the microphone is off until you start it.",
+      "sessionExpired": "Your sign-in has expired and the voice session has ended. Sign out and sign in again to continue."
     },
     "recommendation": {
       "loading": "Analyzing coverage and looking for gaps...",
@@ -403,8 +451,6 @@
       "stillNeeded": "Still needed",
       "carriedOver": "{{count}} carried over",
       "sendForSignature": "Send for Signature",
-      "sent": "Sent for signature",
-      "sentHint": "Demo only — nothing was actually sent.",
       "sendReadyHint": "All required fields complete.",
       "sendBlocked": "{{count}} required field(s) still needed.",
       "legendProfile": "From profile",
@@ -423,8 +469,21 @@
         "signatureApplicant": "Applicant signature",
         "signatureAdvisor": "Advisor signature",
         "date": "Date",
-        "disclaimer": "Draft prepared with the Awesome Insurance advisor assistant. This is not an offer of cover. Cover starts only when Awesome Insurance issues a policy after underwriting."
-      }
+        "disclaimer": "Draft prepared with the Awesome Insurance advisor assistant. This is not an offer of cover. Cover starts only when Awesome Insurance issues a policy after underwriting.",
+        "nlgAcknowledgment": "NO-LAPSE GUARANTEE ACKNOWLEDGMENT: This policy has a no-lapse guarantee. The death benefit is guaranteed to the age shown on this application only if the required premium is paid on time. Paying only the minimum, or paying late, can reduce or permanently end the guarantee even if there is cash value. By signing, the applicant confirms receiving an illustration that shows the required premium."
+      },
+      "secretNote": "Typed here only. The assistants cannot see this field.",
+      "saved": "Saved",
+      "saving": "Saving...",
+      "editAgain": "Edit again",
+      "saveFailed": "Could not save the application: {{message}}",
+      "savedHint": "Saved as {{ref}}. Open it in Data Explorer under Saved applications.",
+      "savedHintReplaced": "Saved again as {{ref}}. This replaced the earlier save (revision {{revision}}).",
+      "savedOmitted": "Not saved: {{fields}}.",
+      "fillDemo": "Fill demo data",
+      "fillDemoHint": "Demo only: fills the empty fields with the same sample answers for every customer. Fields that are already filled are kept.",
+      "demoFilled": "{{count}} fields filled with sample data.",
+      "demoNothing": "Nothing to fill: every field already has an answer."
     },
     "notes": {
       "heading": "Notes",
@@ -483,55 +542,6 @@
       "saved": "Note saved to the customer's record.",
       "trimmed": "Shortened to fit the 1,000-character limit.",
       "dateLabel": "Follow-up date (optional)"
-    },
-    "roleplay": {
-      "button": "Practise",
-      "setupTitle": "Practise with {{name}}",
-      "setupIntro": "The assistant plays this customer, using what is on their record. Run the conversation as you would a real one, then end it to get coaching feedback.",
-      "difficulty": "Difficulty",
-      "level": {
-        "friendly": "Friendly",
-        "neutral": "Neutral",
-        "sceptical": "Sceptical"
-      },
-      "focusLabel": "Main objection",
-      "focus": {
-        "any": "Let it vary",
-        "cost": "It costs too much",
-        "work": "I'm covered through work",
-        "young": "I'm too young to need it",
-        "compare": "I want to compare with my insurer",
-        "think": "I need to think about it"
-      },
-      "privacy": "Nothing from a practice session is recorded or saved, and nothing is added to the customer's record. Health details are not shared with the assistant.",
-      "start": "Start practice",
-      "banner": "Practice session: the assistant is playing {{name}}",
-      "bannerHint": "Start the microphone and the customer greets you. Say \"end exercise\" to stop early.",
-      "leave": "Leave practice",
-      "endAndScore": "End and score",
-      "feedbackTitle": "Coaching feedback",
-      "scoring": "Reviewing the conversation…",
-      "scoreError": "Couldn't produce the feedback: {{message}}",
-      "insufficient": "There wasn't enough of a conversation to give feedback. Try again and say a little more.",
-      "claimsTitle": "Product statements checked",
-      "verdict": {
-        "supported": "Matches the sheet",
-        "contradicted": "Differs from the sheet",
-        "not_in_sheets": "Not in the sheets"
-      },
-      "nextTime": "Try next time",
-      "coachingNote": "Coaching feedback for your own practice, generated by AI. It is not a performance rating and is not saved.",
-      "finish": "Finish",
-      "again": "Practise again",
-      "criteria": {
-        "rapport": "Opening and rapport",
-        "discovery": "Discovery questions",
-        "needs_link": "Linking needs to cover",
-        "objections": "Handling objections",
-        "accuracy": "Accuracy",
-        "compliance": "Compliance",
-        "closing": "Closing"
-      }
     }
   }
 }

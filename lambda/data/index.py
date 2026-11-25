@@ -17,12 +17,13 @@ Routes:
     -> { "folder", "key", "name", "content_type", "content",
          "metadata": { "last_updated": "YYYY-MM-DD" } | {}, "size_bytes" }
 
-  The `transcripts` folder is different from the rest: it holds the signed-in
-  advisor's own voice transcripts (kept one day) and nobody else's. The caller
-  is identified from the verified sign-in token only (claims.username looked up
-  in Cognito), the listing covers only that advisor's prefix, and a request for
-  anything outside it is a 404. A machine token (the AgentCore gateway's) has
-  no user, so it never sees the folder.
+  The `transcripts` and `applications` folders are different from the rest: they
+  hold the signed-in advisor's own voice transcripts (kept one day) and saved
+  application forms (kept two days) and nobody else's. The caller is identified
+  from the verified sign-in token only (claims.username looked up in Cognito),
+  the listing covers only that advisor's prefix, and a request for anything
+  outside it is a 404. A machine token (the AgentCore gateway's) has no user,
+  so it never sees these folders.
 
 Design notes:
 - The knowledge corpus is spread across SEVEN separate S3 buckets (one per
@@ -79,6 +80,7 @@ FOLDER_ENV_VARS: dict[str, str] = {
     # Per-advisor; never listed or read without a signed-in user (see
     # _advisor_from_event). Not in FOLDER_ORDER on purpose.
     "transcripts": "TRANSCRIPTS_BUCKET",
+    "applications": "APPLICATIONS_BUCKET",
 }
 FOLDER_PREFIX: dict[str, str] = {"brochures": "awesome/", "samples": "samples/"}
 # Folders whose objects are PDFs. These are not read through the Lambda: the
@@ -88,6 +90,10 @@ PDF_FOLDERS = {"brochures", "samples"}
 PRESIGN_SECONDS = 120
 USER_POOL_ID = os.environ.get("USER_POOL_ID", "")
 MAX_TRANSCRIPTS_LISTED = 50
+MAX_APPLICATIONS_LISTED = 50
+# <customer id | _prospect>/<product type>/<time>-<ref>.json, as written by lambda/applications,
+# relative to the advisor's prefix.
+APPLICATION_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}/[a-z_]{1,32}/\d{8}T\d{6}Z-APP-[0-9A-F]{8}\.json$")
 # <start time>-<session id>.json, as written by the voice runtime.
 TRANSCRIPT_KEY_RE = re.compile(r"^\d{8}T\d{6}Z-[A-Za-z0-9_-]{1,48}\.json$")
 USER_SCOPE = "aws.cognito.signin.user.admin"
@@ -231,6 +237,25 @@ def _list_folder_objects(folder: str) -> list[dict]:
     return out
 
 
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
+
+
 def _advisor_from_event(event: dict) -> str | None:
     """The signed-in advisor's email, from the verified token only.
 
@@ -247,9 +272,7 @@ def _advisor_from_event(event: dict) -> str | None:
         return None
     try:
         user = boto3.client("cognito-idp").admin_get_user(UserPoolId=USER_POOL_ID, Username=username)
-        for attr in user["UserAttributes"]:
-            if attr["Name"] == "email" and attr["Value"]:
-                return attr["Value"]
+        return _verified_email(user)
     except Exception as exc:  # noqa: BLE001
         print(f"Cognito lookup failed: {type(exc).__name__}")
     return None
@@ -339,6 +362,74 @@ def _get_transcript(advisor_id: str, key: str) -> dict:
     }
 
 
+def _list_applications(advisor_id: str) -> list[dict]:
+    """The advisor's own saved applications, newest first. Never another advisor's."""
+    bucket = _bucket_for("applications")
+    prefix = _advisor_prefix(advisor_id)
+    paginator = s3_client.get_paginator("list_objects_v2")
+    found: list[dict] = []
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            rel = obj["Key"][len(prefix):]
+            if APPLICATION_KEY_RE.match(rel):
+                found.append({"rel": rel, "obj": obj})
+    found.sort(key=lambda f: f["obj"].get("LastModified") or 0, reverse=True)
+    out: list[dict] = []
+    for item in found[:MAX_APPLICATIONS_LISTED]:
+        obj = item["obj"]
+        meta: dict = {}
+        try:
+            head = s3_client.head_object(Bucket=bucket, Key=obj["Key"]).get("Metadata", {})
+            meta = {
+                "ref": head.get("ref"),
+                "product_type": head.get("product"),
+                "saved_at": head.get("saved"),
+                "updated_at": head.get("updated") or head.get("saved"),
+                "revision": int(head.get("revision", "1") or 1),
+                "customer": unquote(head.get("customer", "")) or None,
+                "customer_id": head.get("customer-id") or None,
+                "fields": int(head.get("fields", "0") or 0),
+            }
+        except (ClientError, ValueError):
+            pass
+        out.append(
+            {
+                "folder": "applications",
+                "key": item["rel"],
+                "name": item["rel"].rsplit("/", 1)[-1],
+                "path": "",
+                "content_type": "application",
+                "size_bytes": obj.get("Size", 0),
+                "last_modified": obj.get("LastModified"),
+                "meta": meta,
+            }
+        )
+    return out
+
+
+def _get_application(advisor_id: str, key: str) -> dict:
+    """One of the advisor's saved applications. LookupError for anything else."""
+    if not APPLICATION_KEY_RE.match(key):
+        raise LookupError(f"Invalid application key: {key}")
+    bucket = _bucket_for("applications")
+    try:
+        obj = s3_client.get_object(Bucket=bucket, Key=_advisor_prefix(advisor_id) + key)
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") in ("NoSuchKey", "404", "AccessDenied"):
+            raise LookupError(f"No such application: {key}") from exc
+        raise
+    raw = obj["Body"].read()
+    return {
+        "folder": "applications",
+        "key": key,
+        "name": key.rsplit("/", 1)[-1],
+        "content_type": "application",
+        "content": _decode(raw),
+        "metadata": {},
+        "size_bytes": len(raw),
+    }
+
+
 def _list_all(advisor_id: str | None = None) -> dict:
     """Listing for every configured folder, in display order.
 
@@ -365,6 +456,13 @@ def _list_all(advisor_id: str | None = None) -> dict:
             files = []
         total += len(files)
         folders.append({"folder": "transcripts", "files": files})
+        try:
+            files = _list_applications(advisor_id)
+        except (ClientError, LookupError, ValueError) as exc:
+            print(f"could not list applications: {exc}")
+            files = []
+        total += len(files)
+        folders.append({"folder": "applications", "files": files})
     return {"folders": folders, "total": total}
 
 
@@ -499,6 +597,11 @@ def handler(event, context):
                 if not advisor_id:
                     raise LookupError("transcripts need a signed-in advisor")
                 return _response(200, _get_transcript(advisor_id, key))
+            if folder == "applications":
+                advisor_id = _advisor_from_event(event)
+                if not advisor_id:
+                    raise LookupError("applications need a signed-in advisor")
+                return _response(200, _get_application(advisor_id, key))
             return _response(200, _get_file(folder, key))
 
         return _response(404, {"message": f"Unknown route: {resource}"})

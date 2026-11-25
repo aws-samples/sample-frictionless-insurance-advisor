@@ -5,7 +5,7 @@
     },
     "nav": {
       "assistant": "Text Assistant",
-      "voice": "Text+Voice Assistant",
+      "voice": "Voice Assistant",
       "comparator": "Comparator",
       "data": "Data Explorer",
       "signOut": "Sign out",
@@ -25,7 +25,18 @@
       "comingSoon": "Coming soon."
     },
     "errors": {
-      "loadFailed": "Failed to load data: {{message}}"
+      "loadFailed": "Failed to load data: {{message}}",
+      "requestFailed": "The request could not be completed. Please try again.",
+      "serviceUnavailable": "The service is temporarily unavailable. Please try again in a few minutes.",
+      "unauthorized": "You are signed out or not allowed to do this. Please sign in again.",
+      "tooManyRequests": "Too many requests. Please wait a moment and try again.",
+      "reference": "Reference: {{id}}",
+      "chat": {
+        "guardrailUnavailable": "The assistant is temporarily unavailable. Please try again in a few minutes.",
+        "promptTooLong": "Your message is too long. Please shorten it and try again.",
+        "limitReached": "That request needed more steps than the assistant allows. Please ask for a smaller part of it.",
+        "internal": "Something went wrong while processing your request. Please try again."
+      }
     },
     "errorBoundary": {
       "title": "Something went wrong",

@@ -5,7 +5,7 @@
     },
     "nav": {
       "assistant": "Asistente de texto",
-      "voice": "Asistente de texto y voz",
+      "voice": "Asistente de voz",
       "comparator": "Comparador",
       "data": "Explorador de datos",
       "signOut": "Cerrar sesión",
@@ -25,7 +25,18 @@
       "comingSoon": "Próximamente."
     },
     "errors": {
-      "loadFailed": "Error al cargar los datos: {{message}}"
+      "loadFailed": "Error al cargar los datos: {{message}}",
+      "requestFailed": "No se pudo completar la solicitud. Inténtelo de nuevo.",
+      "serviceUnavailable": "El servicio no está disponible temporalmente. Inténtelo de nuevo en unos minutos.",
+      "unauthorized": "Ha cerrado la sesión o no tiene permiso para hacerlo. Inicie sesión de nuevo.",
+      "tooManyRequests": "Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.",
+      "reference": "Referencia: {{id}}",
+      "chat": {
+        "guardrailUnavailable": "El asistente no está disponible temporalmente. Inténtelo de nuevo en unos minutos.",
+        "promptTooLong": "Su mensaje es demasiado largo. Acórtelo e inténtelo de nuevo.",
+        "limitReached": "Esa solicitud necesitaba más pasos de los que permite el asistente. Pida una parte más pequeña.",
+        "internal": "Algo salió mal al procesar su solicitud. Inténtelo de nuevo."
+      }
     },
     "errorBoundary": {
       "title": "Algo salió mal",

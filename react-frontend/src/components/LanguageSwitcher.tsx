@@ -10,7 +10,8 @@ import { SUPPORTED_LOCALES } from '../i18n/config';
  * persists the choice to `localStorage` under `i18nextLng`, so the selection
  * survives reloads and future sessions.
  *
- * Styled as an icon-led pill that fits the topnav cluster.
+ * Styled as an icon-led pill that fits the topnav cluster. Below the `sm` breakpoint it shrinks to
+ * the globe icon so the whole top bar fits a phone.
  */
 export function LanguageSwitcher() {
   const { i18n, t } = useTranslation();
@@ -26,7 +27,7 @@ export function LanguageSwitcher() {
       <select
         value={i18n.resolvedLanguage ?? i18n.language}
         onChange={handleChange}
-        className="h-8 appearance-none rounded-full border border-border bg-background-elevated/70 pl-7 pr-7 text-xs font-medium text-foreground transition-[border-color,background] hover:border-border-strong hover:bg-background-elevated focus-visible:outline-none focus-visible:border-ring/60 focus-visible:ring-2 focus-visible:ring-ring/30"
+        className="h-8 w-8 appearance-none rounded-full border border-border bg-background-elevated/70 pl-7 pr-0 text-xs font-medium text-transparent sm:w-auto sm:pr-7 sm:text-foreground [&>option]:text-foreground transition-[border-color,background] hover:border-border-strong hover:bg-background-elevated focus-visible:outline-none focus-visible:border-ring/60 focus-visible:ring-2 focus-visible:ring-ring/30"
       >
         {SUPPORTED_LOCALES.map((locale) => (
           <option key={locale.code} value={locale.code}>
@@ -36,7 +37,7 @@ export function LanguageSwitcher() {
       </select>
       {/* tiny chevron via gradient corner */}
       <svg
-        className="pointer-events-none absolute right-2 h-3 w-3 text-foreground-muted"
+        className="pointer-events-none absolute right-2 hidden h-3 w-3 text-foreground-muted sm:block"
         viewBox="0 0 12 12"
         fill="none"
         aria-hidden

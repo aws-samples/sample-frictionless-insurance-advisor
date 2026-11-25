@@ -1,5 +1,11 @@
 #!/bin/bash
+# Usage:
+#   EXPECTED_AWS_ACCOUNT_ID=<12-digit account id> ./deploy.sh
+# The script stops before changing anything unless the current AWS credentials belong to
+# that account (see scripts/require-expected-account.sh).
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/scripts/require-expected-account.sh"
+require_expected_account
 
 # The CDK CLI is pinned to the version that matches aws-cdk-lib in
 # pyproject.toml: an older CLI cannot read the cloud assembly a newer
@@ -11,7 +17,7 @@ run_cdk() { uv run npx --yes "aws-cdk@${CDK_CLI_VERSION}" "$@"; }
 #   CDK_EXTRA_ARGS="-c enable_public_signup=true -c signup_allowed_emails=a@example.com" ./deploy.sh
 read -r -a CDK_EXTRA <<< "${CDK_EXTRA_ARGS:-}"
 
-uv sync
+uv sync --frozen
 
 echo "🚀 Deploying Insurance Advisor AgentCore..."
 
@@ -23,7 +29,7 @@ echo "🚀 Deploying Insurance Advisor AgentCore..."
 #    dependency graph allows. In our DAG, 01-auth must finish before
 #    02-tools, and 02-tools must finish before 03-agentcore and
 #    04-voice — but 03 and 04 are siblings of each other and can deploy
-#    in parallel, which saves ~3-4 min on a full deploy.
+#    in parallel.
 echo "🏗️  Deploying backend stacks (auth, tools, agentcore, voice)..."
 run_cdk deploy \
     insadv-01-auth \
@@ -33,12 +39,6 @@ run_cdk deploy \
     --concurrency 4 \
     --require-approval never \
     ${CDK_EXTRA[@]+"${CDK_EXTRA[@]}"}
-
-# Note: there used to be a step here re-asserting requestHeaderConfiguration on
-# the AgentCore Runtimes, because they were AwsCustomResource-backed and the
-# provider Lambda's npm-installed AWS SDK sometimes silently dropped the field.
-# The runtimes are now AWS::BedrockAgentCore::Runtime (L1), so the Authorization
-# allowlist is declared in CloudFormation and cannot drift. Script removed.
 
 # 2) Pull SSM values into react-frontend/.env.local and build the SPA.
 #    First generate the sample policy PDFs from their markdown sources.
@@ -52,7 +52,7 @@ echo "📄 Generating sample policy PDFs..."
 echo "🎨 Building React frontend..."
 pushd react-frontend >/dev/null
 ./scripts/setup-env.sh
-npm install
+npm ci
 npm run build
 popd >/dev/null
 

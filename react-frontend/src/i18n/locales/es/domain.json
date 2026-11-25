@@ -66,6 +66,36 @@
       "general": "Productos generales",
       "health": "Productos de salud",
       "all": "Todos los productos"
+    },
+    "citizenship": {
+      "us_citizen": "Ciudadano de EE. UU.",
+      "permanent_resident": "Residente permanente",
+      "other": "Otro"
+    },
+    "tobaccoStatus": {
+      "never": "Nunca",
+      "former": "Antiguo consumidor",
+      "current": "Actual"
+    },
+    "netWorthBand": {
+      "under_100k": "Menos de 100 000 $",
+      "100k_250k": "100 000 $ a 250 000 $",
+      "250k_500k": "250 000 $ a 500 000 $",
+      "500k_1m": "500 000 $ a 1 M$",
+      "1m_2_5m": "1 M$ a 2,5 M$",
+      "over_2_5m": "Más de 2,5 M$"
+    },
+    "yesNo": {
+      "yes": "Sí",
+      "no": "No"
+    },
+    "universalRider": {
+      "waiver_of_premium": "Exoneración de primas",
+      "accidental_death": "Beneficio por muerte accidental",
+      "long_term_care": "Cuidados de larga duración / enfermedad crónica",
+      "guaranteed_purchase_option": "Opción de compra garantizada",
+      "no_lapse_guarantee": "Cobertura adicional de garantía de no caducidad",
+      "overloan_protection": "Protección contra sobreendeudamiento por préstamos"
     }
   }
 }

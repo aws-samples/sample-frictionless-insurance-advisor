@@ -5,7 +5,7 @@
     },
     "nav": {
       "assistant": "Pembantu Teks",
-      "voice": "Pembantu Teks+Suara",
+      "voice": "Pembantu Suara",
       "comparator": "Pembanding",
       "data": "Penjelajah Data",
       "signOut": "Log keluar",
@@ -25,7 +25,18 @@
       "comingSoon": "Akan datang."
     },
     "errors": {
-      "loadFailed": "Gagal memuatkan data: {{message}}"
+      "loadFailed": "Gagal memuatkan data: {{message}}",
+      "requestFailed": "Permintaan tidak dapat diselesaikan. Sila cuba lagi.",
+      "serviceUnavailable": "Perkhidmatan tidak tersedia buat sementara waktu. Sila cuba lagi dalam beberapa minit.",
+      "unauthorized": "Anda telah log keluar atau tidak dibenarkan melakukan ini. Sila log masuk semula.",
+      "tooManyRequests": "Terlalu banyak permintaan. Sila tunggu sebentar dan cuba lagi.",
+      "reference": "Rujukan: {{id}}",
+      "chat": {
+        "guardrailUnavailable": "Pembantu tidak tersedia buat sementara waktu. Sila cuba lagi dalam beberapa minit.",
+        "promptTooLong": "Mesej anda terlalu panjang. Sila pendekkan dan cuba lagi.",
+        "limitReached": "Permintaan itu memerlukan lebih banyak langkah daripada yang dibenarkan oleh pembantu. Sila minta bahagian yang lebih kecil.",
+        "internal": "Berlaku masalah semasa memproses permintaan anda. Sila cuba lagi."
+      }
     },
     "errorBoundary": {
       "title": "Sesuatu telah berlaku",

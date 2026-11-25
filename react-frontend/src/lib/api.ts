@@ -1,8 +1,11 @@
 import { fetchAuthSession } from 'aws-amplify/auth';
 
+import i18n from '../i18n/config';
+import { apiErrorFromResponse } from './errors';
 import type { GapLine } from './productLines';
 
 import type {
+  ApplicationFieldInput,
   CatalogProduct,
   ComparisonResponse,
   Customer,
@@ -15,9 +18,8 @@ import type {
   Policy,
   PrioritiesResponse,
   RecommendationResponse,
-  RoleplayDifficulty,
-  RoleplayScoreResponse,
   SampleBrochure,
+  SubmitApplicationResponse,
 } from '../types';
 
 async function authHeaders(): Promise<Record<string, string>> {
@@ -40,8 +42,7 @@ function apiUrl(endpoint: string): string {
 async function getJson<T>(endpoint: string): Promise<T> {
   const response = await fetch(apiUrl(endpoint), { headers: await authHeaders() });
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`${endpoint} returned ${response.status}: ${body}`);
+    throw apiErrorFromResponse(endpoint, response.status, await response.text());
   }
   return (await response.json()) as T;
 }
@@ -53,8 +54,7 @@ async function postJson<T>(endpoint: string, payload: unknown): Promise<T> {
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`${endpoint} returned ${response.status}: ${body}`);
+    throw apiErrorFromResponse(endpoint, response.status, await response.text());
   }
   return (await response.json()) as T;
 }
@@ -100,25 +100,56 @@ export async function summariseMeeting(
   turns: { role: 'user' | 'assistant'; text: string }[],
   locale: string
 ): Promise<MeetingSummaryResponse> {
-  return postJson<MeetingSummaryResponse>('meeting-summary', { customer_id: customerId, turns, locale });
+  return postJson<MeetingSummaryResponse>('meeting-summary', {
+    customer_id: customerId,
+    turns: trimTurnsForSummary(turns),
+    locale,
+  });
+}
+
+// The server (lambda/meeting_summary) reads the last 400 turns, 2,000 characters each, 24,000 in all,
+// and API Gateway and the WAF refuse a larger request (60 KB). The budget below keeps a request of
+// the most recent turns well inside those limits, whatever the language (text counted in UTF-8 bytes).
+const SUMMARY_MAX_TURNS = 400;
+const SUMMARY_MAX_TURN_CHARS = 2000;
+const SUMMARY_MAX_TOTAL_CHARS = 22000;
+const SUMMARY_MAX_TEXT_BYTES = 40000;
+
+/** The most recent turns of a conversation that fit the summary request, oldest first. */
+export function trimTurnsForSummary(
+  turns: { role: 'user' | 'assistant'; text: string }[]
+): { role: 'user' | 'assistant'; text: string }[] {
+  const encoder = new TextEncoder();
+  const kept: { role: 'user' | 'assistant'; text: string }[] = [];
+  let chars = 0;
+  let bytes = 0;
+  for (let i = turns.length - 1; i >= 0 && kept.length < SUMMARY_MAX_TURNS; i--) {
+    const text = turns[i].text.replace(/\s+/g, ' ').trim().slice(0, SUMMARY_MAX_TURN_CHARS);
+    if (!text) continue;
+    const size = encoder.encode(text).length;
+    if (kept.length > 0 && (chars + text.length > SUMMARY_MAX_TOTAL_CHARS || bytes + size > SUMMARY_MAX_TEXT_BYTES)) break;
+    kept.push({ role: turns[i].role, text });
+    chars += text.length;
+    bytes += size;
+  }
+  return kept.reverse();
 }
 /**
- * Coaching feedback on a practice conversation. In `turns` the advisor is "user"
- * and the AI customer is "assistant". Nothing is stored.
+ * "Send for Signature": save the whole form as one JSON object (POST /applications).
+ * `customerId` is null for a prospect. Secret fields are dropped on the server.
+ * `ref` is the reference of an earlier save of this application: it is overwritten, not duplicated.
  */
-export async function scoreRoleplay(
-  customerId: string,
-  turns: { role: 'user' | 'assistant'; text: string }[],
-  difficulty: RoleplayDifficulty,
-  focus: string,
-  locale: string
-): Promise<RoleplayScoreResponse> {
-  return postJson<RoleplayScoreResponse>('roleplay-score', {
+export async function submitApplication(
+  productType: string,
+  customerId: string | null,
+  fields: Record<string, ApplicationFieldInput>,
+  ref?: string | null
+): Promise<SubmitApplicationResponse> {
+  return postJson<SubmitApplicationResponse>('applications', {
+    product_type: productType,
     customer_id: customerId,
-    turns,
-    difficulty,
-    focus,
-    locale,
+    fields,
+    ...(ref ? { ref } : {}),
   });
 }
 /** Delete one note. Only the advisor's own sign-in token is accepted for this. */
@@ -131,8 +162,7 @@ export async function deleteNote(customerId: string, noteId: string): Promise<vo
     headers: await authHeaders(),
   });
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`${endpoint} returned ${response.status}: ${body}`);
+    throw apiErrorFromResponse(endpoint, response.status, await response.text());
   }
 }
 
@@ -225,23 +255,13 @@ export function prefetchComparatorData(): void {
 }
 
 /**
- * Turn an error thrown by getJson/postJson ("endpoint returned 422: {...}")
- * into the backend's own message, when it sent one.
+ * The text to show for an error thrown by getJson/postJson. An ApiError already carries a safe
+ * message (the backend's short message for a client error, or a fixed sentence); any other
+ * Error is a problem on this side (no network, not signed in) and its message is shown.
  */
 export function friendlyApiError(err: unknown): string {
-  const text = err instanceof Error ? err.message : String(err);
-  const match = text.match(/returned \d+: (\{.*\})\s*$/s);
-  if (match) {
-    try {
-      const parsed = JSON.parse(match[1]) as { message?: unknown };
-      if (typeof parsed.message === 'string' && parsed.message) return parsed.message;
-    } catch {
-      /* fall through to the raw text */
-    }
-  }
-  return text;
+  return err instanceof Error ? err.message : i18n.t('common.errors.requestFailed');
 }
-
 /**
  * List every browsable reference document, grouped by folder and returned in
  * the backend's display order. Cheap (S3 listings only, no document bodies),
@@ -339,7 +359,9 @@ const MAX_DOC_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB — must match server cap
 interface InitiateResponse {
   document_id: string;
   s3_key: string;
-  presigned_put_url: string;
+  /** Where the form is posted, and the fields (a signed policy) that go with the file. */
+  upload_url: string;
+  upload_fields: Record<string, string>;
   expires_in_seconds: number;
   max_size_bytes: number;
   content_type: string;
@@ -348,10 +370,11 @@ interface InitiateResponse {
 
 /**
  * Two-step document upload:
- *   1. POST /documents/initiate → backend mints a presigned S3 PUT URL
- *   2. PUT the binary directly to S3 (bypasses API Gateway 10MB cap)
+ *   1. POST /documents/initiate → backend checks the customer and signs an S3 POST form
+ *   2. POST the form (signed fields, then the file) directly to S3 (bypasses API Gateway 10MB cap)
  *
- * Validates type and size client-side before hitting the network.
+ * The signed policy fixes the key and Content-Type and bounds the size, so S3 itself refuses a
+ * file that is empty or too large. Type and size are also checked here, before the network.
  *
  * Returns the document_id the agent uses to call
  * extract_policy_from_document. The caller then includes the document_id
@@ -381,26 +404,26 @@ export async function uploadDocument(
     const limitMb = Math.round(MAX_DOC_SIZE_BYTES / 1024 / 1024);
     throw new Error(`File is too large. Maximum size is ${limitMb} MB.`);
   }
-
   const initiate = await postJson<InitiateResponse>('documents/initiate', {
     filename: file.name,
     content_type: contentType,
     customer_id: customerId,
   });
-
-  // The presigned URL signs the Content-Type and Content-Length-Range,
-  // so we must PUT with the exact same Content-Type the server signed.
-  const putResponse = await fetch(initiate.presigned_put_url, {
-    method: 'PUT',
-    headers: { 'Content-Type': initiate.content_type },
-    body: file,
-  });
-  if (!putResponse.ok) {
-    throw new Error(
-      `Upload to S3 failed (${putResponse.status}). The presigned URL may have expired.`
-    );
+  if (file.size > initiate.max_size_bytes) {
+    const limitMb = Math.max(1, Math.round(initiate.max_size_bytes / 1024 / 1024));
+    throw new Error(`File is too large. Maximum size is ${limitMb} MB.`);
   }
-
+  // The signed fields go first and the file last: S3 ignores any field after the file. The
+  // Content-Type is one of the signed fields, so it must not be set as a request header here.
+  const form = new FormData();
+  for (const [name, value] of Object.entries(initiate.upload_fields)) {
+    form.append(name, value);
+  }
+  form.append('file', file);
+  const uploadResponse = await fetch(initiate.upload_url, { method: 'POST', body: form });
+  if (!uploadResponse.ok) {
+    throw apiErrorFromResponse('document upload', uploadResponse.status, await uploadResponse.text());
+  }
   return {
     document_id: initiate.document_id,
     filename: initiate.filename,

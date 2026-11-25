@@ -18,7 +18,7 @@ import type { PriorityAction, PriorityReason, PriorityRule } from '../types';
 export interface CockpitProps {
   totalCustomers: number;
   totalPolicies: number;
-  /** Open this customer and start the matching quick prompt in the chat. */
+  /** Open this customer in the Text Assistant and start the matching quick prompt. */
   onOpen: (customerId: string, action: PriorityAction) => void;
 }
 
@@ -51,7 +51,7 @@ const RULE_TONE_TEXT: Record<'danger' | 'warning' | 'info', string> = {
 };
 
 /**
- * The welcome area when no customer is selected: today's priorities.
+ * The Home tab's main area: today's priorities.
  * Each row names the customer, why they are on the list, and offers one
  * click to open them with the right starting prompt (annual review,
  * meeting preparation or a drafted message).

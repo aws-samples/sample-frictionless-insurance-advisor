@@ -39,7 +39,7 @@ interface RecommendationStore {
  * App-wide recommendation cache.
  *
  * Lives at the AuthedShell level (next to CustomersProvider) so the cache
- * survives switching between Text Assistant and Voice+Text Assistant pages.
+ * survives switching between the Text Assistant and Voice Assistant pages.
  * Without this, the RecommendationSection unmounts each time the user
  * changes pages and we'd repay the ~5-10 second Bedrock cost.
  *
@@ -146,8 +146,7 @@ export function RecommendationProvider({ children }: { children: ReactNode }) {
 
 /**
  * Consumer hook used by RecommendationSection. Reads the cache for the
- * given customer/locale and triggers a fetch on miss. Same return shape
- * the previous local-only hook had, so callers don't need to change.
+ * given customer/locale and triggers a fetch on miss.
  */
 export function useRecommendation(
   customerId: string | null,

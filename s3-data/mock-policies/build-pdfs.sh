@@ -4,6 +4,8 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$DIR/../.." && pwd)"
 
-uv run --with markdown --with fpdf2 \
-    python "$DIR/build_pdfs.py"
+# markdown and fpdf2 come from the project's locked dev group (pyproject.toml, uv.lock):
+# exact versions and file hashes, nothing is resolved at run time.
+uv run --frozen --project "$ROOT" python "$DIR/build_pdfs.py"

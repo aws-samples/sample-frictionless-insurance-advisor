@@ -1,0 +1,51 @@
+{
+  "common": {
+    "app": {
+      "title": "Versicherungsberater"
+    },
+    "nav": {
+      "assistant": "Text-Assistent",
+      "voice": "Sprach-Assistent",
+      "comparator": "Vergleich",
+      "data": "Daten-Explorer",
+      "signOut": "Abmelden",
+      "language": "Sprache",
+      "pitchDeck": "Präsentation öffnen"
+    },
+    "actions": {
+      "send": "Senden",
+      "clear": "Leeren",
+      "refresh": "Aktualisieren",
+      "cancel": "Abbrechen",
+      "close": "Schließen",
+      "retry": "Erneut versuchen"
+    },
+    "states": {
+      "loading": "Wird geladen...",
+      "comingSoon": "Demnächst verfügbar."
+    },
+    "errors": {
+      "loadFailed": "Daten konnten nicht geladen werden: {{message}}",
+      "requestFailed": "Die Anfrage konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+      "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut.",
+      "unauthorized": "Sie sind abgemeldet oder dürfen das nicht tun. Bitte melden Sie sich erneut an.",
+      "tooManyRequests": "Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
+      "reference": "Referenz: {{id}}",
+      "chat": {
+        "guardrailUnavailable": "Der Assistent ist vorübergehend nicht verfügbar. Bitte versuchen Sie es in einigen Minuten erneut.",
+        "promptTooLong": "Ihre Nachricht ist zu lang. Bitte kürzen Sie sie und versuchen Sie es erneut.",
+        "limitReached": "Diese Anfrage hätte mehr Schritte erfordert, als der Assistent erlaubt. Bitte fragen Sie nach einem kleineren Teil.",
+        "internal": "Bei der Verarbeitung Ihrer Anfrage ist etwas schiefgelaufen. Bitte versuchen Sie es erneut."
+      }
+    },
+    "errorBoundary": {
+      "title": "Etwas ist schiefgelaufen",
+      "body": "In der App ist ein unerwarteter Fehler aufgetreten und diese Ansicht konnte nicht angezeigt werden. Ihre Daten sind sicher – meist hilft ein Neuladen.",
+      "reload": "Neu laden"
+    },
+    "brand": {
+      "nameAccent": "Awesome",
+      "nameSuffix": "Insurance"
+    }
+  }
+}

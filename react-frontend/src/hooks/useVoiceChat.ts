@@ -2,11 +2,29 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import audioWorkletUrl from '../lib/audio-processor.worklet.js?url';
-import { connectVoice, ConsentEvent, ConsentStatus, TranscriptRole, VoiceConnection } from '../lib/voice';
-import type { Customer, FormFillEvent, FormSchema, RoleplayConfig, VoiceMessage } from '../types';
+import {
+  connectVoice,
+  ConsentEvent,
+  ConsentStatus,
+  TranscriptRole,
+  VOICE_TOKEN_EXPIRED_CLOSE_CODE,
+  VoiceConnection,
+} from '../lib/voice';
+import type { Customer, FormFillEvent, FormSchema, VoiceMessage } from '../types';
 
-import { usePersistentBoolean } from './usePersistentBoolean';
 
+/** The voice model ends a session after about this long with no speech and no typed message. */
+export const IDLE_LIMIT_SECONDS = 300;
+/**
+ * A second token-expiry close within this long of the previous one is not retried: a fresh token
+ * lasts far longer, so the sign-in is not usable and the advisor must sign in again.
+ */
+const TOKEN_RECONNECT_MIN_GAP_MS = 30_000;
+/**
+ * What the page tells the advisor after the runtime ended the session because the access token expired:
+ * 'renewed' (a new session was opened with a fresh token) or 'expired' (it could not be).
+ */
+export type SessionNotice = 'renewed' | 'expired' | null;
 export interface VoiceChatState {
   connected: boolean;
   recording: boolean;
@@ -45,23 +63,12 @@ export interface VoiceFormHandlers {
 /** Why consent went back to pending, for a short notice under the header. */
 export type ConsentNotice = 'customer_changed' | null;
 
-export interface VoiceConsentHandlers {
-  /**
-   * The advisor confirmed that the customer agreed to be transcribed. Called
-   * once per customer per session, with the time of the original answer. The
-   * customer id is null for a prospect who has no record yet; the call is held
-   * back until they have one.
-   */
-  onConsentConfirmed?: (customerId: string, at: string) => void;
-}
 
 export function useVoiceChat(
   customer: Customer | null,
   formHandlers?: VoiceFormHandlers,
   /** Field paths already filled from the customer record; relayed to the agent. */
-  formPrefill?: Record<string, string>,
-  consentHandlers?: VoiceConsentHandlers,
-  roleplay: RoleplayConfig | null = null
+  formPrefill?: Record<string, string>
 ) {
   // Held in a ref so re-renders of the owner don't tear down the socket:
   // `connect` must not depend on identity-unstable callbacks.
@@ -69,11 +76,6 @@ export function useVoiceChat(
   formHandlersRef.current = formHandlers;
   const formPrefillRef = useRef<Record<string, string> | undefined>(formPrefill);
   formPrefillRef.current = formPrefill;
-  const consentHandlersRef = useRef<VoiceConsentHandlers | undefined>(consentHandlers);
-  consentHandlersRef.current = consentHandlers;
-  // Practice mode: read when a connection opens, so switching it reconnects.
-  const roleplayRef = useRef<RoleplayConfig | null>(roleplay);
-  roleplayRef.current = roleplay;
 
   // --- consent to record ------------------------------------
   // The runtime is the source of truth; these mirror what it last said.
@@ -82,8 +84,6 @@ export function useVoiceChat(
   const [consentNotice, setConsentNotice] = useState<ConsentNotice>(null);
   const consentRef = useRef<ConsentStatus>('pending');
   const consentAtRef = useRef<string | null>(null);
-  /** Customers this session has already logged the consent note for. */
-  const loggedForRef = useRef<Set<string>>(new Set());
   /** The mic has started and the runtime has been asked to put the question. */
   const promptedRef = useRef(false);
   const currentCustomerIdRef = useRef<string | null>(customer?.customer_id ?? null);
@@ -106,16 +106,25 @@ export function useVoiceChat(
   const isPlayingRef = useRef(false);
   const forceNewBubbleRef = useRef(false);
 
-  // Output mute — purely local. Audio still decodes and plays through a
-  // GainNode whose gain we drop to 0, so the transcript still streams at
-  // speaking pace; only the sound is silenced. Persisted so the choice
-  // survives reconnects and reloads.
-  const [muted, , toggleMuted] = usePersistentBoolean('insadv.voiceMuted', false);
-  const mutedRef = useRef(muted);
-  mutedRef.current = muted;
-  /** Master gain all playback routes through, so mute is one value change. */
-  const gainRef = useRef<GainNode | null>(null);
-
+  // Pause. "Pause voice chat" switches the microphone off and silences the assistant's voice
+  // at once; the session itself stays open, so typing, the transcript, consent and any open
+  // form carry on (replies come as text only). It is not a pause on the server: the voice
+  // model ends a session after about 5 minutes with no speech and no typing, so while paused
+  // a countdown runs, and typing a message restarts it. If the session has ended by the time
+  // the advisor resumes, resuming starts a new one.
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
+  /** When the idle limit is reached while paused (epoch ms), or null when not paused. */
+  const [idleDeadline, setIdleDeadline] = useState<number | null>(null);
+  /** True after a resume had to start a new session because the old one had ended. */
+  const [sessionRestarted, setSessionRestarted] = useState(false);
+  const [sessionNotice, setSessionNotice] = useState<SessionNotice>(null);
+  const lastTokenReconnectRef = useRef(0);
+  /** Set below, once `connect`, `stopRecording` and `cutPlayback` exist. */
+  const reconnectAfterTokenExpiryRef = useRef<() => void>(() => {});
+  /** The audio buffer that is playing now, so a pause can stop it mid-word. */
+  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null);
   // --- transcript/audio synchronisation ---------------------------------
   // Nova Sonic streams text and audio over the same socket, but text arrives
   // at network speed while audio can only play at speaking speed. Rendering
@@ -195,10 +204,12 @@ export function useVoiceChat(
     setState((prev) => ({ ...prev, speaking: true }));
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    // Route through the main gain node (mute), falling back to the destination
-    // if for some reason it isn't set up yet.
-    src.connect(gainRef.current ?? ctx.destination);
-    src.onended = () => playNext();
+    src.connect(ctx.destination);
+    currentSourceRef.current = src;
+    src.onended = () => {
+      if (currentSourceRef.current === src) currentSourceRef.current = null;
+      playNext();
+    };
     src.start();
   }, []);
 
@@ -209,12 +220,7 @@ export function useVoiceChat(
       if (!recordingRef.current) return;
       try {
         if (!playCtxRef.current || playCtxRef.current.state === 'closed') {
-          const newCtx = new AudioContext({ sampleRate });
-          const gain = newCtx.createGain();
-          gain.gain.value = mutedRef.current ? 0 : 1;
-          gain.connect(newCtx.destination);
-          playCtxRef.current = newCtx;
-          gainRef.current = gain;
+          playCtxRef.current = new AudioContext({ sampleRate });
         }
         const ctx = playCtxRef.current;
 
@@ -246,19 +252,28 @@ export function useVoiceChat(
   );
 
   /** Drop any text still waiting on audio (interruption, clear, disconnect). */
-  const toggleMute = useCallback(() => toggleMuted(), [toggleMuted]);
-
-  // Apply the mute state to live playback. A short ramp avoids a click, and
-  // driving it from an effect keeps it correct however `muted` changed
-  // (button, or restored from localStorage once a context exists).
-  useEffect(() => {
-    const gain = gainRef.current;
-    const ctx = playCtxRef.current;
-    if (gain && ctx) {
-      gain.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.01);
+  /**
+   * Stop the assistant's voice now: the buffer that is playing, and everything queued behind it.
+   * Text that was being held back to stay in step with the sound is shown straight away.
+   */
+  const cutPlayback = useCallback(() => {
+    const src = currentSourceRef.current;
+    currentSourceRef.current = null;
+    if (src) {
+      src.onended = null;
+      try {
+        src.stop();
+      } catch {
+        /* already stopped */
+      }
     }
-  }, [muted]);
-
+    playQueueRef.current = [];
+    isPlayingRef.current = false;
+    queuedSecondsRef.current = 0;
+    lastReleaseAtRef.current = 0;
+    pendingTextRef.current = pendingTextRef.current.map((c) => ({ ...c, releaseAt: 0 }));
+    setState((prev) => ({ ...prev, speaking: false }));
+  }, []);
   /** Drop text still waiting on audio (interruption, clear, disconnect). */
   const discardPendingText = useCallback(() => {
     pendingTextRef.current = [];
@@ -359,7 +374,7 @@ export function useVoiceChat(
     [commitAssistantSegment]
   );
 
-  /** Mirror a consent event from the runtime, and log the confirmation once. */
+  /** Mirror a consent event from the runtime. */
   const handleConsent = useCallback((event: ConsentEvent) => {
     consentRef.current = event.status;
     setConsent(event.status);
@@ -368,11 +383,6 @@ export function useVoiceChat(
       const at = event.at;
       consentAtRef.current = at;
       setConsentAt(at);
-      const customerId = event.customerId ?? currentCustomerIdRef.current;
-      if (customerId && at && !loggedForRef.current.has(customerId)) {
-        loggedForRef.current.add(customerId);
-        consentHandlersRef.current?.onConsentConfirmed?.(customerId, at);
-      }
     } else {
       consentAtRef.current = null;
       setConsentAt(null);
@@ -384,13 +394,12 @@ export function useVoiceChat(
     }
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (afterTokenExpiry = false) => {
     try {
       setState((prev) => ({ ...prev, error: null }));
       // A new session starts without consent.
       consentRef.current = 'pending';
       consentAtRef.current = null;
-      loggedForRef.current = new Set();
       setConsent('pending');
       setConsentAt(null);
       setConsentNotice(null);
@@ -399,7 +408,6 @@ export function useVoiceChat(
         customerId: customer?.customer_id ?? null,
         customerName: customer?.name ?? null,
         formPrefill: formPrefillRef.current,
-        roleplay: roleplayRef.current,
         onAudioChunk: queueAudio,
         onTranscript: handleTranscript,
         onInterruption: () => {
@@ -416,19 +424,22 @@ export function useVoiceChat(
           formHandlersRef.current?.onFormOpen?.(productType, schema),
         onFormFill: (event) => formHandlersRef.current?.onFormFill?.(event),
         onConnected: () => setState((prev) => ({ ...prev, connected: true, error: null })),
-        onDisconnected: () =>
+        onDisconnected: (closeCode) => {
           setState((prev) => ({
             ...prev,
             connected: false,
             recording: false,
             speaking: false,
-          })),
+          }));
+          if (closeCode === VOICE_TOKEN_EXPIRED_CLOSE_CODE) reconnectAfterTokenExpiryRef.current();
+        },
         onError: (msg) => setState((prev) => ({ ...prev, error: msg })),
       });
       connRef.current = conn;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setState((prev) => ({ ...prev, error: msg }));
+      if (afterTokenExpiry) setSessionNotice('expired');
     }
   }, [customer, queueAudio, handleTranscript, handleConsent]);
 
@@ -441,6 +452,9 @@ export function useVoiceChat(
 
   const disconnect = useCallback(() => {
     stopRecording();
+    setSessionNotice(null);
+    setPaused(false);
+    setIdleDeadline(null);
     connRef.current?.close();
     connRef.current = null;
     playQueueRef.current = [];
@@ -450,7 +464,7 @@ export function useVoiceChat(
       playCtxRef.current.close();
     }
     playCtxRef.current = null;
-    gainRef.current = null;
+    currentSourceRef.current = null;
     setState({
       connected: false,
       recording: false,
@@ -513,14 +527,7 @@ export function useVoiceChat(
       setState((prev) => ({ ...prev, recording: true }));
       // First time the mic opens in a session without consent: have the
       // assistant ask the question now rather than wait to be spoken to.
-      if (roleplayRef.current) {
-        // Practice: no consent question (nobody real is on the line); the AI
-        // customer greets the advisor instead.
-        if (!promptedRef.current) {
-          promptedRef.current = true;
-          connRef.current?.send({ type: 'voice_roleplay_start' });
-        }
-      } else if (consentRef.current === 'pending' && !promptedRef.current) {
+      if (consentRef.current === 'pending' && !promptedRef.current) {
         promptedRef.current = true;
         connRef.current?.send({ type: 'voice_consent_prompt' });
       }
@@ -537,12 +544,17 @@ export function useVoiceChat(
       history: [...prev.history, { id: uuidv4(), role: 'user', text }],
     }));
     connRef.current.send({ type: 'bidi_text_input', text, role: 'user' });
+    // A typed message counts as activity for the voice model's idle limit.
+    if (pausedRef.current) setIdleDeadline(Date.now() + IDLE_LIMIT_SECONDS * 1000);
   }, []);
 
   const clearHistory = useCallback(() => {
     // Close + reopen the WebSocket so the downstream insurance agent starts
     // a fresh session. Clears the on-screen history as a side effect.
     stopRecording();
+    setPaused(false);
+    setIdleDeadline(null);
+    setSessionRestarted(false);
     connRef.current?.close();
     connRef.current = null;
     playQueueRef.current = [];
@@ -572,6 +584,64 @@ export function useVoiceChat(
     }, 0);
   }, [connect, stopRecording]);
 
+  /** Pause: microphone off, the assistant's voice cut now, session left open. */
+  const pauseVoice = useCallback(() => {
+    stopRecording();
+    cutPlayback();
+    setSessionRestarted(false);
+    setPaused(true);
+    setIdleDeadline(Date.now() + IDLE_LIMIT_SECONDS * 1000);
+  }, [stopRecording, cutPlayback]);
+  /**
+   * Resume (or start) voice. If the session ended while paused, a new one is opened first;
+   * consent is then asked again, because it belongs to a session.
+   */
+  const resumeVoice = useCallback(async () => {
+    const wasPaused = pausedRef.current;
+    setPaused(false);
+    setIdleDeadline(null);
+    if (!connRef.current?.isOpen()) {
+      connRef.current = null;
+      if (!connectingRef.current) {
+        connectingRef.current = true;
+        try {
+          await connect();
+        } finally {
+          connectingRef.current = false;
+        }
+      }
+      if (wasPaused) setSessionRestarted(true);
+    }
+    await startRecording();
+  }, [connect, startRecording]);
+  const dismissSessionRestarted = useCallback(() => setSessionRestarted(false), []);
+  const dismissSessionNotice = useCallback(() => setSessionNotice(null), []);
+
+  // The runtime ends a session when the access token it was opened with expires. The conversation on
+  // screen stays; a new session starts with a fresh token and asks for recording consent again, and the
+  // microphone stays off until the advisor starts it. If the fresh token is refused too, the page says so
+  // and stops.
+  reconnectAfterTokenExpiryRef.current = () => {
+    const now = Date.now();
+    const repeated = now - lastTokenReconnectRef.current < TOKEN_RECONNECT_MIN_GAP_MS;
+    lastTokenReconnectRef.current = now;
+    stopRecording();
+    cutPlayback();
+    setPaused(false);
+    setIdleDeadline(null);
+    connRef.current = null;
+    if (repeated) {
+      setSessionNotice('expired');
+      return;
+    }
+    setSessionNotice('renewed');
+    if (!connectingRef.current) {
+      connectingRef.current = true;
+      void connect(true).finally(() => {
+        connectingRef.current = false;
+      });
+    }
+  };
   const clearError = useCallback(() => setState((prev) => ({ ...prev, error: null })), []);
 
   /** The on-screen answer to the consent question. */
@@ -579,16 +649,6 @@ export function useVoiceChat(
     connRef.current?.send({ type: 'voice_consent', status });
   }, []);
 
-  // Entering or leaving a practice session needs a fresh connection: the runtime
-  // reads the mode once, from the first message.
-  const roleplayKey = roleplay ? JSON.stringify(roleplay) : '';
-  const lastRoleplayKeyRef = useRef<string>(roleplayKey);
-  useEffect(() => {
-    if (lastRoleplayKeyRef.current === roleplayKey) return;
-    lastRoleplayKeyRef.current = roleplayKey;
-    clearHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- clearHistory is stable enough; run on mode change only
-  }, [roleplayKey]);
 
   useEffect(() => {
     // Auto-connect when the hook mounts (Voice page opens). Disconnect
@@ -612,7 +672,11 @@ export function useVoiceChat(
     consentAt,
     consentNotice,
     answerConsent,
-    muted,
+    paused,
+    idleDeadline,
+    sessionRestarted,
+    sessionNotice,
+    dismissSessionNotice,
     connect,
     disconnect,
     startRecording,
@@ -620,6 +684,8 @@ export function useVoiceChat(
     sendText,
     clearHistory,
     clearError,
-    toggleMute,
+    pauseVoice,
+    resumeVoice,
+    dismissSessionRestarted,
   };
 }

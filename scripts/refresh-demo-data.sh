@@ -7,12 +7,15 @@
 # at least every 48 hours (see "Automatic reset" in cdk/tools_stack.py).
 #
 # Usage:
-#   AWS_PROFILE=<profile> ./scripts/refresh-demo-data.sh [--yes] [--keep-notes] [--skip-memory]
+#   EXPECTED_AWS_ACCOUNT_ID=<12-digit account id> AWS_PROFILE=<profile> ./scripts/refresh-demo-data.sh [--yes] [--keep-notes] [--skip-memory]
+#
+#   EXPECTED_AWS_ACCOUNT_ID  required; the script stops unless the credentials belong to that account
 #
 #   --yes          do not ask for confirmation
 #   --keep-notes   keep notes added after seeding
 #   --skip-memory  leave AgentCore memory alone
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/require-expected-account.sh"
 
 REGION="${AWS_REGION:-us-east-1}"
 STACK="insadv-02-tools"
@@ -30,6 +33,7 @@ for arg in "$@"; do
 done
 PAYLOAD="{\"keep_notes\": ${KEEP_NOTES}, \"skip_memory\": ${SKIP_MEMORY}}"
 
+require_expected_account
 ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
 FN_ARN="$(aws cloudformation describe-stacks --stack-name "$STACK" --region "$REGION" \
   --query "Stacks[0].Outputs[?OutputKey=='MockDataLambdaArn'].OutputValue" --output text)"

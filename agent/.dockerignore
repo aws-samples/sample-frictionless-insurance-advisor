@@ -1,0 +1,7 @@
+# Keeps the build context (and the CDK image asset hash) free of files the Dockerfile does not COPY.
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.venv
+tests
+*.md

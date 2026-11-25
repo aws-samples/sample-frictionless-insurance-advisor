@@ -10,14 +10,16 @@ import {
   Phone,
   Shield,
   ShieldCheck,
+  Sparkles,
   Users as UsersIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { fmtDate } from '../lib/format';
 import { Avatar, Badge, Card } from '../ui';
-import type { Customer, CustomerNote, FormSchema, PriorityAction } from '../types';
-import { Cockpit } from './Cockpit';
+import type { Customer, CustomerNote, FormSchema } from '../types';
+import { CustomerDetails } from './CustomerDetails';
+import { InfoRow } from './InfoRow';
 
 import { NotesCard } from './NotesCard';
 import { PoliciesList } from './PoliciesList';
@@ -28,11 +30,8 @@ import { ProfileActions } from './ProfileActions';
 const NO_NOTES: CustomerNote[] = [];
 
 interface CustomerPanelProps {
+  /** The open customer, or null while a new prospect is being onboarded (no profile yet). */
   customer: Customer | null;
-  totalCustomers: number;
-  totalPolicies: number;
-  /** Cockpit: open a customer and start a prompt. */
-  onOpenCustomer?: (customerId: string, action: PriorityAction) => void;
   /** Opens an application form for the customer (the left panel switches to it). */
   onOpenForm: (productType: string, schema: FormSchema) => void;
 }
@@ -50,26 +49,7 @@ function daysSince(iso: string | undefined): number | null {
   return Math.floor((Date.now() - parsed.getTime()) / 86_400_000);
 }
 
-interface InfoRowProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number | null | undefined;
-}
-
-function InfoRow({ icon, label, value }: InfoRowProps) {
-  if (!value && value !== 0) return null;
-  return (
-    <div className="flex items-start gap-2.5 text-sm">
-      <span className="mt-0.5 text-foreground-muted shrink-0">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <div className="text-xs uppercase tracking-wide text-foreground-muted">{label}</div>
-        <div className="mt-0.5 text-foreground break-words">{value}</div>
-      </div>
-    </div>
-  );
-}
-
-export function CustomerPanel({ customer, totalCustomers, totalPolicies, onOpenCustomer, onOpenForm }: CustomerPanelProps) {
+export function CustomerPanel({ customer, onOpenForm }: CustomerPanelProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? i18n.language;
 
@@ -86,12 +66,21 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies, onOpenC
   }, [policies]);
 
   if (!customer) {
+    // New prospect: there is no profile to show yet. The Cockpit lives on the Home tab only.
     return (
-      <Cockpit
-        totalCustomers={totalCustomers}
-        totalPolicies={totalPolicies}
-        onOpen={(id, action) => onOpenCustomer?.(id, action)}
-      />
+      <div className="p-6 sm:p-8">
+        <div className="flex items-start gap-4">
+          <Sparkles className="mt-1 h-6 w-6 text-brand-2" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl font-bold tracking-tight">
+              <span className="text-brand-gradient">{t('assistant.welcome.heading')}</span>
+            </h2>
+            <p className="mt-1 max-w-prose text-sm text-foreground-muted">
+              {t('assistant.welcome.body')}
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
   const isProspect = customer.policies.every((p) => p.third_party);
@@ -110,7 +99,7 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies, onOpenC
     ? t(`domain.maritalStatus.${customer.marital_status}`, { defaultValue: customer.marital_status })
     : null;
 
-  // Fall back to join_date only if last_reviewed is absent (legacy records).
+  // Fall back to join_date only if last_reviewed is absent (records without a review date).
   const reviewAgeDays = daysSince(customer.last_reviewed ?? customer.join_date);
   const isStale = reviewAgeDays !== null && reviewAgeDays > STALE_AFTER_DAYS;
 
@@ -192,6 +181,9 @@ export function CustomerPanel({ customer, totalCustomers, totalPolicies, onOpenC
             value={customer.policies.length}
           />
         </div>
+
+        {/* Remaining profile fields, collapsed. Keyed so each customer opens closed. */}
+        <CustomerDetails key={customer.customer_id} customer={customer} />
       </Card>
 
       {/* Notes: life events and interactions */}

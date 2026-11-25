@@ -27,7 +27,23 @@
         "policiesCount": "계약 수",
         "occupation": "직업",
         "maritalStatus": "혼인 상태",
-        "gender": "성별"
+        "gender": "성별",
+        "firstName": "이름",
+        "middleName": "중간 이름",
+        "lastName": "성",
+        "dateOfBirth": "생년월일",
+        "street": "도로명 주소",
+        "city": "도시",
+        "state": "주",
+        "zip": "우편번호",
+        "citizenship": "시민권",
+        "tobaccoStatus": "흡연 여부",
+        "dependents": "부양가족",
+        "employmentStatus": "고용 상태",
+        "annualIncome": "연소득",
+        "netWorthBand": "순자산",
+        "homeOwner": "주택 소유",
+        "medicalConditions": "기존 질환"
       },
       "dataFreshness": {
         "badge": "최신 정보 확인",
@@ -45,6 +61,10 @@
           "menuTitle": "가입 신청서 상품",
           "error": "신청서를 열 수 없습니다: {{message}}"
         }
+      },
+      "details": {
+        "show": "상세 보기",
+        "hide": "상세 숨기기"
       }
     },
     "policies": {
@@ -100,7 +120,12 @@
           "currentCreditedRate": "현재 적용 이율",
           "guaranteedMinimumRate": "최저 보장 이율",
           "cashValueEstimate": "해지 환급금(추정)",
-          "subAccountAllocation": "특별 계정 배분"
+          "subAccountAllocation": "특별 계정 배분",
+          "guaranteeToAge": "실효 방지 보증",
+          "guaranteeAge": "{{age}}세까지",
+          "guaranteeLifetime": "종신(121세)",
+          "requiredPremium": "필요 최소 보험료(연간)",
+          "riders": "특약"
         },
         "subAccounts": {
           "equity_growth": "주식 — 성장형",
@@ -113,7 +138,8 @@
       }
     },
     "chat": {
-      "heading": "AI 채팅",
+      "textHeading": "텍스트 어시스턴트",
+      "voiceHeading": "음성 어시스턴트",
       "selectCustomer": "채팅을 시작하려면 고객을 선택하세요.",
       "emptyPlaceholder": "질문을 입력하거나 아래 제안 중 하나를 선택하세요.",
       "messageLabel": "메시지",
@@ -122,6 +148,7 @@
       "userBubbleLabel": "나",
       "assistantBubbleLabel": "어시스턴트",
       "thinking": "생각 중...",
+      "guardrailBlocked": "규정 준수 필터가 해당 답변을 차단했습니다. 다시 시도하거나, 상품 이름을 언급하거나 고객 프로필에 무엇이 나와 있는지 묻는 등 질문을 바꿔 보세요.",
       "quickQuestions": "빠른 질문",
       "attachDocument": "보험 증권 문서 첨부 (PDF, 이미지 또는 텍스트)",
       "removeAttachment": "첨부 파일 제거",
@@ -279,7 +306,8 @@
           "forms": "청약서",
           "pricing": "요율표",
           "brochures": "브로슈어",
-          "transcripts": "음성 대화 기록"
+          "transcripts": "음성 대화 기록",
+          "applications": "저장된 신청서"
         },
         "pdf": {
           "download": "PDF 다운로드",
@@ -354,6 +382,22 @@
           "agencyCount": "신용평가사 {{count}}곳",
           "carrier": "보험사",
           "illustrative": "예시 데이터"
+        },
+        "application": {
+          "status": "서명용으로 전송됨",
+          "forCustomer": "{{name}}님 대상",
+          "forProspect": "잠재 고객 대상",
+          "answerCount": "답변 {{count}}개",
+          "hiddenCount": "저장 시 숨김 {{count}}개",
+          "revision": "개정 {{revision}}, 업데이트 {{time}}",
+          "expires": "데모 데이터: 저장 후 약 2~3일 뒤 자동으로 삭제됩니다.",
+          "omitted": "저장되지 않음: {{fields}}.",
+          "hidden": "숨김",
+          "origin": {
+            "profile": "프로필에서",
+            "voice": "대화에서 파악",
+            "manual": "직접 입력"
+          }
         }
       }
     },
@@ -361,32 +405,36 @@
       "heading": "음성 채팅",
       "selectCustomer": "음성 대화를 시작하려면 고객을 선택하세요.",
       "startVoice": "음성 채팅 시작",
-      "stopVoice": "음성 채팅 중지",
       "typePlaceholder": "메시지를 입력하세요...",
       "connecting": "연결 중...",
       "emptyConnecting": "에이전트에 연결 중...",
       "emptyConnected": "아래에 메시지를 입력하거나 음성 채팅 시작을 눌러 말하세요. 지우기는 대화를 초기화합니다.",
-      "hintText": "어시스턴트는 텍스트로만 응답합니다. 음성 채팅 시작을 누르면 음성으로 응답합니다.",
-      "hintVoice": "음성 채팅이 활성화되었습니다. 어시스턴트는 음성과 텍스트로 응답합니다. 음성 채팅 중지를 누르면 텍스트만 사용됩니다.",
+      "hintVoice": "음성 채팅이 활성화되었습니다. 어시스턴트는 음성과 텍스트로 응답합니다. 음성 채팅 일시중지를 누르면 텍스트만 사용됩니다.",
       "status": {
         "connecting": "연결 중",
         "connected": "연결됨",
         "listening": "듣는 중",
-        "speaking": "말하는 중"
+        "speaking": "말하는 중",
+        "paused": "일시중지됨"
       },
-      "mute": "음성 음소거",
-      "unmute": "음소거 해제",
       "consent": {
-        "question": "녹음 전 확인: {{name}} 님이 이 대화의 텍스트 변환에 동의했나요?",
+        "question": "녹음 전 확인: {{name}} 님이 이 대화의 텍스트 변환과, 핵심 내용을 이후 대화를 위해 메모리에 보관하는 데 동의했나요?",
         "theProspect": "잠재 고객",
-        "hint": "확인하기 전에는 아무것도 저장되거나 기억되지 않으며 양식도 채워지지 않습니다. 어시스턴트에게 음성으로 답하거나 버튼을 사용하세요.",
+        "hint": "확인하기 전에는 아무것도 저장되거나 기억되지 않으며 양식도 채워지지 않습니다. 버튼으로 답해 주세요. 어시스턴트가 대신 답할 수 없습니다.",
         "changed": "고객이 바뀌어 다시 동의가 필요합니다.",
         "confirm": "동의함",
         "decline": "동의 안 함",
-        "confirmed": "{{time}}에 동의를 확인했습니다. 이 대화는 텍스트로 저장되며 24시간 보관됩니다.",
+        "confirmed": "{{time}}에 동의를 확인했습니다. 이 대화는 텍스트로 저장되며 약 하루 동안 보관됩니다. 핵심 내용은 고객의 메모리에 90일 이상 남을 수 있습니다.",
         "declinedMessage": "동의하지 않았습니다. 세션이 종료되었으며 아무것도 저장되지 않았습니다.",
         "startNew": "새 세션 시작"
-      }
+      },
+      "pauseVoice": "음성 채팅 일시중지",
+      "resumeVoice": "음성 채팅 다시 시작",
+      "pausedNotice": "음성 채팅 일시중지: 마이크가 꺼지고 어시스턴트 음성도 꺼졌습니다. 입력은 계속할 수 있고 답변은 텍스트로 옵니다. 음성이나 입력이 약 5분 동안 없으면 세션이 종료됩니다.",
+      "pausedExpired": "5분이 지나 세션이 종료되었을 수 있습니다. 다시 시작하면 필요 시 새 세션이 열리고 녹음 동의를 다시 묻습니다.",
+      "sessionRestarted": "일시중지 중 이전 세션이 종료되어 새 세션을 시작했습니다. 녹음 동의를 다시 확인합니다.",
+      "sessionRenewed": "로그인이 만료되어 음성 세션을 종료하고 새로 갱신된 로그인으로 새 세션을 열었습니다. 녹음 동의를 다시 확인하며, 마이크는 직접 시작할 때까지 꺼져 있습니다.",
+      "sessionExpired": "로그인이 만료되어 음성 세션이 종료되었습니다. 계속하려면 로그아웃한 후 다시 로그인하세요."
     },
     "recommendation": {
       "loading": "보장 내역을 분석하고 공백을 확인하는 중...",
@@ -403,8 +451,6 @@
       "stillNeeded": "미입력 항목",
       "carriedOver": "{{count}}건 이어받음",
       "sendForSignature": "서명 요청 보내기",
-      "sent": "서명 요청을 보냈습니다",
-      "sentHint": "데모 전용 — 실제로 전송되지 않았습니다.",
       "sendReadyHint": "필수 항목이 모두 입력되었습니다.",
       "sendBlocked": "필수 항목 {{count}}건이 남았습니다.",
       "legendProfile": "프로필에서",
@@ -423,8 +469,21 @@
         "signatureApplicant": "신청인 서명",
         "signatureAdvisor": "어드바이저 서명",
         "date": "날짜",
-        "disclaimer": "Awesome Insurance 어드바이저 어시스턴트로 작성한 초안입니다. 보장을 제안하는 문서가 아닙니다. 보장은 심사 후 Awesome Insurance가 증권을 발행한 때에만 시작됩니다."
-      }
+        "disclaimer": "Awesome Insurance 어드바이저 어시스턴트로 작성한 초안입니다. 보장을 제안하는 문서가 아닙니다. 보장은 심사 후 Awesome Insurance가 증권을 발행한 때에만 시작됩니다.",
+        "nlgAcknowledgment": "실효 방지 보증 확인: 이 보험에는 실효 방지 보증이 있습니다. 사망보험금은 필요한 보험료를 기한 내에 납입한 경우에만 이 청약서에 기재된 연령까지 보증됩니다. 최소 보험료만 납입하거나 납입이 늦어지면 해약환급금이 있어도 보증이 줄어들거나 영구히 종료될 수 있습니다. 서명함으로써 청약자는 필요한 보험료가 표시된 설계서를 받았음을 확인합니다."
+      },
+      "secretNote": "여기에서만 입력합니다. 어시스턴트는 이 항목을 볼 수 없습니다.",
+      "saved": "저장됨",
+      "saving": "저장 중...",
+      "editAgain": "다시 편집",
+      "saveFailed": "신청서를 저장하지 못했습니다: {{message}}",
+      "savedHint": "{{ref}}(으)로 저장되었습니다. 데이터 탐색기의 저장된 신청서에서 열 수 있습니다.",
+      "savedHintReplaced": "{{ref}}(으)로 다시 저장했습니다. 이전 저장본을 대체했습니다(개정 {{revision}}).",
+      "savedOmitted": "저장되지 않음: {{fields}}.",
+      "fillDemo": "데모 데이터 채우기",
+      "fillDemoHint": "데모 전용: 모든 고객에게 동일한 샘플 답변으로 빈 항목을 채웁니다. 이미 채워진 항목은 유지됩니다.",
+      "demoFilled": "{{count}}개 항목을 샘플 데이터로 채웠습니다.",
+      "demoNothing": "채울 항목이 없습니다. 모든 항목에 답변이 있습니다."
     },
     "notes": {
       "heading": "메모",
@@ -483,55 +542,6 @@
       "saved": "고객 기록에 메모를 저장했습니다.",
       "trimmed": "1,000자 제한에 맞게 줄였습니다.",
       "dateLabel": "후속 조치 날짜(선택)"
-    },
-    "roleplay": {
-      "button": "연습하기",
-      "setupTitle": "{{name}}님과 연습",
-      "setupIntro": "어시스턴트가 고객 기록을 바탕으로 이 고객을 연기합니다. 실제처럼 진행한 뒤 종료하면 피드백을 받습니다.",
-      "difficulty": "난이도",
-      "level": {
-        "friendly": "우호적",
-        "neutral": "보통",
-        "sceptical": "회의적"
-      },
-      "focusLabel": "주요 반대 의견",
-      "focus": {
-        "any": "자동으로",
-        "cost": "비용이 너무 높다",
-        "work": "직장에서 보장받고 있다",
-        "young": "아직 어려서 필요 없다",
-        "compare": "현재 보험사와 비교하고 싶다",
-        "think": "생각해 보겠다"
-      },
-      "privacy": "연습 세션의 내용은 녹음되거나 저장되지 않으며 고객 기록에 추가되지 않습니다. 건강 정보는 어시스턴트와 공유되지 않습니다.",
-      "start": "연습 시작",
-      "banner": "연습 세션: 어시스턴트가 {{name}}님을 연기 중입니다",
-      "bannerHint": "마이크를 켜면 고객이 인사합니다. 일찍 멈추려면 \"end exercise\"라고 말하세요.",
-      "leave": "연습 나가기",
-      "endAndScore": "종료 및 채점",
-      "feedbackTitle": "코칭 피드백",
-      "scoring": "대화를 검토하는 중…",
-      "scoreError": "피드백을 만들지 못했습니다: {{message}}",
-      "insufficient": "피드백을 주기에는 대화가 부족했습니다. 조금 더 이야기하며 다시 시도해 보세요.",
-      "claimsTitle": "확인한 상품 설명",
-      "verdict": {
-        "supported": "자료와 일치",
-        "contradicted": "자료와 다름",
-        "not_in_sheets": "자료에 없음"
-      },
-      "nextTime": "다음에 시도할 것",
-      "coachingNote": "본인의 연습을 위한 AI 생성 코칭 피드백입니다. 성과 평가가 아니며 저장되지 않습니다.",
-      "finish": "마치기",
-      "again": "다시 연습",
-      "criteria": {
-        "rapport": "도입과 라포",
-        "discovery": "니즈 파악 질문",
-        "needs_link": "필요와 보장 연결",
-        "objections": "반대 의견 대응",
-        "accuracy": "정확성",
-        "compliance": "준법",
-        "closing": "마무리"
-      }
     }
   }
 }

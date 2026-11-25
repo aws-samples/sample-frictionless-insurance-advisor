@@ -18,6 +18,7 @@ from aws_cdk import (
     aws_sns_subscriptions as sns_subs,
     aws_ssm as ssm,
     aws_wafv2 as wafv2,
+    ArnFormat,
     RemovalPolicy,
     CfnOutput,
     Duration,
@@ -29,7 +30,12 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .api_models import (
+    APPLICATION, COMPARE, COMPARE_INGEST, DOCUMENT_INITIATE, MEETING_SUMMARY, POLICY_CREATE,
+    POLICY_UPDATE, PROFILE_CREATE, PROFILE_NOTE, PROFILE_UPDATE, RECOMMEND, SIGNUP,
+)
 from .auth_stack import AuthStack
+from .limits import UPLOAD_LIMITS, limit_environment
 
 # One model for every text task in this stack: Claude Haiku 5.5 through the US
 # cross-region inference profile. It rejects `temperature` (like Sonnet 5), so
@@ -44,6 +50,98 @@ def _text_model_arns(region: str, account: str) -> list[str]:
         f"arn:aws:bedrock:{region}:{account}:inference-profile/{TEXT_MODEL_ID}",
         *[f"arn:aws:bedrock:{r}::foundation-model/anthropic.claude-haiku-5-5" for r in _HAIKU55_REGIONS],
     ]
+
+
+_JSON_SCHEMA_KEYWORDS = {
+    "type": "type", "properties": "properties", "required": "required", "items": "items",
+    "additionalProperties": "additional_properties", "maxLength": "max_length", "maxItems": "max_items",
+    "maxProperties": "max_properties",
+}
+
+
+def _json_schema(spec: dict, title: str | None = None) -> apigateway.JsonSchema:
+    """An API Gateway model schema (draft 4) from a plain dict of JSON Schema keywords (see api_models.py)."""
+    args = {}
+    for keyword, value in spec.items():
+        name = _JSON_SCHEMA_KEYWORDS[keyword]
+        if keyword == "type":
+            kinds = [getattr(apigateway.JsonSchemaType, v.upper()) for v in (value if isinstance(value, list) else [value])]
+            value = kinds if isinstance(spec["type"], list) else kinds[0]
+        elif keyword == "properties":
+            value = {field: _json_schema(sub) for field, sub in value.items()}
+        elif keyword == "items":
+            value = _json_schema(value)
+        args[name] = value
+    if title:
+        args["schema"] = apigateway.JsonSchemaVersion.DRAFT4
+        args["title"] = title
+    return apigateway.JsonSchema(**args)
+
+
+# Request body size at the WAF. The managed common rule group blocks a body over 8 KB on every
+# route (its SizeRestrictions_BODY rule). Two routes carry more by design: /meeting-summary (a
+# conversation of up to 24,000 characters) and /applications (a whole form). The managed size
+# rule is therefore counted only, and two rules of our own apply the limits: 8 KB everywhere
+# except those two routes, 60 KB on them. The web ACL inspects the first 64 KB of a body; a body
+# beyond that is treated as over the limit on both rules, so it is blocked.
+WAF_BODY_LIMIT_BYTES = 8 * 1024
+WAF_LARGE_BODY_LIMIT_BYTES = 60 * 1024
+WAF_LARGE_BODY_ROUTES = ("/meeting-summary", "/applications")
+
+
+def _waf_route_ends_with(route: str) -> wafv2.CfnWebACL.StatementProperty:
+    return wafv2.CfnWebACL.StatementProperty(
+        byte_match_statement=wafv2.CfnWebACL.ByteMatchStatementProperty(
+            field_to_match=wafv2.CfnWebACL.FieldToMatchProperty(uri_path={}),
+            positional_constraint="ENDS_WITH",
+            search_string=route,
+            text_transformations=[wafv2.CfnWebACL.TextTransformationProperty(priority=0, type="LOWERCASE")],
+        )
+    )
+
+
+def _waf_body_larger_than(limit_bytes: int) -> wafv2.CfnWebACL.StatementProperty:
+    return wafv2.CfnWebACL.StatementProperty(
+        size_constraint_statement=wafv2.CfnWebACL.SizeConstraintStatementProperty(
+            comparison_operator="GT",
+            size=limit_bytes,
+            field_to_match=wafv2.CfnWebACL.FieldToMatchProperty(
+                body=wafv2.CfnWebACL.BodyProperty(oversize_handling="MATCH")
+            ),
+            text_transformations=[wafv2.CfnWebACL.TextTransformationProperty(priority=0, type="NONE")],
+        )
+    )
+
+
+def _waf_body_size_rule(name: str, priority: int, large_routes: bool) -> wafv2.CfnWebACL.RuleProperty:
+    """Block a body over the limit: the large limit on the large-body routes, the default limit elsewhere."""
+    on_large_route = wafv2.CfnWebACL.StatementProperty(
+        or_statement=wafv2.CfnWebACL.OrStatementProperty(
+            statements=[_waf_route_ends_with(r) for r in WAF_LARGE_BODY_ROUTES]
+        )
+    )
+    if large_routes:
+        statements = [_waf_body_larger_than(WAF_LARGE_BODY_LIMIT_BYTES), on_large_route]
+    else:
+        statements = [
+            _waf_body_larger_than(WAF_BODY_LIMIT_BYTES),
+            wafv2.CfnWebACL.StatementProperty(
+                not_statement=wafv2.CfnWebACL.NotStatementProperty(statement=on_large_route)
+            ),
+        ]
+    return wafv2.CfnWebACL.RuleProperty(
+        name=name,
+        priority=priority,
+        action=wafv2.CfnWebACL.RuleActionProperty(block={}),
+        statement=wafv2.CfnWebACL.StatementProperty(
+            and_statement=wafv2.CfnWebACL.AndStatementProperty(statements=statements)
+        ),
+        visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+            cloud_watch_metrics_enabled=True,
+            metric_name=name,
+            sampled_requests_enabled=False,
+        ),
+    )
 
 
 def _seed_data_hash() -> str:
@@ -71,6 +169,31 @@ def _seed_data_hash() -> str:
 # Gateway's request interceptor swaps in after verifying it (lambda/gateway_interceptor).
 USER_TOKEN_SCOPE = "aws.cognito.signin.user.admin"
 
+# Enhanced REST API security policy: TLS 1.3 and TLS 1.2 with the same cipher
+# suites as the legacy TLS_1_2 policy. Regional endpoint, so no *_EDGE policy.
+API_SECURITY_POLICY = "SecurityPolicy_TLS13_1_2_2021_06"
+
+# Defaults for the API throttle, the per-IP WAF rate limit and the Lambda
+# reserved concurrency. Each is overridable with a CDK context value (`-c name=value`).
+DEFAULT_API_THROTTLE_RATE = 50  # requests per second, all routes
+DEFAULT_API_THROTTLE_BURST = 100
+DEFAULT_WAF_RATE_LIMIT_PER_IP = 5000  # requests per 5 minutes per source IP
+DEFAULT_LAMBDA_RESERVED_CONCURRENCY = 10  # per application Lambda
+
+
+def _int_context(node, key: str, default: int, minimum: int) -> int:
+    """Read an integer CDK context value, falling back to `default`."""
+    raw = node.try_get_context(key)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        value = int(str(raw).strip())
+    except ValueError:
+        raise ValueError(f"context '{key}' must be an integer, got {raw!r}") from None
+    if value < minimum:
+        raise ValueError(f"context '{key}' must be at least {minimum}, got {value}")
+    return value
+
 
 class ToolsStack(Stack):
     """Tools stack with S3, DynamoDB, Lambda functions, and API Gateway"""
@@ -78,12 +201,21 @@ class ToolsStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, auth_stack: AuthStack, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # S3 Access Log Bucket
+        # S3 Access Log Bucket. The log objects name the advisor prefix and carry the
+        # caller's address, so they expire after 90 days. The bucket is not versioned.
         self.access_log_bucket = s3.Bucket(
             self, "AccessLogBucket",
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
             enforce_ssl=True,
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    id="expire-access-logs",
+                    enabled=True,
+                    expiration=Duration.days(90),
+                    abort_incomplete_multipart_upload_after=Duration.days(7),
+                )
+            ],
         )
 
         # S3 Buckets for portfolio and promotion data
@@ -215,9 +347,8 @@ class ToolsStack(Stack):
         #   - block_public_access enforced
         #   - 24-hour lifecycle expiration on every object (uploads are
         #     ephemeral; the agent reads them once and then they auto-delete)
-        #   - server-side encryption (S3-managed for now; a customer-managed KMS
-        #     key would be the production
-        #     hardening)
+        #   - server-side encryption (S3-managed; a customer-managed KMS
+        #     key would be the production hardening)
         #   - server access logs enabled for audit
         # Bucket policy below additionally denies any principal except the
         # two Lambdas that need it.
@@ -232,11 +363,11 @@ class ToolsStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
             cors=[
                 s3.CorsRule(
-                    # The browser uploads directly via presigned PUT, which
+                    # The browser uploads directly with a presigned POST form, which
                     # crosses the SPA's origin -> S3 boundary. Allow any
-                    # origin since auth is enforced by the presigned URL
-                    # signature itself, not by Origin headers.
-                    allowed_methods=[s3.HttpMethods.PUT],
+                    # origin since auth is enforced by the signed POST policy
+                    # itself, not by Origin headers.
+                    allowed_methods=[s3.HttpMethods.POST],
                     allowed_origins=["*"],
                     allowed_headers=["*"],
                     exposed_headers=["ETag"],
@@ -275,6 +406,31 @@ class ToolsStack(Stack):
                     id="auto-expire-transcripts",
                     enabled=True,
                     expiration=Duration.days(1),
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                )
+            ],
+        )
+        # Saved application forms ("Send for Signature"). One JSON object per send, under
+        # <advisor>/<customer id or _prospect>/<product type>/. Demo data only: objects are
+        # deleted 2 days after they are written (a day or so later in practice, as S3 expires
+        # at midnight UTC) and the bucket is deleted with the stack. Only the applications
+        # Lambda can write and only the data Lambda can read, scoped to the signed-in
+        # advisor's own prefix. No agent tool and no other Lambda has any access.
+        # The Social Security number is never written (the Lambda drops secret fields).
+        self.applications_bucket = s3.Bucket(
+            self, "ApplicationsBucket",
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            server_access_logs_bucket=self.access_log_bucket,
+            server_access_logs_prefix="applications-logs/",
+            enforce_ssl=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    id="auto-expire-applications",
+                    enabled=True,
+                    expiration=Duration.days(2),
                     abort_incomplete_multipart_upload_after=Duration.days(1),
                 )
             ],
@@ -400,8 +556,8 @@ class ToolsStack(Stack):
 
         # Lambda Functions
         #
-        # Helper: create an explicit CloudWatch LogGroup per function. This
-        # replaces the deprecated `log_retention=` prop (which provisioned a
+        # Helper: create an explicit CloudWatch LogGroup per function. This is
+        # used instead of the deprecated `log_retention=` prop (which provisions a
         # separate LogRetention custom-resource Lambda). Retention is bounded
         # to ONE_MONTH and the group is destroyed with the stack.
         def _log_group(construct_id: str) -> logs.LogGroup:
@@ -410,6 +566,17 @@ class ToolsStack(Stack):
                 retention=logs.RetentionDays.ONE_MONTH,
                 removal_policy=RemovalPolicy.DESTROY,
             )
+
+        # Memory for the Lambdas the assistants call as tools (through the
+        # gateway directly, or through API Gateway for profile, policies and
+        # priorities). At the 128 MB default the Python runtime plus boto3
+        # already use 96 to 105 MB and a call gets about a twelfth of a
+        # vCPU. Lambda gives CPU in proportion to memory, so 512 MB
+        # roughly quadruples the CPU for client setup, TLS and JSON work, which
+        # is most of these functions' time. On-demand cost per call stays
+        # negligible. Lambdas that call Bedrock already run at 512 MB.
+        # CalculatorsLambda (pure arithmetic, 2 ms median) stays at 128 MB.
+        TOOL_LAMBDA_MEMORY_MB = 512
 
         self.profile_lambda = _lambda.Function(
             self, "ProfileLambda",
@@ -421,6 +588,7 @@ class ToolsStack(Stack):
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("ProfileLambda"),
         )
 
@@ -435,6 +603,7 @@ class ToolsStack(Stack):
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("PoliciesLambda"),
         )
 
@@ -451,6 +620,7 @@ class ToolsStack(Stack):
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("PrioritiesLambda"),
         )
 
@@ -463,6 +633,7 @@ class ToolsStack(Stack):
                 "PORTFOLIO_BUCKET": self.portfolio_bucket.bucket_name
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("PortfolioLambda"),
         )
 
@@ -475,6 +646,7 @@ class ToolsStack(Stack):
                 "PROMOTION_BUCKET": self.promotion_bucket.bucket_name
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("PromotionsLambda"),
         )
 
@@ -487,6 +659,7 @@ class ToolsStack(Stack):
                 "FORMS_BUCKET": self.forms_bucket.bucket_name
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("FormSchemaLambda"),
         )
 
@@ -501,6 +674,7 @@ class ToolsStack(Stack):
             code=_lambda.Code.from_asset("lambda/pricing"),
             environment={"PRICING_BUCKET": self.pricing_bucket.bucket_name},
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("PricingTableLambda"),
         )
         self.pricing_estimate_lambda = _lambda.Function(
@@ -514,6 +688,7 @@ class ToolsStack(Stack):
                 "POLICIES_TABLE": self.policies_table.table_name,
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("PricingEstimateLambda"),
         )
         # Savings-gap calculators (education, retirement): pure arithmetic, no data
@@ -535,6 +710,7 @@ class ToolsStack(Stack):
                 "COMPANY_BUCKET": self.company_bucket.bucket_name
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("CompanyLambda"),
         )
 
@@ -547,6 +723,7 @@ class ToolsStack(Stack):
                 "COMPETITIVE_BUCKET": self.competitive_bucket.bucket_name
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("CompetitiveLambda"),
         )
 
@@ -559,6 +736,7 @@ class ToolsStack(Stack):
                 "COMPETITORS_BUCKET": self.competitors_bucket.bucket_name
             },
             timeout=Duration.seconds(30),
+            memory_size=TOOL_LAMBDA_MEMORY_MB,
             log_group=_log_group("CompetitorsLambda"),
         )
 
@@ -599,6 +777,7 @@ class ToolsStack(Stack):
                 "PRICING_BUCKET": self.pricing_bucket.bucket_name,
                 "BROCHURES_BUCKET": self.brochures_bucket.bucket_name,
                 "TRANSCRIPTS_BUCKET": self.transcripts_bucket.bucket_name,
+                "APPLICATIONS_BUCKET": self.applications_bucket.bucket_name,
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
             },
             timeout=Duration.seconds(30),
@@ -606,19 +785,32 @@ class ToolsStack(Stack):
         )
 
         # Bedrock Guardrail — single content/PII/word-policy resource shared
-        # by every Bedrock caller in the system: the AgentCore text runtime
-        # (insadv-03-agentcore), the AgentCore voice runtime (insadv-04-voice),
-        # and the comparator + recommend Lambdas defined below. Lives in
+        # by the Claude callers in the system: the AgentCore text runtime
+        # (insadv-03-agentcore) and the three Lambdas that call Bedrock
+        # (comparator, recommend and extract-policy, defined below). The
+        # AgentCore voice runtime (insadv-04-voice) is NOT covered: Bedrock
+        # Guardrails do not support Nova Sonic (see README,
+        # "Why the voice assistant has no guardrail"). Lives in
         # tools_stack so the Lambdas in this stack can wire it directly
         # without creating a cross-stack cycle.
+        def _pii(pii_type: str, action: str) -> bedrock.CfnGuardrail.PiiEntityConfigProperty:
+            # Set input_action and output_action explicitly on each PII entity.
+            # With only `action`, Bedrock applies ANONYMIZE to the model's
+            # output but not to the user's message, so a number typed into
+            # the chat would reach the model unmasked.
+            return bedrock.CfnGuardrail.PiiEntityConfigProperty(
+                type=pii_type,
+                action=action,
+                input_action=action,
+                output_action=action,
+                input_enabled=True,
+                output_enabled=True,
+            )
+
         self.guardrail = bedrock.CfnGuardrail(
             self, "InsuranceAdvisorGuardrail",
-            # Name suffixed -shared to differentiate from the legacy guardrail
-            # that previously lived in the agentcore stack. Necessary because
-            # CloudFormation deploys insadv-02-tools BEFORE insadv-03-agentcore
-            # (now that agentcore depends on tools), which means the new
-            # guardrail tries to CREATE while the old one still exists. Same
-            # name = AlreadyExists. Different name = clean migration.
+            # Name suffixed -shared: this one guardrail is shared by the text
+            # runtime (insadv-03-agentcore) and the Lambdas in this stack.
             name="insurance-advisor-guardrail-shared",
             description="Guardrail for Insurance Advisor agent - filters harmful content, blocks off-topic requests, and protects PII",
             blocked_input_messaging="I'm sorry, I can't process that request. Please rephrase your question about insurance services.",
@@ -637,15 +829,15 @@ class ToolsStack(Stack):
                     bedrock.CfnGuardrail.ContentFilterConfigProperty(
                         type="INSULTS", input_strength="HIGH", output_strength="HIGH"
                     ),
-                    # LOW on purpose (demo decision, 2026-10-09). At HIGH this
-                    # filter blocked harmless lead-in sentences in the text
+                    # LOW on purpose (demo setting). At HIGH this
+                    # filter blocks harmless lead-in sentences in the text
                     # assistant's application-form flow ("I'll pull the profile
                     # and open the application to pre-fill what we know").
                     bedrock.CfnGuardrail.ContentFilterConfigProperty(
                         type="MISCONDUCT", input_strength="LOW", output_strength="LOW"
                     ),
-                    # MEDIUM on purpose (demo decision, 2026-10-14). At HIGH this
-                    # filter blocked a plain reply in the application-form flow
+                    # MEDIUM on purpose (demo setting). At HIGH this
+                    # filter blocks a plain reply in the application-form flow
                     # ("death benefit is 2m, option a, premium frequency is
                     # monthly") with a LOW-confidence prompt-attack detection,
                     # because Bedrock reads the whole conversation, not the last
@@ -659,37 +851,39 @@ class ToolsStack(Stack):
             sensitive_information_policy_config=bedrock.CfnGuardrail.SensitiveInformationPolicyConfigProperty(
                 pii_entities_config=[
                     # Financial PII — anonymize. The agent never legitimately
-                    # quotes these to an advisor; if they appear, scrub before
-                    # the model sees them in either direction.
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="US_SOCIAL_SECURITY_NUMBER", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="CREDIT_DEBIT_CARD_NUMBER", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="US_BANK_ACCOUNT_NUMBER", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="CREDIT_DEBIT_CARD_CVV", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="CREDIT_DEBIT_CARD_EXPIRY", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="PIN", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="INTERNATIONAL_BANK_ACCOUNT_NUMBER", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="SWIFT_CODE", action="ANONYMIZE"),
+                    # quotes these to an advisor; if they appear, scrub them
+                    # in both directions: in the user's message before the
+                    # model sees it (input_action) and in the model's answer
+                    # before the user sees it (output_action). _pii() sets
+                    # both per-direction actions and enables both directions.
+                    _pii("US_SOCIAL_SECURITY_NUMBER", "ANONYMIZE"),
+                    _pii("CREDIT_DEBIT_CARD_NUMBER", "ANONYMIZE"),
+                    _pii("US_BANK_ACCOUNT_NUMBER", "ANONYMIZE"),
+                    _pii("CREDIT_DEBIT_CARD_CVV", "ANONYMIZE"),
+                    _pii("CREDIT_DEBIT_CARD_EXPIRY", "ANONYMIZE"),
+                    _pii("PIN", "ANONYMIZE"),
+                    _pii("INTERNATIONAL_BANK_ACCOUNT_NUMBER", "ANONYMIZE"),
+                    _pii("SWIFT_CODE", "ANONYMIZE"),
                     # Government identifiers — anonymize. Advisors don't need
                     # passport / driver / ITIN numbers to flow through the
-                    # chat surface; if uploaded in a policy doc, the
-                    # extracted fields will be redacted by the guardrail
-                    # before the agent reads them out.
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="US_PASSPORT_NUMBER", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="DRIVER_ID", action="ANONYMIZE"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER", action="ANONYMIZE"),
+                    # chat surface; if they appear in a text policy doc or
+                    # in a chat message, the guardrail masks them before
+                    # the model reads them (and in what the model writes).
+                    _pii("US_PASSPORT_NUMBER", "ANONYMIZE"),
+                    _pii("DRIVER_ID", "ANONYMIZE"),
+                    _pii("US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER", "ANONYMIZE"),
                     # Hard secrets — block the whole request. These should
                     # never appear in advisor-to-agent chat traffic; if
                     # they do, refuse rather than scrub.
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="PASSWORD", action="BLOCK"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="AWS_ACCESS_KEY", action="BLOCK"),
-                    bedrock.CfnGuardrail.PiiEntityConfigProperty(type="AWS_SECRET_KEY", action="BLOCK"),
+                    _pii("PASSWORD", "BLOCK"),
+                    _pii("AWS_ACCESS_KEY", "BLOCK"),
+                    _pii("AWS_SECRET_KEY", "BLOCK"),
                     # NAME / EMAIL / PHONE / ADDRESS / AGE / DATE_OF_BIRTH
                     # are deliberately NOT anonymized: they are integral to
                     # legitimate insurance advisor workflows (a customer's
                     # phone number on their policy doc, an advisor typing
                     # "add policy for Robert" etc). Anonymizing them would
-                    # break the chat experience entirely. Output-side
-                    # redaction in CloudWatch logs is tracked separately.
+                    # break the chat experience entirely.
                 ]
             ),
             word_policy_config=bedrock.CfnGuardrail.WordPolicyConfigProperty(
@@ -702,9 +896,20 @@ class ToolsStack(Stack):
             # those to detect the topic in input and output. We use type=DENY
             # so blocked turns return blocked_outputs_messaging instead of
             # leaking model output. Examples are intentionally specific to
-            # insurance advisor edge cases (variable life sub-account
-            # allocation -> investment advice; 1035 exchange tax treatment ->
-            # tax advice).
+            # insurance advisor edge cases (litigation strategy -> legal
+            # advice; surrender tax owed -> tax advice).
+            #
+            # Denied topics: LegalAdvice and TaxAdvice. There is
+            # deliberately no investment/financial-advice topic: a life
+            # insurance advisor gives financial advice, so the assistants may
+            # give general financial guidance (needs analysis, protection vs
+            # savings-linked products, education and retirement funding). Such
+            # a topic would block harmless replies that have "recommendation"
+            # next to "portfolio" and genuine guidance alike. The safety rules
+            # (no guaranteed returns, no
+            # named third-party securities or funds, illustrative figures,
+            # advisor owns suitability) live in the agents' system prompts,
+            # not in the guardrail.
             #
             # There is deliberately no underwriting/claims-promise topic. It
             # fired on routine product questions ("what are the eligibility
@@ -721,9 +926,22 @@ class ToolsStack(Stack):
                     # with the medical/legal/etc. domain. The carve-out tells
                     # the topic classifier that those routine references are
                     # NOT in-scope for the DENY action.
+                    #
+                    # Both topics block on input (the advisor asks the
+                    # assistant for legal or tax advice) and only detect on
+                    # output (output_action NONE, output_enabled True: the
+                    # finding is logged and the answer is delivered). The
+                    # classifier cannot tell a news report about lawsuits,
+                    # court rulings or tax law from advice, so a blocking
+                    # output action stops market-news answers. The agents'
+                    # system prompts forbid legal and tax advice in answers.
                     bedrock.CfnGuardrail.TopicConfigProperty(
                         name="LegalAdvice",
                         type="DENY",
+                        input_action="BLOCK",
+                        input_enabled=True,
+                        output_action="NONE",
+                        output_enabled=True,
                         definition=(
                             "Recommending litigation or settlement strategy, or " +
                             "interpreting statutes and case law. Routine " +
@@ -735,21 +953,12 @@ class ToolsStack(Stack):
                         ],
                     ),
                     bedrock.CfnGuardrail.TopicConfigProperty(
-                        name="InvestmentRecommendations",
-                        type="DENY",
-                        definition=(
-                            "Telling the customer which specific securities or " +
-                            "sub-accounts to buy. Factual descriptions of " +
-                            "variable-product investment options are allowed."
-                        ),
-                        examples=[
-                            "What percentage should I put into the equity sub-account?",
-                            "Which mutual fund is best for my variable life policy?",
-                        ],
-                    ),
-                    bedrock.CfnGuardrail.TopicConfigProperty(
                         name="TaxAdvice",
                         type="DENY",
+                        input_action="BLOCK",
+                        input_enabled=True,
+                        output_action="NONE",
+                        output_enabled=True,
                         definition=(
                             "Calculating specific tax owed or recommending a " +
                             "tax-strategy action. General descriptions of tax " +
@@ -794,9 +1003,8 @@ class ToolsStack(Stack):
         # version through Fn::GetAtt and Fn::ImportValue across stacks)
         # deadlocks the moment two downstream stacks consume the export —
         # CloudFormation refuses to update an export's value while it's
-        # imported. We tried half a dozen workarounds; all failed because
-        # CFN's pre-flight validator pre-emptively flags any export that
-        # could "potentially update."
+        # imported. CFN's pre-flight validator pre-emptively flags any
+        # export that could "potentially update."
         #
         # The pattern here decouples version publication from the cross-
         # stack export graph entirely:
@@ -953,6 +1161,10 @@ class ToolsStack(Stack):
             self.guardrail_version_param
         )
 
+        # Largest upload, in bytes. The documents Lambda signs it into the upload form; the Lambdas
+        # that read an upload refuse anything larger (see cdk/limits.py). -c max_upload_bytes=...
+        upload_env = limit_environment(self.node, UPLOAD_LIMITS)
+
         # Comparator Lambda — fetches the selected products' markdown from
         # S3 and calls Bedrock (Claude Haiku 5.5) via the Converse API with
         # a tool-forced JSON schema, returning a structured comparison.
@@ -995,6 +1207,7 @@ class ToolsStack(Stack):
                 "CATALOG_TABLE": self.catalog_table.table_name,
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
                 "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
+                **upload_env,
             },
             timeout=Duration.seconds(25),
             memory_size=512,
@@ -1042,28 +1255,27 @@ class ToolsStack(Stack):
             memory_size=512,
             log_group=_log_group("MeetingSummaryLambda"),
         )
-
-        # Role-play score: coaching feedback on a practice conversation. Reads the
-        # product sheets to check the advisor's product statements. Stores nothing.
-        self.roleplay_score_lambda = _lambda.Function(
-            self, "RoleplayScoreLambda",
+        # Applications: "Send for Signature" saves the whole form as one JSON object.
+        self.applications_lambda = _lambda.Function(
+            self, "ApplicationsLambda",
             runtime=_lambda.Runtime.PYTHON_3_13,
             handler="index.handler",
-            code=_lambda.Code.from_asset("lambda/roleplay_score"),
+            code=_lambda.Code.from_asset("lambda/applications"),
             environment={
                 "PROFILES_TABLE": self.profiles_table.table_name,
-                "PORTFOLIO_BUCKET": self.portfolio_bucket.bucket_name,
+                "FORMS_BUCKET": self.forms_bucket.bucket_name,
+                "APPLICATIONS_BUCKET": self.applications_bucket.bucket_name,
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
-                "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
             },
-            timeout=Duration.seconds(90),
-            memory_size=512,
-            log_group=_log_group("RoleplayScoreLambda"),
+            timeout=Duration.seconds(15),
+            memory_size=256,
+            log_group=_log_group("ApplicationsLambda"),
         )
 
-        # Documents Lambda — short-lived presigned-URL signer for the
+        # Documents Lambda — short-lived presigned-POST signer for the
         # POST /documents/initiate route. Doesn't call Bedrock; doesn't
-        # need a guardrail. Just mints the URL and returns it.
+        # need a guardrail. Checks the customer belongs to the advisor and
+        # returns the signed upload form.
         self.documents_lambda = _lambda.Function(
             self, "DocumentsLambda",
             runtime=_lambda.Runtime.PYTHON_3_13,
@@ -1071,7 +1283,9 @@ class ToolsStack(Stack):
             code=_lambda.Code.from_asset("lambda/documents"),
             environment={
                 "DOCUMENTS_BUCKET": self.documents_bucket.bucket_name,
+                "PROFILES_TABLE": self.profiles_table.table_name,
                 "USER_POOL_ID": auth_stack.user_pool.user_pool_id,
+                **upload_env,
             },
             timeout=Duration.seconds(15),
             memory_size=256,
@@ -1091,6 +1305,7 @@ class ToolsStack(Stack):
             environment={
                 "DOCUMENTS_BUCKET": self.documents_bucket.bucket_name,
                 "BEDROCK_MODEL_ID": TEXT_MODEL_ID,
+                **upload_env,
             },
             timeout=Duration.seconds(120),
             memory_size=512,
@@ -1109,7 +1324,6 @@ class ToolsStack(Stack):
             self.extract_policy_lambda,
             self.comparator_ingest_lambda,
             self.meeting_summary_lambda,
-            self.roleplay_score_lambda,
         ):
             llm_lambda.add_environment(
                 "BEDROCK_GUARDRAIL_ID", self.guardrail.attr_guardrail_id
@@ -1136,9 +1350,10 @@ class ToolsStack(Stack):
 
         # Public sign-up is OFF by default. Anyone who can reach the API could
         # otherwise claim a demo account on a fresh deployment and use the
-        # model-backed assistants at the deployer's expense. The two demo users
-        # are created by `scripts/create-demo-users.sh` (run by deploy.sh) with a
-        # generated password. To turn the open sign-up route back on, deploy with
+        # model-backed assistants at the deployer's expense. The three demo advisors
+        # are created by `scripts/create-demo-users.sh`, which you run once by hand
+        # after the first deploy (deploy.sh does not run it), with a generated password.
+        # To turn the open sign-up route on, deploy with
         # `-c enable_public_signup=true` (and set `-c signup_allowed_emails=a@x,b@y`).
         self.public_signup_enabled = str(
             self.node.try_get_context("enable_public_signup") or "false"
@@ -1250,6 +1465,7 @@ class ToolsStack(Stack):
         # Cognito, so it also needs AdminGetUser (as the other advisor-scoped
         # Lambdas do).
         self.transcripts_bucket.grant_read(self.data_lambda)
+        self.applications_bucket.grant_read(self.data_lambda)
         self.data_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -1337,31 +1553,25 @@ class ToolsStack(Stack):
                 ],
             )
         )
-        # Role-play score: read-only on the profile (ownership check) and the product sheets.
-        self.profiles_table.grant_read_data(self.roleplay_score_lambda)
-        self.portfolio_bucket.grant_read(self.roleplay_score_lambda)
-        self.roleplay_score_lambda.add_to_role_policy(
+        # Applications: read the profile (the customer must be the advisor's), read the form
+        # definition, resolve the advisor, write one object. Saving again overwrites the earlier
+        # save, so it also lists the advisor's folder to find it and reads it for its revision.
+        # The code only ever lists and reads under the signed-in advisor's own prefix.
+        self.profiles_table.grant_read_data(self.applications_lambda)
+        self.forms_bucket.grant_read(self.applications_lambda)
+        self.applications_bucket.grant_read(self.applications_lambda)
+        self.applications_bucket.grant_put(self.applications_lambda)
+        self.applications_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=["cognito-idp:AdminGetUser"],
                 resources=[auth_stack.user_pool.user_pool_arn],
             )
         )
-        self.roleplay_score_lambda.add_to_role_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                actions=[
-                    "bedrock:InvokeModel",
-                    "bedrock:InvokeModelWithResponseStream",
-                ],
-                resources=[
-                    *_text_model_arns(self.region, self.account),
-                ],
-            )
-        )
         # Documents Lambda needs:
         #   1. Look up Cognito user email -> advisor_id
-        #   2. Mint presigned PUT URLs against the documents bucket
+        #   2. Mint presigned POST forms against the documents bucket
+        #   3. Read the customer's profile row, to check it belongs to the advisor
         self.documents_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -1369,9 +1579,10 @@ class ToolsStack(Stack):
                 resources=[auth_stack.user_pool.user_pool_arn],
             )
         )
-        # generate_presigned_url requires s3:PutObject on the resource so
+        # generate_presigned_post requires s3:PutObject on the resource so
         # the IAM policy is evaluated as part of signature derivation.
         self.documents_bucket.grant_put(self.documents_lambda)
+        self.profiles_table.grant_read_data(self.documents_lambda)
 
         # Extract Policy Lambda needs:
         #   1. Read the uploaded document from the documents bucket
@@ -1417,9 +1628,35 @@ class ToolsStack(Stack):
             )
         )
 
-        # KMS key for CloudWatch log encryption. Mitigation M9: in addition
-        # to bounding log retention to a finite window, we encrypt the
-        # API Gateway access log group with a customer-managed key so
+        # Reserved concurrency for the application Lambdas. It is both a cap on
+        # what one function can take from the account's shared pool and a
+        # guarantee of that much for the function. Lambda refuses a reservation
+        # that would leave fewer than 10 executions unreserved, so the total
+        # (21 functions x the value, plus any other reservation in the account)
+        # must stay below the account's concurrency quota minus 10. On an account
+        # with a low quota deploy with `-c lambda_reserved_concurrency=none`, or
+        # with a smaller number.
+        raw_concurrency = str(self.node.try_get_context("lambda_reserved_concurrency") or "").strip().lower()
+        if raw_concurrency not in ("none", "off"):
+            reserved_concurrency = _int_context(
+                self.node, "lambda_reserved_concurrency", DEFAULT_LAMBDA_RESERVED_CONCURRENCY, 1)
+            for fn in (
+                self.profile_lambda, self.policies_lambda, self.priorities_lambda,
+                self.portfolio_lambda, self.promotions_lambda, self.formschema_lambda,
+                self.pricing_table_lambda, self.pricing_estimate_lambda,
+                self.calculators_lambda, self.company_lambda, self.competitive_lambda,
+                self.competitors_lambda, self.catalog_lambda, self.data_lambda,
+                self.comparator_lambda, self.comparator_ingest_lambda,
+                self.recommend_lambda, self.meeting_summary_lambda,
+                self.applications_lambda, self.documents_lambda,
+                self.extract_policy_lambda,
+                *([self.signup_lambda] if self.signup_lambda else []),
+            ):
+                fn.node.default_child.reserved_concurrent_executions = reserved_concurrency
+
+        # KMS key for CloudWatch log encryption. In addition
+        # to bounding log retention to a finite window, the
+        # API Gateway access log group is encrypted with a customer-managed key so
         # access requires both `logs:GetLogEvents` AND `kms:Decrypt` on
         # this key. Reduces the blast radius of an over-broad CloudWatch
         # read grant — the most common path for PII-in-logs leakage.
@@ -1485,17 +1722,54 @@ class ToolsStack(Stack):
             ),
             deploy_options=apigateway.StageOptions(
                 access_log_destination=apigateway.LogGroupLogDestination(self.api_log_group),
-                access_log_format=apigateway.AccessLogFormat.clf(),
+                # One JSON line per request. The caller is the Cognito `sub`
+                # (and the app client) from the authorizer claims; the e-mail
+                # address is not logged. `sub` is "-" when the authorizer
+                # rejected the request.
+                access_log_format=apigateway.AccessLogFormat.custom(json.dumps({
+                    "requestId": "$context.requestId",
+                    "requestTimeEpoch": "$context.requestTimeEpoch",
+                    "sub": "$context.authorizer.claims.sub",
+                    "clientId": "$context.authorizer.claims.client_id",
+                    "sourceIp": "$context.identity.sourceIp",
+                    "httpMethod": "$context.httpMethod",
+                    "resourcePath": "$context.resourcePath",
+                    "status": "$context.status",
+                    "responseLength": "$context.responseLength",
+                    "integrationLatency": "$context.integrationLatency",
+                    "responseLatency": "$context.responseLatency",
+                    "tlsVersion": "$context.tlsVersion",
+                    "cipherSuite": "$context.cipherSuite",
+                })),
                 logging_level=apigateway.MethodLoggingLevel.INFO,
+                # Stage-wide default for every route; the account default is
+                # 10000 rps. The cap is API-wide (not per Cognito user): several
+                # advisors loading a page, plus the assistants' tool calls, stay
+                # well inside it. Override with the api_throttle_rate and
+                # api_throttle_burst context values.
+                throttling_rate_limit=_int_context(
+                    self.node, "api_throttle_rate", DEFAULT_API_THROTTLE_RATE, 1),
+                throttling_burst_limit=_int_context(
+                    self.node, "api_throttle_burst", DEFAULT_API_THROTTLE_BURST, 1),
                 # Per-method throttling on the model-backed
                 # routes. 5 rps steady-state with a 10-burst
                 # is plenty for an interactive advisor click cadence
                 # (the UI throttles user clicks anyway) and floors any
                 # cost-bomb attempt. The cap is API-wide on the route
-                # (not per-Cognito-user), but with only 2 allowlisted
+                # (not per-Cognito-user), but with only a few
                 # advisors the difference is academic; the budget
-                # alarm catches the rest.
+                # alarm catches the rest. Uploads and file reads are
+                # lower-frequency than page loads, so they get a tighter
+                # cap than the stage default as well.
                 method_options={
+                    "/documents/initiate/POST": apigateway.MethodDeploymentOptions(
+                        throttling_rate_limit=10,
+                        throttling_burst_limit=20,
+                    ),
+                    "/data/file/GET": apigateway.MethodDeploymentOptions(
+                        throttling_rate_limit=20,
+                        throttling_burst_limit=40,
+                    ),
                     "/comparator/compare/POST": apigateway.MethodDeploymentOptions(
                         throttling_rate_limit=5,
                         throttling_burst_limit=10,
@@ -1512,7 +1786,7 @@ class ToolsStack(Stack):
                         throttling_rate_limit=5,
                         throttling_burst_limit=10,
                     ),
-                    "/roleplay-score/POST": apigateway.MethodDeploymentOptions(
+                    "/applications/POST": apigateway.MethodDeploymentOptions(
                         throttling_rate_limit=5,
                         throttling_burst_limit=10,
                     ),
@@ -1525,6 +1799,16 @@ class ToolsStack(Stack):
             ),
         )
 
+        # TLS floor of the default execute-api endpoint. New REST APIs start on the
+        # legacy TLS_1_0 policy, which cannot be moved to the legacy TLS_1_2; an
+        # enhanced policy can, and it needs an endpoint access mode. BASIC keeps
+        # the SNI and host checks of STRICT off, so existing clients are not
+        # affected. RestApiProps has no property for either value, so they are set
+        # on the underlying CfnRestApi.
+        cfn_api = self.api.node.default_child
+        cfn_api.security_policy = API_SECURITY_POLICY
+        cfn_api.endpoint_access_mode = "BASIC"
+
         # API Gateway serves the *deployment snapshot* the stage points to, not the
         # live API definition. When a route is removed, CloudFormation creates the new
         # snapshot before it deletes the old method, so the snapshot can still contain
@@ -1533,7 +1817,7 @@ class ToolsStack(Stack):
         # setting changes. After TURNING SIGN-UP OFF on an existing deployment, run
         # `cdk deploy` a second time so the new snapshot is taken without the route.
         # Bump DEPLOYMENT_REVISION to force a fresh snapshot for the same reason.
-        DEPLOYMENT_REVISION = 2
+        DEPLOYMENT_REVISION = 3
         self.api.latest_deployment.add_to_logical_id(
             {"public_signup": self.public_signup_enabled, "revision": DEPLOYMENT_REVISION}
         )
@@ -1548,6 +1832,54 @@ class ToolsStack(Stack):
             rest_api=self.api,
             request_validator_name="validate-params",
             validate_request_parameters=True,
+        )
+
+        # Body validation. The routes below that take a JSON body use this validator and a request
+        # model (cdk/api_models.py); a body that does not fit its model is refused with a 400
+        # before the Lambda runs. The Lambdas validate again with their exact rules.
+        body_validator = apigateway.RequestValidator(
+            self, "BodyValidator",
+            rest_api=self.api,
+            request_validator_name="validate-body-and-params",
+            validate_request_body=True,
+            validate_request_parameters=True,
+        )
+
+        def _model(model_id: str, spec: dict) -> apigateway.IModel:
+            return self.api.add_model(
+                model_id,
+                content_type="application/json",
+                model_name=model_id,
+                schema=_json_schema(spec, title=model_id),
+            )
+
+        profile_create_model = _model("ProfileCreateModel", PROFILE_CREATE)
+        profile_update_model = _model("ProfileUpdateModel", PROFILE_UPDATE)
+        profile_note_model = _model("ProfileNoteModel", PROFILE_NOTE)
+        policy_create_model = _model("PolicyCreateModel", POLICY_CREATE)
+        policy_update_model = _model("PolicyUpdateModel", POLICY_UPDATE)
+        document_initiate_model = _model("DocumentInitiateModel", DOCUMENT_INITIATE)
+        compare_model = _model("CompareModel", COMPARE)
+        compare_ingest_model = _model("CompareIngestModel", COMPARE_INGEST)
+        recommend_model = _model("RecommendModel", RECOMMEND)
+        meeting_summary_model = _model("MeetingSummaryModel", MEETING_SUMMARY)
+        application_model = _model("ApplicationModel", APPLICATION)
+
+        def _with_body(model: apigateway.IModel) -> dict:
+            """Method options: validate the JSON body against `model` (and the parameters)."""
+            return {
+                "request_validator": body_validator,
+                "request_models": {"application/json": model},
+            }
+
+        # A body that fails its model gets a fixed answer. The default one lists the failed
+        # keywords and field names, and carries no CORS header, so the browser could not read it.
+        self.api.add_gateway_response(
+            "BadRequestBody",
+            type=apigateway.ResponseType.BAD_REQUEST_BODY,
+            status_code="400",
+            response_headers={"Access-Control-Allow-Origin": "'*'"},
+            templates={"application/json": '{"message": "The request body is not valid"}'},
         )
 
         # API Gateway integrations for profile and policies
@@ -1570,7 +1902,7 @@ class ToolsStack(Stack):
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
             authorization_scopes=[USER_TOKEN_SCOPE],
-            request_validator=request_validator,
+            **_with_body(profile_create_model),
         )
         profile_resource.add_method(
             "PUT",
@@ -1578,7 +1910,7 @@ class ToolsStack(Stack):
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
             authorization_scopes=[USER_TOKEN_SCOPE],
-            request_validator=request_validator,
+            **_with_body(profile_update_model),
         )
 
         # Customer notes (life events and interactions), nested in the profile.
@@ -1594,7 +1926,7 @@ class ToolsStack(Stack):
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
             authorization_scopes=[USER_TOKEN_SCOPE],
-            request_validator=request_validator,
+            **_with_body(profile_note_model),
         )
         note_item_resource = notes_resource.add_resource("{note_id}")
         note_item_resource.add_method(
@@ -1635,7 +1967,7 @@ class ToolsStack(Stack):
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
             authorization_scopes=[USER_TOKEN_SCOPE],
-            request_validator=request_validator,
+            **_with_body(policy_create_model),
         )
         policy_resource.add_method(
             "PUT",
@@ -1643,7 +1975,7 @@ class ToolsStack(Stack):
             authorizer=self.cognito_authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
             authorization_scopes=[USER_TOKEN_SCOPE],
-            request_validator=request_validator,
+            **_with_body(policy_update_model),
         )
         policy_resource.add_method(
             "DELETE",
@@ -1702,7 +2034,7 @@ class ToolsStack(Stack):
         comparator_compare_resource.add_method(
             "POST",
             comparator_integration,
-            **catalog_auth_kwargs,
+            **{**catalog_auth_kwargs, **_with_body(compare_model)},
         )
 
         # Comparator ingest route:
@@ -1715,7 +2047,7 @@ class ToolsStack(Stack):
         comparator_ingest_resource.add_method(
             "POST",
             comparator_ingest_integration,
-            **catalog_auth_kwargs,
+            **{**catalog_auth_kwargs, **_with_body(compare_ingest_model)},
         )
         # Recommend route:
         #   POST /recommend  with body { customer_id, locale }
@@ -1726,7 +2058,7 @@ class ToolsStack(Stack):
         recommend_resource.add_method(
             "POST",
             recommend_integration,
-            **catalog_auth_kwargs,
+            **{**catalog_auth_kwargs, **_with_body(recommend_model)},
         )
 
         # Meeting summary route:
@@ -1736,15 +2068,15 @@ class ToolsStack(Stack):
         meeting_summary_resource.add_method(
             "POST",
             apigateway.LambdaIntegration(self.meeting_summary_lambda),
-            **catalog_auth_kwargs,
+            **{**catalog_auth_kwargs, **_with_body(meeting_summary_model)},
         )
-        # Role-play score route:
-        #   POST /roleplay-score  with body { customer_id, turns, difficulty, focus, locale }
-        roleplay_score_resource = self.api.root.add_resource("roleplay-score")
-        roleplay_score_resource.add_method(
+        # Applications route:
+        #   POST /applications  with body { product_type, customer_id | null, fields }
+        applications_resource = self.api.root.add_resource("applications")
+        applications_resource.add_method(
             "POST",
-            apigateway.LambdaIntegration(self.roleplay_score_lambda),
-            **catalog_auth_kwargs,
+            apigateway.LambdaIntegration(self.applications_lambda),
+            **{**catalog_auth_kwargs, **_with_body(application_model)},
         )
         # Sign-up route (opt-in, see `enable_public_signup`):
         #   POST /signup  with body { email, password }
@@ -1759,12 +2091,12 @@ class ToolsStack(Stack):
                 "POST",
                 signup_integration,
                 authorization_type=apigateway.AuthorizationType.NONE,
-                request_validator=request_validator,
+                **_with_body(_model("SignupModel", SIGNUP)),
             )
         # Documents upload-init route:
         #   POST /documents/initiate  with body { filename, content_type, customer_id? }
-        # Returns a presigned S3 PUT URL the SPA uses to upload the binary
-        # directly to the documents bucket (bypasses API GW's 10 MB cap).
+        # Returns a presigned S3 POST form (URL and signed fields) the SPA uses to
+        # upload the binary directly to the documents bucket (bypasses API GW's 10 MB cap).
         # Authenticated; advisor_id derived from the JWT.
         documents_integration = apigateway.LambdaIntegration(self.documents_lambda)
         documents_resource = self.api.root.add_resource("documents")
@@ -1772,7 +2104,7 @@ class ToolsStack(Stack):
         documents_initiate_resource.add_method(
             "POST",
             documents_integration,
-            **catalog_auth_kwargs,
+            **{**catalog_auth_kwargs, **_with_body(document_initiate_model)},
         )
 
         # WAFv2 WebACL for API Gateway protection
@@ -1783,7 +2115,7 @@ class ToolsStack(Stack):
             visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
                 cloud_watch_metrics_enabled=True,
                 metric_name="InsuranceAdvisorApiWebAcl",
-                sampled_requests_enabled=True,
+                sampled_requests_enabled=False,
             ),
             rules=[
                 *([
@@ -1823,7 +2155,7 @@ class ToolsStack(Stack):
                     visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
                         cloud_watch_metrics_enabled=True,
                         metric_name="RateLimitSignup",
-                        sampled_requests_enabled=True,
+                        sampled_requests_enabled=False,
                     ),
                 )
                 ] if self.public_signup_enabled else []),
@@ -1835,16 +2167,96 @@ class ToolsStack(Stack):
                         managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
                             vendor_name="AWS",
                             name="AWSManagedRulesCommonRuleSet",
+                            # Counted only: the body size limits are applied by the two rules
+                            # below (see WAF_BODY_LIMIT_BYTES), which allow more on two routes.
+                            rule_action_overrides=[
+                                wafv2.CfnWebACL.RuleActionOverrideProperty(
+                                    name="SizeRestrictions_BODY",
+                                    action_to_use=wafv2.CfnWebACL.RuleActionProperty(count={}),
+                                )
+                            ],
                         )
                     ),
                     visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
                         cloud_watch_metrics_enabled=True,
                         metric_name="AWSManagedRulesCommonRuleSet",
-                        sampled_requests_enabled=True,
+                        sampled_requests_enabled=False,
                     ),
+                ),
+                # Per-source-IP cap over all routes, evaluated over 5 minutes.
+                # The default is far above what several advisors behind one
+                # address produce (page loads, tool calls, polling), so it only
+                # trips on floods. Override with the waf_rate_limit_per_ip
+                # context value (WAF accepts 10 and above).
+                wafv2.CfnWebACL.RuleProperty(
+                    name="RateLimitPerIp",
+                    priority=2,
+                    action=wafv2.CfnWebACL.RuleActionProperty(block={}),
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        rate_based_statement=wafv2.CfnWebACL.RateBasedStatementProperty(
+                            limit=_int_context(
+                                self.node, "waf_rate_limit_per_ip", DEFAULT_WAF_RATE_LIMIT_PER_IP, 10),
+                            aggregate_key_type="IP",
+                            evaluation_window_sec=300,
+                        )
+                    ),
+                    visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                        cloud_watch_metrics_enabled=True,
+                        metric_name="RateLimitPerIp",
+                        sampled_requests_enabled=False,
+                    ),
+                ),
+                _waf_body_size_rule("BodyOver8KbExceptLargeBodyRoutes", priority=3, large_routes=False),
+                _waf_body_size_rule("BodyOver60KbOnLargeBodyRoutes", priority=4, large_routes=True),
+            ],
+            # Inspect up to 64 KB of the body (the default is 16 KB), so the large-body routes
+            # are measured exactly.
+            association_config=wafv2.CfnWebACL.AssociationConfigProperty(
+                request_body={
+                    "API_GATEWAY": wafv2.CfnWebACL.RequestBodyAssociatedResourceTypeConfigProperty(
+                        default_size_inspection_limit="KB_64"
+                    )
+                }
+            ),
+        )
+
+        # WAF request logs. The Authorization and Cookie header values are
+        # redacted before delivery, so bearer tokens never reach the log group.
+        # AWS WAF requires the log group name to start with `aws-waf-logs-` and
+        # takes the log group ARN without the `:*` suffix that LogGroup.log_group_arn
+        # carries, so the ARN is built by hand. The service adds the log delivery
+        # statement to the CloudWatch Logs resource policy when the logging
+        # configuration is created. The group keeps the service-default
+        # encryption: the key of the other log groups grants only the regional
+        # CloudWatch Logs service, not log delivery.
+        waf_log_group_name = "aws-waf-logs-insurance-advisor-api"
+        self.waf_log_group = logs.LogGroup(
+            self, "ApiWebAclLogs",
+            log_group_name=waf_log_group_name,
+            retention=logs.RetentionDays.ONE_MONTH,
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+        waf_logging = wafv2.CfnLoggingConfiguration(
+            self, "ApiWebAclLogging",
+            resource_arn=self.web_acl.attr_arn,
+            log_destination_configs=[
+                self.format_arn(
+                    service="logs",
+                    resource="log-group",
+                    resource_name=waf_log_group_name,
+                    arn_format=ArnFormat.COLON_RESOURCE_NAME,
+                )
+            ],
+            redacted_fields=[
+                wafv2.CfnLoggingConfiguration.FieldToMatchProperty(
+                    single_header={"Name": "authorization"}
+                ),
+                wafv2.CfnLoggingConfiguration.FieldToMatchProperty(
+                    single_header={"Name": "cookie"}
                 ),
             ],
         )
+        waf_logging.node.add_dependency(self.waf_log_group)
 
         # Associate WAFv2 WebACL with API Gateway stage
         wafv2.CfnWebACLAssociation(
@@ -1856,7 +2268,7 @@ class ToolsStack(Stack):
         # ---------------------------------------------------------------
         # Cost-bomb defense.
         # AWS Budgets alarm on the per-month Bedrock + Lambda spend in this
-        # account. The threat is T_chat_loop / T_recommend_loop: a single
+        # account. The risk is that a single
         # authenticated advisor (or an OAuth credential leak) loops the
         # LLM endpoints and racks up Bedrock spend before anyone notices.
         # We don't auto-stop traffic — that would be too aggressive for
@@ -1910,7 +2322,7 @@ class ToolsStack(Stack):
         # usage is billed under "Amazon Bedrock Service" and the runtimes,
         # gateway and memory under "Amazon Bedrock AgentCore"; plain
         # "Amazon Bedrock" only carries Nova Sonic and guardrail units.
-        # Without the first two the alarm missed most of this app's spend.
+        # Without the first two the alarm would miss most of this app's spend.
         # The filter is by service, not by project, so it counts the whole
         # account's usage of these services.
         budgets.CfnBudget(
@@ -1978,8 +2390,8 @@ class ToolsStack(Stack):
         self.catalog_table.grant_read_write_data(self.mock_data_lambda)
 
         # Clearing AgentCore long-term memory on reset: find the memory id in SSM,
-        # then list and delete its records. Memory ids are generated by the
-        # agentcore stack, so the memory resource is a wildcard.
+        # then list and delete its records and its conversation events. Memory ids are
+        # generated by the agentcore stack, so the memory resource is a wildcard.
         self.mock_data_lambda.add_to_role_policy(iam.PolicyStatement(
             actions=["ssm:GetParameter"],
             resources=[f"arn:aws:ssm:{self.region}:{self.account}:parameter/insurance-advisor/agentcore/ltm-memory-id"],
@@ -1990,6 +2402,8 @@ class ToolsStack(Stack):
                 "bedrock-agentcore:ListSessions",
                 "bedrock-agentcore:ListMemoryRecords",
                 "bedrock-agentcore:BatchDeleteMemoryRecords",
+                "bedrock-agentcore:ListEvents",
+                "bedrock-agentcore:DeleteEvent",
             ],
             resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:memory/*"],
         ))
@@ -2015,10 +2429,10 @@ class ToolsStack(Stack):
 
         # We let CDK auto-create the worker role (no explicit `role=` param)
         # so the `policy=...` block is honoured. Passing an explicit role
-        # silently disables `policy=`, which previously caused a deploy-time
-        # race: the inline policy on the custom role wasn't attached before
-        # the worker Lambda fired, leading to "lambda:InvokeFunction" auth
-        # failures that rolled back the entire stack creation.
+        # silently disables `policy=`, which causes a deploy-time race: the
+        # inline policy on the custom role isn't attached before the worker
+        # Lambda fires, leading to "lambda:InvokeFunction" auth failures that
+        # roll back the entire stack creation.
         #
         # We use from_statements rather than from_sdk_calls because CDK's
         # SDK-call → IAM-action mapping for `Lambda.invoke` resolves to

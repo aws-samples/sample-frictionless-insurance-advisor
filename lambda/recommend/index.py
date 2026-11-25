@@ -34,7 +34,7 @@ from boto3.dynamodb.conditions import Key
 from botocore.config import Config
 
 
-SUPPORTED_LOCALES = {"en", "ja", "ko", "es", "fr", "zh", "ms", "th", "id"}
+SUPPORTED_LOCALES = {"en", "ja", "ko", "es", "fr", "de", "zh", "ms", "th", "id"}
 
 # Product lines the advisor can scope a gap analysis to. Keep in sync with
 # react-frontend/src/lib/productLines.ts (the same grouping drives the Comparator).
@@ -68,9 +68,9 @@ BEDROCK_MODEL_ID = os.environ.get(
     "BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-5-5"
 )
 
-# Bedrock Guardrail wired by the agentcore stack at deploy time. The
-# guardrail VERSION isn't an env var any more — we resolve it at cold start
-# from an SSM parameter so guardrail policy updates can roll out without a
+# Bedrock Guardrail wired by the tools stack at deploy time. The
+# guardrail VERSION is not a fixed env var: it is resolved at cold start
+# from an SSM parameter so guardrail policy updates roll out without a
 # Lambda redeploy. The parameter NAME is in the env; the VALUE is fetched
 # once per cold start and cached for the life of the container.
 GUARDRAIL_ID = os.environ.get("BEDROCK_GUARDRAIL_ID")
@@ -83,10 +83,9 @@ _GUARDRAIL_VERSION_CACHE: str | None = None
 def _resolve_guardrail_version() -> str | None:
     """Read the current guardrail version from SSM, cached per container.
 
-    Falls back to the legacy `BEDROCK_GUARDRAIL_VERSION` env var if the
-    SSM parameter name isn't configured (so this Lambda works under both
-    the legacy CFN-export deploy path AND the SSM-based one). Returns
-    None if neither is configured."""
+    Falls back to the `BEDROCK_GUARDRAIL_VERSION` env var if the SSM
+    parameter name isn't configured or the parameter can't be read.
+    Returns None if neither is available."""
     global _GUARDRAIL_VERSION_CACHE
     if _GUARDRAIL_VERSION_CACHE is not None:
         return _GUARDRAIL_VERSION_CACHE
@@ -99,25 +98,34 @@ def _resolve_guardrail_version() -> str | None:
                 return value
         except Exception as exc:  # noqa: BLE001
             print(f"could not resolve guardrail version from SSM: {exc}")
-    legacy = (os.environ.get("BEDROCK_GUARDRAIL_VERSION") or "").strip()
-    if legacy:
-        _GUARDRAIL_VERSION_CACHE = legacy
-        return legacy
+    env_guardrail_version = (os.environ.get("BEDROCK_GUARDRAIL_VERSION") or "").strip()
+    if env_guardrail_version:
+        _GUARDRAIL_VERSION_CACHE = env_guardrail_version
+        return env_guardrail_version
     return None
 
 
-def _guardrail_config() -> dict | None:
-    """Build the Converse `guardrailConfig` block when guardrail env vars
-    are set, otherwise return None so the call proceeds unguarded.
+class GuardrailUnavailable(RuntimeError):
+    """The guardrail id or version cannot be resolved, so the model is not called."""
 
+
+GUARDRAIL_UNAVAILABLE_MESSAGE = (
+    "The assistant's safety filter is temporarily unavailable. Please try again in a few minutes."
+)
+
+
+def _guardrail_config() -> dict:
+    """Build the Converse `guardrailConfig` block.
+
+    Raises GuardrailUnavailable when the guardrail id is not configured or its
+    version cannot be resolved: the model is never called without a guardrail.
     Trace mode is "enabled" so blocked requests show up in CloudWatch with
     the policy name that triggered.
     """
-    if not GUARDRAIL_ID:
-        return None
-    version = _resolve_guardrail_version()
+    version = _resolve_guardrail_version() if GUARDRAIL_ID else None
     if not version:
-        return None
+        print("Guardrail id or version not resolved - refusing the model call")
+        raise GuardrailUnavailable()
     return {
         "guardrailIdentifier": GUARDRAIL_ID,
         "guardrailVersion": version,
@@ -258,6 +266,25 @@ def _default_json(value):
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
+
+
 def extract_advisor_id(event) -> str | None:
     """The signed-in advisor's email, taken ONLY from the verified sign-in token.
 
@@ -272,19 +299,19 @@ def extract_advisor_id(event) -> str | None:
         cognito_client = boto3.client("cognito-idp")
         user_pool_id = os.environ.get("USER_POOL_ID")
         response = cognito_client.admin_get_user(UserPoolId=user_pool_id, Username=username)
-        for attr in response["UserAttributes"]:
-            if attr["Name"] == "email":
-                return attr["Value"]
+        return _verified_email(response)
     except Exception as e:
-        print(f"Cognito lookup error: {e}")
+        print(f"Cognito lookup error: {type(e).__name__}")
     return None
 
 
-def _safe_body(event) -> dict:
+def _safe_body(event) -> dict | None:
+    """The JSON object in the request body, or None when the body is not valid JSON or not an object."""
     try:
-        return json.loads(event.get("body") or "{}")
-    except json.JSONDecodeError:
-        return {}
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return body if isinstance(body, dict) else None
 
 
 # --- Data fetchers ---------------------------------------------------------
@@ -370,6 +397,7 @@ _LANG_NAMES = {
     "ko": "Korean",
     "es": "Spanish",
     "fr": "French",
+    "de": "German",
     "zh": "Simplified Chinese",
     "ms": "Malay (Bahasa Melayu)",
     "th": "Thai",
@@ -399,7 +427,7 @@ def _summarize_profile(profile: dict) -> str:
     fields = [
         "name", "date_of_birth", "marital_status", "dependents",
         "occupation", "employment_status", "annual_income",
-        "home_owner", "smoking", "medical_conditions",
+        "home_owner", "tobacco_status", "medical_conditions",
         "financial_objective", "time_horizon", "risk_tolerance", "liquidity_needs",
     ]
     out = []
@@ -573,10 +601,10 @@ def _build_converse_request(
         "inferenceConfig": {
             # No `temperature`: Claude Haiku 5.5 rejects it. Forced tool choice
             # keeps the output on the schema.
-            # Doubled from 1500 to avoid the same output-token truncation the
-            # comparator hit: a customer with many policies / coverage gaps
-            # produces a longer structured payload, and truncation would drop
-            # trailing gaps and silently render an incomplete analysis.
+            # The cap is high enough to avoid output-token truncation: a
+            # customer with many policies / coverage gaps produces a longer
+            # structured payload, and truncation would drop trailing gaps and
+            # silently render an incomplete analysis.
             "maxTokens": 3000,
         },
         "toolConfig": {
@@ -592,9 +620,7 @@ def _build_converse_request(
             "toolChoice": {"tool": {"name": "emit_recommendation"}},
         },
     }
-    guardrail = _guardrail_config()
-    if guardrail is not None:
-        request["guardrailConfig"] = guardrail
+    request["guardrailConfig"] = _guardrail_config()
     return request
 
 
@@ -634,11 +660,15 @@ def handler(event, context):
             return _response(401, {"message": "Unauthorized - no advisor ID found"})
 
         body = _safe_body(event)
+        if body is None:
+            return _response(400, {"message": "Request body must be a JSON object"})
         customer_id = body.get("customer_id")
         if not customer_id:
             return _response(400, {"message": "customer_id is required"})
+        if not isinstance(customer_id, str) or len(customer_id) > 64:
+            return _response(400, {"message": "customer_id is not valid"})
 
-        locale = (body.get("locale") or "en").lower()
+        locale = str(body.get("locale") or "en").lower()
         if locale not in SUPPORTED_LOCALES:
             locale = "en"
 
@@ -676,6 +706,8 @@ def handler(event, context):
 
         return _response(200, payload)
 
+    except GuardrailUnavailable:
+        return _response(503, {"message": GUARDRAIL_UNAVAILABLE_MESSAGE})
     except Exception as e:
         print(f"Error in recommend handler: {e}")
         traceback.print_exc()

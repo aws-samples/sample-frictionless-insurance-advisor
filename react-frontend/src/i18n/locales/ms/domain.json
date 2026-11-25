@@ -66,6 +66,36 @@
       "general": "Produk am",
       "health": "Produk kesihatan",
       "all": "Semua produk"
+    },
+    "citizenship": {
+      "us_citizen": "Warganegara AS",
+      "permanent_resident": "Pemastautin tetap",
+      "other": "Lain-lain"
+    },
+    "tobaccoStatus": {
+      "never": "Tidak pernah",
+      "former": "Bekas pengguna",
+      "current": "Pengguna semasa"
+    },
+    "netWorthBand": {
+      "under_100k": "Bawah $100 ribu",
+      "100k_250k": "$100 ribu hingga $250 ribu",
+      "250k_500k": "$250 ribu hingga $500 ribu",
+      "500k_1m": "$500 ribu hingga $1 juta",
+      "1m_2_5m": "$1 juta hingga $2.5 juta",
+      "over_2_5m": "Melebihi $2.5 juta"
+    },
+    "yesNo": {
+      "yes": "Ya",
+      "no": "Tidak"
+    },
+    "universalRider": {
+      "waiver_of_premium": "Pengecualian premium",
+      "accidental_death": "Faedah kematian akibat kemalangan",
+      "long_term_care": "Penjagaan jangka panjang / penyakit kronik",
+      "guaranteed_purchase_option": "Pilihan pembelian terjamin",
+      "no_lapse_guarantee": "Rider jaminan tanpa luput",
+      "overloan_protection": "Perlindungan pinjaman berlebihan"
     }
   }
 }
