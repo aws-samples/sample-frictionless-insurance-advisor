@@ -13,7 +13,7 @@ declares that argument (today `estimate_premium` and
 `extract_policy_from_document`); a missing argument is filled in. With no
 verified identity the call is refused. If the gateway ever stopped enforcing,
 this would still hold the line for these tools; it cannot, and does not try to,
-protect the REST tools, which no longer take an advisor argument at all.
+protect the REST tools, which take no advisor argument at all.
 
 Used by both runtimes (the text agent and the voice agent): Strands fires the
 same `BeforeToolCallEvent` for both.

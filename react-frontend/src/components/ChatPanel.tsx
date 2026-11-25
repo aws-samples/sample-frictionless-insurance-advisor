@@ -3,9 +3,10 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, MessageCircle, Send, Sparkles, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { useAgentChat, type ChatFormBridge } from '../hooks/useAgentChat';
+import { useAgentChat, type ChatFormBridge, type UseAgentChatResult } from '../hooks/useAgentChat';
 import { uploadDocument } from '../lib/api';
 import { cn } from '../lib/cn';
+import { warmUpSession } from '../lib/warmup';
 import { Alert, Button, IconButton, Spinner } from '../ui';
 import type { Customer, PriorityAction, UploadedDocument } from '../types';
 
@@ -22,6 +23,11 @@ interface ChatPanelProps {
   /** From the Cockpit: send this starter prompt once, for this customer. */
   pendingStart?: { customerId: string; action: PriorityAction } | null;
   onPendingStartDone?: () => void;
+  /**
+   * False while the page is kept mounted but hidden behind another tab. A hidden list has no
+   * height, so the scroll to the latest message waits until the page is shown again.
+   */
+  active?: boolean;
 }
 
 // Static key tables — declared as literal arrays so the typed `t()` can
@@ -76,10 +82,29 @@ const PROSPECT_PROMPT_KEYS = [
   'assistant.prompts.prospect.marketPulse',
 ] as const;
 
-export function ChatPanel({ customer, formBridge, pendingStart, onPendingStartDone }: ChatPanelProps) {
+/** The chat with its own history (per customer, kept while this component is mounted). */
+export function ChatPanel(props: ChatPanelProps) {
+  const chat = useAgentChat(props.customer, props.formBridge);
+  return <ChatPanelView {...props} chat={chat} />;
+}
+
+interface ChatPanelViewProps extends Omit<ChatPanelProps, 'formBridge'> {
+  /** The chat state from `useAgentChat` (history and unsent draft), owned by the caller so it outlives this view (Home clears the selection and unmounts it). */
+  chat: UseAgentChatResult;
+}
+
+/** The chat UI on top of a chat the caller owns. The Text page uses this so every customer's history survives a visit to Home. */
+export function ChatPanelView({ customer, chat, pendingStart, onPendingStartDone, active = true }: ChatPanelViewProps) {
   const { t } = useTranslation();
-  const { messages, send, streaming, reset } = useAgentChat(customer, formBridge);
-  const [input, setInput] = useState<string>('');
+  const { messages, send, streaming, reset, sessionId } = chat;
+
+  // Wake this chat's container while the advisor is still reading the page, so the first
+  // answer does not wait for it. Once per session id (see lib/warmup.ts); silent on failure.
+  useEffect(() => {
+    if (active) void warmUpSession(sessionId);
+  }, [active, sessionId]);
+  // The unsent text lives in the chat state (per customer), not here, so it survives this view being unmounted.
+  const { draft: input, setDraft: setInput } = chat;
   const [attachment, setAttachment] = useState<UploadedDocument | null>(null);
   const [quickQuestionsOpen, setQuickQuestionsOpen] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -100,8 +125,8 @@ export function ChatPanel({ customer, formBridge, pendingStart, onPendingStartDo
 
   // The same title and icon for a customer and for a prospect: it is the same assistant.
   const HeaderIcon = MessageCircle;
-  // "AI Chat - <customer name>", or "AI Chat - Prospect" while onboarding someone new (no record yet).
-  const heading = `${t('assistant.chat.heading')} - ${customer ? customer.name : t('assistant.cockpit.prospect')}`;
+  // "Text Assistant - <customer name>", or "Text Assistant - Prospect" while onboarding someone new (no record yet).
+  const heading = `${t('assistant.chat.textHeading')} - ${customer ? customer.name : t('assistant.cockpit.prospect')}`;
 
   // Cockpit hand-off: once this customer's chat is showing, send the starter
   // prompt that matches the suggested action, exactly once.
@@ -124,11 +149,13 @@ export function ChatPanel({ customer, formBridge, pendingStart, onPendingStartDo
     void send(t(key));
     onPendingStartDone?.();
   }, [pendingStart, customer, isProspect, streaming, send, t, onPendingStartDone]);
-  // Auto-scroll the message stream as new content streams in.
+  // Auto-scroll the message stream as new content streams in, and to the latest message again
+  // when the page is shown after a visit to another tab.
   useEffect(() => {
+    if (!active) return;
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, streaming]);
+  }, [messages, streaming, active]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -150,7 +177,7 @@ export function ChatPanel({ customer, formBridge, pendingStart, onPendingStartDo
 
   const handleAttach = async (file: File) => {
     // Optimistically show the chip as 'uploading' so the user sees feedback
-    // immediately. The backend issues a presigned URL and the browser PUTs
+    // immediately. The backend issues a presigned POST form and the browser posts
     // the binary directly to S3.
     setAttachment({
       document_id: '',
@@ -245,7 +272,11 @@ export function ChatPanel({ customer, formBridge, pendingStart, onPendingStartDo
                       {t('assistant.chat.assistantBubbleLabel')}
                     </div>
                     <div className="mt-0.5">
-                      {message.content ? (
+                      {message.guardrailBlocked ? (
+                        <p data-testid="guardrail-blocked" className="italic text-foreground-muted">
+                          {t('assistant.chat.guardrailBlocked')}
+                        </p>
+                      ) : message.content ? (
                         <MarkdownMessage
                           content={message.sources?.length ? stripSourcesLine(message.content) : message.content}
                         />
@@ -256,7 +287,9 @@ export function ChatPanel({ customer, formBridge, pendingStart, onPendingStartDo
                         </span>
                       ) : null}
                     </div>
-                    {message.sources?.length ? <SourcesFooter sources={message.sources} /> : null}
+                    {/* In async guardrail mode the sources event follows the block event and is built from
+                        the streamed answer; a replaced answer must not keep a source list under the notice. */}
+                    {message.sources?.length && !message.guardrailBlocked ? <SourcesFooter sources={message.sources} /> : null}
                   </div>
                 </div>
               );

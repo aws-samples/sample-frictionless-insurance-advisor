@@ -19,7 +19,7 @@ interface ConsentBarProps {
 
 /**
  * Recording consent. The assistant asks the question by voice;
- * the buttons answer it the same way. Until it is confirmed the runtime stores
+ * the buttons are the only way to answer it. Until it is confirmed the runtime stores
  * no transcript, writes no memory and fills no forms.
  */
 export function ConsentBar({ status, at, customerName, notice, connected, onAnswer, onStartNew }: ConsentBarProps) {

@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApplicationForm } from '../hooks/useApplicationForm';
 import { useCustomers } from '../hooks/useCustomers';
-import type { VoiceConsentHandlers, VoiceFormHandlers } from '../hooks/useVoiceChat';
-import { addNote } from '../lib/api';
+import { useSelection } from '../hooks/useSelection';
+import type { VoiceFormHandlers } from '../hooks/useVoiceChat';
 import { Alert } from '../ui';
 import { CustomerPanel } from './CustomerPanel';
 import { FormPanel } from './FormPanel';
+import { NoCustomerState } from './NoCustomerState';
 import { Sidebar } from './Sidebar';
 import { SidebarToggle } from './SidebarToggle';
 import { SplitWorkspace } from './SplitWorkspace';
@@ -35,22 +36,8 @@ interface VoicePageProps {
 export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps) {
   const { t } = useTranslation();
   const { customers, loading, error, refresh } = useCustomers();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [prospectMode, setProspectMode] = useState<boolean>(false);
-  const handleHome = () => {
-    setSelectedId(null);
-    setProspectMode(false);
-  };
-  const handleSelect = (customerId: string | null) => {
-    if (customerId === null) {
-      setSelectedId(null);
-      setProspectMode(true);
-    } else {
-      setSelectedId(customerId);
-      setProspectMode(false);
-    }
-  };
-
+  // Shared with the Text page, so switching tab keeps the same customer.
+  const { selectedId, prospectMode, select: handleSelect } = useSelection();
   const selectedCustomer = useMemo(
     () => customers.find((c) => c.customer_id === selectedId) ?? null,
     [customers, selectedId]
@@ -59,33 +46,11 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
   const form = useApplicationForm(selectedCustomer, prospectMode);
   const { activeForm, prefill } = form;
 
-  const totalPolicies = useMemo(
-    () => customers.reduce((sum, c) => sum + c.policies.length, 0),
-    [customers]
-  );
-
   const formHandlers = useMemo<VoiceFormHandlers>(
     () => ({ onFormOpen: form.openForm, onFormFill: form.fillField }),
     [form.openForm, form.fillField]
   );
 
-  // Log the advisor's consent confirmation as a note on the customer, through
-  // the notes API. A failure is shown nowhere else: the consent itself
-  // stands in the transcript header, and the note can be added by hand.
-  const consentHandlers = useMemo<VoiceConsentHandlers>(
-    () => ({
-      onConsentConfirmed: (customerId, at) => {
-        const when = at.replace('T', ' ').replace(/(:\d\d)?(\+00:00|Z)$/, '') + ' UTC';
-        void addNote(customerId, {
-          type: 'interaction',
-          text: `Recording consent confirmed ${when} (voice session). The customer agreed to the conversation being transcribed.`,
-        })
-          .then(() => refresh())
-          .catch((err: unknown) => console.error('[consent-note]', err));
-      },
-    }),
-    [refresh]
-  );
   return (
     <div className="relative flex flex-1 w-full overflow-hidden min-h-0">
       {sidebarCollapsed ? null : (
@@ -94,8 +59,6 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
           selectedId={selectedId}
           loading={loading}
           error={error}
-          homeActive={selectedId === null && !prospectMode}
-          onHome={handleHome}
           onSelect={handleSelect}
           onRefresh={refresh}
         />
@@ -111,6 +74,9 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
           </div>
         ) : null}
 
+        {selectedId === null && !prospectMode && !activeForm ? (
+          <NoCustomerState kind="voice" onNewProspect={() => handleSelect(null)} />
+        ) : (
         <SplitWorkspace
           storageId="insadv.workspace.split"
           left={
@@ -124,15 +90,13 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
                 onConfirmField={form.confirmField}
                 onClose={form.closeForm}
                 customerName={selectedCustomer?.name}
+                customerId={selectedCustomer?.customer_id ?? null}
+                savedRef={form.savedRef}
+                onSaved={form.rememberSavedRef}
               />
             ) : (
               <CustomerPanel
                 customer={selectedCustomer}
-                totalCustomers={customers.length}
-                totalPolicies={totalPolicies}
-                // On the Voice page the Cockpit just opens the customer; the starter
-                // prompts are for the text chat.
-                onOpenCustomer={(id) => handleSelect(id)}
                 onOpenForm={form.openForm}
               />
             )
@@ -143,7 +107,6 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
                 customer={selectedCustomer}
                 formHandlers={formHandlers}
                 formPrefill={prefill}
-                consentHandlers={consentHandlers}
                 onNoteSaved={refresh}
               />
             ) : prospectMode ? (
@@ -151,16 +114,16 @@ export function VoicePage({ sidebarCollapsed, onToggleSidebar }: VoicePageProps)
                 customer={null}
                 formHandlers={formHandlers}
                 formPrefill={prefill}
-                consentHandlers={consentHandlers}
                 onNoteSaved={refresh}
               />
             ) : (
               <div className="p-6">
-                <Alert variant="info">{t('assistant.chat.selectCustomer')}</Alert>
+                <Alert variant="info">{t('assistant.voice.selectCustomer')}</Alert>
               </div>
             )
           }
         />
+        )}
       </div>
     </div>
   );

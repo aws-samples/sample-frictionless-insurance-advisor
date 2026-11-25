@@ -3,27 +3,25 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
   FileText,
-  GraduationCap,
   MessageCircle,
   Mic,
-  MicOff,
-  Volume2,
-  VolumeX,
+  Pause,
+  Play,
   Send,
   Sparkles,
   Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { useVoiceChat, type VoiceConsentHandlers, type VoiceFormHandlers } from '../hooks/useVoiceChat';
-import { friendlyApiError, scoreRoleplay, uploadDocument } from '../lib/api';
+import { useVoiceChat, type VoiceFormHandlers } from '../hooks/useVoiceChat';
+import { formatMinutesSeconds, useSecondsLeft } from '../hooks/useSecondsLeft';
+import { uploadDocument } from '../lib/api';
 import { cn } from '../lib/cn';
 import { Alert, Button, IconButton } from '../ui';
-import type { Customer, RoleplayConfig, RoleplayScoreResponse, UploadedDocument } from '../types';
+import type { Customer, UploadedDocument } from '../types';
 
 import { ConsentBar } from './ConsentBar';
 import { MeetingNotePanel } from './MeetingNotePanel';
-import { RoleplayBanner, RoleplayScoreView, RoleplaySetup } from './RoleplayPanel';
 import { DocumentAttachment } from './DocumentAttachment';
 import { SamplePoliciesMenu } from './SamplePoliciesMenu';
 
@@ -36,8 +34,6 @@ interface VoicePanelProps {
   formHandlers?: VoiceFormHandlers;
   /** Field paths already filled from the customer record; relayed to the agent. */
   formPrefill?: Record<string, string>;
-  /** Called when recording consent is confirmed, so the page can log it. */
-  consentHandlers?: VoiceConsentHandlers;
   /** Called after a meeting note is saved, so the page can refresh the customer. */
   onNoteSaved?: () => void;
 }
@@ -64,15 +60,8 @@ const PROSPECT_PROMPT_KEYS = [
   'assistant.prompts.application.startTermLife',
 ] as const;
 
-export function VoicePanel({ customer, formHandlers, formPrefill, consentHandlers, onNoteSaved }: VoicePanelProps) {
-  const { t, i18n } = useTranslation();
-  // Practice mode (see RoleplayPanel / voice-agent/roleplay.py). `practice` is the
-  // active session's setup; `stage` is where the advisor is in the flow.
-  const [practice, setPractice] = useState<RoleplayConfig | null>(null);
-  const [stage, setStage] = useState<'idle' | 'setup' | 'active' | 'result'>('idle');
-  const [scoring, setScoring] = useState<boolean>(false);
-  const [score, setScore] = useState<RoleplayScoreResponse | null>(null);
-  const [scoreError, setScoreError] = useState<string>('');
+export function VoicePanel({ customer, formHandlers, formPrefill, onNoteSaved }: VoicePanelProps) {
+  const { t } = useTranslation();
   const {
     connected,
     recording,
@@ -81,18 +70,22 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
     partialUser,
     partialAssistant,
     history,
-    startRecording,
-    stopRecording,
     sendText,
     clearHistory,
     clearError,
-    muted,
-    toggleMute,
+    paused,
+    idleDeadline,
+    sessionRestarted,
+    sessionNotice,
+    dismissSessionNotice,
+    pauseVoice,
+    resumeVoice,
+    dismissSessionRestarted,
     consent,
     consentAt,
     consentNotice,
     answerConsent,
-  } = useVoiceChat(customer, formHandlers, formPrefill, consentHandlers, practice);
+  } = useVoiceChat(customer, formHandlers, formPrefill);
 
   const [input, setInput] = useState<string>('');
   const [attachment, setAttachment] = useState<UploadedDocument | null>(null);
@@ -111,8 +104,8 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
 
   // The same title and icon for a customer and for a prospect: it is the same assistant.
   const HeaderIcon = MessageCircle;
-  // "AI Chat - <customer name>", or "AI Chat - Prospect" while onboarding someone new (no record yet).
-  const headerText = `${t('assistant.chat.heading')} - ${customer ? customer.name : t('assistant.cockpit.prospect')}`;
+  // "Voice Assistant - <customer name>", or "Voice Assistant - Prospect" while onboarding someone new (no record yet).
+  const headerText = `${t('assistant.chat.voiceHeading')} - ${customer ? customer.name : t('assistant.cockpit.prospect')}`;
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -122,49 +115,18 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
   const customerKey = customer?.customer_id ?? null;
   useEffect(() => {
     setNoteOpen(false);
-    // A practice session is with one customer's persona.
-    setPractice(null);
-    setStage('idle');
-    setScore(null);
-    setScoreError('');
   }, [customerKey]);
-  const leavePractice = () => {
-    setPractice(null);
-    setStage('idle');
-    setScore(null);
-    setScoreError('');
-  };
-  const endAndScore = async () => {
-    if (!customer || !practice) return;
-    stopRecording();
-    setStage('result');
-    setScoring(true);
-    setScore(null);
-    setScoreError('');
-    try {
-      const res = await scoreRoleplay(
-        customer.customer_id,
-        history.map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', text: m.text })),
-        practice.difficulty,
-        practice.focus,
-        i18n.resolvedLanguage ?? i18n.language
-      );
-      setScore(res);
-    } catch (err) {
-      setScoreError(friendlyApiError(err));
-    } finally {
-      setScoring(false);
-    }
-  };
   // Needs a customer to attach the note to, recording consent, and something said.
   const canSummarise = customer !== null && consent === 'confirmed' && history.length >= 2;
 
+  // Pause cuts the microphone and the assistant's voice at once. The voice model drops an idle
+  // session after about 5 minutes, so a paused chat shows the time left on the button.
+  const secondsLeft = useSecondsLeft(idleDeadline);
   const toggleVoice = () => {
-    if (!connected) return;
     if (recording) {
-      stopRecording();
-    } else {
-      void startRecording();
+      pauseVoice();
+    } else if (connected || paused) {
+      void resumeVoice();
     }
   };
 
@@ -227,7 +189,9 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
     setAttachment(null);
   };
 
-  const statusLabel = !connected
+  const statusLabel = paused
+    ? t('assistant.voice.status.paused')
+    : !connected
     ? t('assistant.voice.status.connecting')
     : speaking
       ? t('assistant.voice.status.speaking')
@@ -237,7 +201,7 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
 
   // Map status to a Badge variant + dot color. Listening / speaking use the
   // brand pulse class; the dot itself gets a stronger color.
-  const statusVariant: 'info' | 'success' | 'warning' | 'brand' = !connected
+  const statusVariant: 'info' | 'success' | 'warning' | 'brand' = paused || !connected
     ? 'info'
     : speaking
       ? 'brand'
@@ -276,36 +240,27 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
             {statusLabel}
           </span>
           <Button
-            variant={recording ? 'destructive' : 'primary'}
+            variant={recording ? 'secondary' : 'primary'}
             size="sm"
             onClick={toggleVoice}
-            disabled={!connected}
+            disabled={!connected && !paused}
+            className={recording ? 'border-warning/50 text-warning' : undefined}
           >
-            {recording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            {recording
-              ? t('assistant.voice.stopVoice')
-              : t('assistant.voice.startVoice')}
-          </Button>
-          <IconButton
-            aria-label={muted ? t('assistant.voice.unmute') : t('assistant.voice.mute')}
-            title={muted ? t('assistant.voice.unmute') : t('assistant.voice.mute')}
-            variant="ghost"
-            size="sm"
-            onClick={toggleMute}
-            aria-pressed={muted}
-          >
-            {muted ? (
-              <VolumeX className="h-4 w-4 text-warning" />
+            {recording ? (
+              <Pause className="h-4 w-4" />
+            ) : paused ? (
+              <Play className="h-4 w-4" />
             ) : (
-              <Volume2 className="h-4 w-4" />
+              <Mic className="h-4 w-4" />
             )}
-          </IconButton>
-          {customer && !practice && stage === 'idle' ? (
-            <Button variant="secondary" size="sm" onClick={() => setStage('setup')} disabled={!connected}>
-              <GraduationCap className="h-4 w-4" />
-              {t('assistant.roleplay.button')}
-            </Button>
-          ) : null}
+            {recording
+              ? t('assistant.voice.pauseVoice')
+              : paused
+                ? secondsLeft && secondsLeft > 0
+                  ? `${t('assistant.voice.resumeVoice')} · ${formatMinutesSeconds(secondsLeft)}`
+                  : t('assistant.voice.resumeVoice')
+                : t('assistant.voice.startVoice')}
+          </Button>
           {canSummarise ? (
             <Button variant="secondary" size="sm" onClick={() => setNoteOpen(true)} disabled={noteOpen}>
               <FileText className="h-4 w-4" />
@@ -326,50 +281,42 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
         </div>
       </div>
 
-      {practice ? null : (
-        <ConsentBar
-          status={consent}
-          at={consentAt}
-          customerName={customer?.name ?? null}
-          notice={consentNotice}
-          connected={connected}
-          onAnswer={answerConsent}
-          onStartNew={clearHistory}
-        />
-      )}
-      {customer && stage === 'setup' ? (
-        <RoleplaySetup
-          customer={customer}
-          onCancel={leavePractice}
-          onStart={(cfg) => {
-            setPractice(cfg);
-            setStage('active');
-          }}
-        />
+      {paused ? (
+        <div
+          role="status"
+          className="mx-6 mt-3 flex items-center gap-2 rounded-md border border-info/40 bg-info/10 px-3 py-2 text-xs text-info"
+        >
+          <Pause className="h-4 w-4 shrink-0" />
+          <span className="flex-1">
+            {secondsLeft === 0 ? t('assistant.voice.pausedExpired') : t('assistant.voice.pausedNotice')}
+          </span>
+        </div>
       ) : null}
-      {customer && practice && stage === 'active' ? (
-        <RoleplayBanner
-          customerName={customer.name}
-          difficulty={practice.difficulty}
-          canEnd={history.length >= 2 && connected}
-          onEnd={() => void endAndScore()}
-          onLeave={leavePractice}
-        />
+      {sessionRestarted ? (
+        <div className="mx-6 mt-3">
+          <Alert variant="info" onDismiss={dismissSessionRestarted}>
+            {t('assistant.voice.sessionRestarted')}
+          </Alert>
+        </div>
       ) : null}
-      {customer && practice && stage === 'result' ? (
-        <RoleplayScoreView
-          loading={scoring}
-          error={scoreError}
-          result={score}
-          onAgain={() => {
-            setScore(null);
-            setScoreError('');
-            setPractice(null);
-            setStage('setup');
-          }}
-          onClose={leavePractice}
-        />
+      {sessionNotice ? (
+        <div className="mx-6 mt-3">
+          <Alert variant={sessionNotice === 'expired' ? 'warning' : 'info'} onDismiss={dismissSessionNotice}>
+            {sessionNotice === 'expired'
+              ? t('assistant.voice.sessionExpired')
+              : t('assistant.voice.sessionRenewed')}
+          </Alert>
+        </div>
       ) : null}
+      <ConsentBar
+        status={consent}
+        at={consentAt}
+        customerName={customer?.name ?? null}
+        notice={consentNotice}
+        connected={connected}
+        onAnswer={answerConsent}
+        onStartNew={clearHistory}
+      />
       {noteOpen && customer ? (
         <MeetingNotePanel
           customer={customer}
@@ -494,14 +441,15 @@ export function VoicePanel({ customer, formHandlers, formPrefill, consentHandler
             <span className="hidden sm:inline">{t('common.actions.send')}</span>
           </Button>
         </div>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="text-[11px] text-foreground-muted">
-            {recording
-              ? t('assistant.voice.hintVoice')
-              : t('assistant.voice.hintText')}
-          </p>
+        {/* Same wrapper as the Text Assistant, so the menu sits at the left in both panels. The hint
+            is only shown while voice is active; it goes on its own line below the menu so the menu
+            does not move when voice starts or stops. */}
+        <div className="mt-2">
           <SamplePoliciesMenu customer={customer} />
         </div>
+        {recording ? (
+          <p className="mt-2 text-[11px] text-foreground-muted">{t('assistant.voice.hintVoice')}</p>
+        ) : null}
       </form>
 
       {/* Quick prompts — collapsed by default to save vertical space. */}

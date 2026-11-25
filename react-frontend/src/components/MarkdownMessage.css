@@ -1,7 +1,7 @@
 /*
  * Scoped styles for agent Markdown responses inside a chat bubble.
  *
- * Inherits the new design-system CSS variables defined in src/index.css so
+ * Inherits the design-system CSS variables defined in src/index.css so
  * the content stays readable in both light and dark themes. Vertical
  * spacing stays tight because chat bubbles are narrow.
  */

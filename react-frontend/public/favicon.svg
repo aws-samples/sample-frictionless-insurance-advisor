@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="57 -30 540 540">
+  <defs>
+    <linearGradient id="og" x1="0.2" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#FFB347"/>
+      <stop offset="0.55" stop-color="#F7871E"/>
+      <stop offset="1" stop-color="#E4501B"/>
+    </linearGradient>
+    <linearGradient id="og2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFA533"/>
+      <stop offset="1" stop-color="#D9441A"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1D5FA6"/>
+      <stop offset="0.6" stop-color="#2A7DC9"/>
+      <stop offset="1" stop-color="#3C97E0"/>
+    </linearGradient>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F86D2"/>
+      <stop offset="1" stop-color="#18508F"/>
+    </linearGradient>
+    <!-- the arrow's shape, used to cut a clear gap in the pieces behind it -->
+    <path id="arrow" d="M70 436 C176 408 238 372 266 336 L306 250 L346 298 L452 182 L500 128 L470 100 L582 18 L546 156 L520 130 L446 214 L346 340 L304 296 L282 344 C246 396 170 424 70 436 Z"/>
+    <mask id="cutOrange" maskUnits="userSpaceOnUse" x="0" y="-60" width="700" height="600">
+      <rect x="0" y="-60" width="700" height="600" fill="#fff"/>
+      <path d="M60 442 C170 410 235 372 262 338 L304 250 L346 296 L440 186 L520 108" fill="none" stroke="#000" stroke-width="86" stroke-linejoin="miter"/>
+    </mask>
+    <mask id="cutBlue" maskUnits="userSpaceOnUse" x="0" y="-60" width="700" height="600">
+      <rect x="0" y="-60" width="700" height="600" fill="#fff"/>
+      <use href="#arrow" fill="#000" stroke="#000" stroke-width="26" stroke-linejoin="miter"/>
+    </mask>
+  </defs>
+  <g mask="url(#cutOrange)">
+    <!-- orange shield outline: top edges meet at an apex, open at the right where the arrow passes -->
+    <path d="M108 84 L316 14 L458 74 L452 104 L420 88 L318 52 L150 112 L150 232 C150 268 170 300 196 322 L172 346 C130 308 108 268 108 224 Z" fill="url(#og)"/>
+    <!-- inner chevron, two-tone -->
+    <path d="M186 326 L318 92 L388 214 L350 218 L318 160 L228 332 Z" fill="url(#og2)"/>
+    <path d="M318 92 L388 214 L350 218 L318 160 Z" fill="#C93C16" opacity="0.45"/>
+    <path d="M186 326 L318 92 L318 160 L228 332 Z" fill="#FFC36B" opacity="0.28"/>
+  </g>
+  <g mask="url(#cutBlue)">
+    <!-- lower crescent -->
+    <path d="M236 352 C262 446 384 486 470 334 C500 282 518 222 524 168 L496 176 C486 242 452 316 398 344 C336 374 284 346 250 322 Z" fill="url(#bg2)"/>
+  </g>
+  <!-- the arrow: swoosh tail, zigzag, shaft and head -->
+  <use href="#arrow" fill="url(#bg)"/>
+</svg>

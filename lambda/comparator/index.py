@@ -48,16 +48,16 @@ MAX_PRODUCTS = 4
 STALE_AFTER_DAYS = 90
 
 # Supported frontend locales. Anything else falls through to English.
-SUPPORTED_LOCALES = {"en", "ja", "ko", "es", "fr", "zh", "ms", "th", "id"}
+SUPPORTED_LOCALES = {"en", "ja", "ko", "es", "fr", "de", "zh", "ms", "th", "id"}
 
 # Claude Haiku 5.5 on us-east-1 Bedrock runtime.
 BEDROCK_MODEL_ID = os.environ.get(
     "BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-5-5"
 )
 
-# Bedrock Guardrail wired by the agentcore stack at deploy time. The
-# guardrail VERSION isn't an env var any more — we resolve it at cold start
-# from an SSM parameter so guardrail policy updates can roll out without a
+# Bedrock Guardrail wired by the tools stack at deploy time. The
+# guardrail VERSION is not a fixed env var: it is resolved at cold start
+# from an SSM parameter so guardrail policy updates roll out without a
 # Lambda redeploy. The parameter NAME is in the env; the VALUE is fetched
 # once per cold start and cached for the life of the container.
 GUARDRAIL_ID = os.environ.get("BEDROCK_GUARDRAIL_ID")
@@ -70,10 +70,9 @@ _GUARDRAIL_VERSION_CACHE: str | None = None
 def _resolve_guardrail_version() -> str | None:
     """Read the current guardrail version from SSM, cached per container.
 
-    Falls back to the legacy `BEDROCK_GUARDRAIL_VERSION` env var if the
-    SSM parameter name isn't configured (so this Lambda works under both
-    the legacy CFN-export deploy path AND the SSM-based one). Returns
-    None if neither is configured."""
+    Falls back to the `BEDROCK_GUARDRAIL_VERSION` env var if the SSM
+    parameter name isn't configured or the parameter can't be read.
+    Returns None if neither is available."""
     global _GUARDRAIL_VERSION_CACHE
     if _GUARDRAIL_VERSION_CACHE is not None:
         return _GUARDRAIL_VERSION_CACHE
@@ -86,10 +85,10 @@ def _resolve_guardrail_version() -> str | None:
                 return value
         except Exception as exc:  # noqa: BLE001
             print(f"could not resolve guardrail version from SSM: {exc}")
-    legacy = (os.environ.get("BEDROCK_GUARDRAIL_VERSION") or "").strip()
-    if legacy:
-        _GUARDRAIL_VERSION_CACHE = legacy
-        return legacy
+    env_guardrail_version = (os.environ.get("BEDROCK_GUARDRAIL_VERSION") or "").strip()
+    if env_guardrail_version:
+        _GUARDRAIL_VERSION_CACHE = env_guardrail_version
+        return env_guardrail_version
     return None
 
 bedrock_runtime = boto3.client(
@@ -108,18 +107,27 @@ RATINGS_KEY = "carrier_ratings.json"
 TEMP_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 
 
-def _guardrail_config() -> dict | None:
-    """Build the Converse `guardrailConfig` block when guardrail env vars
-    are set, otherwise return None so the call proceeds unguarded.
+class GuardrailUnavailable(RuntimeError):
+    """The guardrail id or version cannot be resolved, so the model is not called."""
 
+
+GUARDRAIL_UNAVAILABLE_MESSAGE = (
+    "The assistant's safety filter is temporarily unavailable. Please try again in a few minutes."
+)
+
+
+def _guardrail_config() -> dict:
+    """Build the Converse `guardrailConfig` block.
+
+    Raises GuardrailUnavailable when the guardrail id is not configured or its
+    version cannot be resolved: the model is never called without a guardrail.
     Trace mode is "enabled" so blocked requests show up in CloudWatch with
     the policy name that triggered.
     """
-    if not GUARDRAIL_ID:
-        return None
-    version = _resolve_guardrail_version()
+    version = _resolve_guardrail_version() if GUARDRAIL_ID else None
     if not version:
-        return None
+        print("Guardrail id or version not resolved - refusing the model call")
+        raise GuardrailUnavailable()
     return {
         "guardrailIdentifier": GUARDRAIL_ID,
         "guardrailVersion": version,
@@ -254,14 +262,31 @@ def _ratings_for_entry(entry: dict) -> dict | None:
 
 
 # --- Temporary uploaded brochure -----------------------------------
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
+
+
 def _advisor_from_token(event: dict) -> str | None:
     """Advisor email from the verified sign-in token; no request-supplied fallback."""
     try:
         username = event["requestContext"]["authorizer"]["claims"]["username"]
         user = boto3.client("cognito-idp").admin_get_user(UserPoolId=USER_POOL_ID, Username=username)
-        for attr in user["UserAttributes"]:
-            if attr["Name"] == "email":
-                return attr["Value"]
+        return _verified_email(user)
     except (KeyError, TypeError):
         return None
     except Exception as e:  # noqa: BLE001
@@ -419,6 +444,7 @@ def _locale_language_name(locale: str) -> str:
         "ko": "Korean",
         "es": "Spanish",
         "fr": "French",
+        "de": "German",
         "zh": "Simplified Chinese",
         "ms": "Malay (Bahasa Melayu)",
         "th": "Thai",
@@ -512,10 +538,10 @@ def _build_converse_request(entries: list[dict], markdowns: list[str], locale: s
             # The structured comparison needs enough output budget to emit
             # every section + the trailing disclaimer. Health products have
             # large source markdown and produce richer tables: a complete
-            # 2-product health comparison measured at ~3.4k output tokens,
-            # so the previous 2000 cap truncated mid-output (stopReason=
+            # 2-product health comparison needs about 3.4k output tokens,
+            # and a lower cap would truncate mid-output (stopReason=
             # max_tokens), dropping `sections` and `disclaimer` entirely and
-            # rendering an empty table. 4096 covers the observed worst case
+            # rendering an empty table. 4096 covers that worst case
             # with headroom; the schema below also bounds section/row counts
             # so generation stays well under API Gateway's 29s timeout on
             # Haiku 5.5.
@@ -534,9 +560,7 @@ def _build_converse_request(entries: list[dict], markdowns: list[str], locale: s
             "toolChoice": {"tool": {"name": "emit_comparison"}},
         },
     }
-    guardrail = _guardrail_config()
-    if guardrail is not None:
-        request["guardrailConfig"] = guardrail
+    request["guardrailConfig"] = _guardrail_config()
     return request
 
 
@@ -578,10 +602,14 @@ def handler(event, context):
 
         body_raw = event.get("body") or "{}"
         body = json.loads(body_raw)
+        if not isinstance(body, dict):
+            return _response(400, {"message": "Request body must be a JSON object"})
 
         product_ids = body.get("product_ids", [])
         if not isinstance(product_ids, list):
             return _response(400, {"message": "product_ids must be an array"})
+        if len(product_ids) > MAX_PRODUCTS * 2 or not all(isinstance(p, str) and len(p) <= 200 for p in product_ids):
+            return _response(400, {"message": "product_ids must be a short list of product ids"})
         # De-dupe while preserving order.
         seen: set[str] = set()
         product_ids = [pid for pid in product_ids if not (pid in seen or seen.add(pid))]
@@ -658,7 +686,7 @@ def handler(event, context):
 
         # Output-token truncation: if the model hit the maxTokens ceiling the
         # tool payload is cut off mid-JSON (sections/disclaimer dropped),
-        # which previously surfaced as a silently empty comparison table.
+        # which would surface as a silently empty comparison table.
         # Treat it as a handled error so the frontend shows a retry affordance
         # instead of a blank result, and log it so a recurrence is visible.
         if bedrock_response.get("stopReason") == "max_tokens":
@@ -711,6 +739,8 @@ def handler(event, context):
 
         return _response(200, payload)
 
+    except GuardrailUnavailable:
+        return _response(503, {"message": GUARDRAIL_UNAVAILABLE_MESSAGE})
     except LookupError as e:
         return _response(404, {"message": str(e)})
     except json.JSONDecodeError:

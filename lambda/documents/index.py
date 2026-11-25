@@ -1,7 +1,7 @@
 """
 Documents Upload Lambda
 
-Issues short-lived presigned S3 PUT URLs so the React SPA can upload
+Issues short-lived presigned S3 POST forms so the React SPA can upload
 insurance-policy documents (PDF / Markdown / image) directly to S3 without
 the binary ever transiting API Gateway. The agent then calls the
 extract_policy MCP tool target with the returned `document_id` to read
@@ -10,38 +10,61 @@ the file from S3 and run a tool-forced extraction.
 Route:
   POST /documents/initiate
     Body: { filename: str, content_type: str, customer_id?: str }
-    Returns: { document_id, presigned_put_url, s3_key, expires_in_seconds, max_size_bytes }
+    Returns: { document_id, upload_url, upload_fields, s3_key, expires_in_seconds, max_size_bytes,
+               content_type, filename }
+  The browser sends `upload_fields` and then the file (as the last form field) to `upload_url`
+  with a multipart/form-data POST.
 
-Why presigned URLs (not multipart upload through API GW):
+Why a presigned POST (not a multipart upload through API GW):
 - API Gateway REST has a 10 MB request size cap; base64-inflated binary
-  blows that. Presigned PUT keeps the binary off API GW entirely.
-- This Lambda becomes purely a URL signer (sub-50ms cold start, no compute
+  blows that. A presigned POST keeps the binary off API GW entirely.
+- Unlike a presigned PUT, a POST policy can carry a `content-length-range`
+  condition, so S3 itself refuses a file that is empty or larger than the limit.
+- This Lambda is purely a form signer (sub-50ms cold start, no compute
   cost on the actual file transfer).
 
 Security model (matches the rest of the system):
 - Cognito JWT required at API Gateway (the sign-in scope); the advisor is taken from its verified claims only
 - S3 key is `{advisor_id}/{customer_id_or_unassigned}/{document_id}.{ext}`
-  so a stolen presigned URL can only PUT to the calling advisor's
+  so a stolen presigned form can only write to the calling advisor's
   namespace; the extract_policy Lambda re-derives advisor_id from the
   caller's JWT and rejects mismatched paths.
+- customer_id must match a strict pattern and be one of the calling advisor's
+  own customers before it becomes a path segment of the key.
 - 24-hour S3 lifecycle expiration on the bucket auto-deletes uploads.
 - Only PDF, Markdown, plain text, and JPEG/PNG/WEBP are accepted.
-- 10 MB hard cap.
+- The size limit (10 MB by default, environment variable MAX_UPLOAD_BYTES) is part of the signed policy.
 """
-
 from __future__ import annotations
 
 import json
 import os
+import re
 import uuid
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
+DEFAULT_MAX_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+MIN_UPLOAD_BYTES = 1
 
-MAX_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+def _max_size_bytes() -> int:
+    """MAX_UPLOAD_BYTES from the environment, kept between 1 KB and 50 MB; the default if unset or not a number."""
+    try:
+        value = int(str(os.environ.get("MAX_UPLOAD_BYTES", "")).strip())
+    except ValueError:
+        return DEFAULT_MAX_SIZE_BYTES
+    return min(50 * 1024 * 1024, max(1024, value))
+
+
+MAX_SIZE_BYTES = _max_size_bytes()
 PRESIGN_EXPIRES_SECONDS = 300  # 5 min — long enough for a slow upload, short enough to limit replay
+MAX_FILENAME_CHARS = 255
+# Same pattern as lambda/applications.
+CUSTOMER_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+UNASSIGNED = "unassigned"
 
 # Map of allowed Content-Type -> file extension. Anything else is rejected.
 ALLOWED_CONTENT_TYPES: dict[str, str] = {
@@ -53,16 +76,17 @@ ALLOWED_CONTENT_TYPES: dict[str, str] = {
     "image/webp": "webp",
 }
 
-
-# `s3v4` is required so the presigned URL signature is compatible with the
-# default SSE-KMS key. Without it the browser PUT gets InvalidArgument.
+# `s3v4` signs the presigned form with Signature Version 4, which S3 requires
+# for buckets with default encryption.
 s3_client = boto3.client(
     "s3",
     config=Config(signature_version="s3v4"),
 )
 cognito = boto3.client("cognito-idp")
+dynamodb = boto3.resource("dynamodb")
 
 DOCUMENTS_BUCKET = os.environ["DOCUMENTS_BUCKET"]
+PROFILES_TABLE = os.environ["PROFILES_TABLE"]
 USER_POOL_ID = os.environ.get("USER_POOL_ID")
 
 
@@ -82,6 +106,25 @@ def _response(status: int, body) -> dict:
     }
 
 
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
+
+
 def _extract_advisor_id(event: dict) -> str | None:
     """The signed-in advisor's email, taken ONLY from the verified sign-in token.
 
@@ -95,11 +138,9 @@ def _extract_advisor_id(event: dict) -> str | None:
         return None
     try:
         response = cognito.admin_get_user(UserPoolId=USER_POOL_ID, Username=username)
-        for attr in response["UserAttributes"]:
-            if attr["Name"] == "email":
-                return attr["Value"]
+        return _verified_email(response)
     except Exception as e:  # noqa: BLE001
-        print(f"Cognito lookup error: {e}")
+        print(f"Cognito lookup error: {type(e).__name__}")
     return None
 
 
@@ -124,27 +165,43 @@ def handler(event, context):
             body = json.loads(event.get("body") or "{}")
         except json.JSONDecodeError:
             return _response(400, {"message": "Body is not valid JSON"})
+        if not isinstance(body, dict):
+            return _response(400, {"message": "Body must be a JSON object"})
 
-        filename = (body.get("filename") or "").strip()
-        content_type = (body.get("content_type") or "").strip().lower()
-        customer_id = (body.get("customer_id") or "").strip() or "unassigned"
+        filename = body.get("filename")
+        content_type = body.get("content_type")
+        customer_id = body.get("customer_id")
 
-        if not filename:
+        if not isinstance(filename, str) or not filename.strip():
             return _response(400, {"message": "filename is required"})
+        filename = filename.strip()
+        if len(filename) > MAX_FILENAME_CHARS:
+            return _response(400, {"message": "filename is too long"})
+
+        content_type = content_type.strip().lower() if isinstance(content_type, str) else ""
         if content_type not in ALLOWED_CONTENT_TYPES:
             return _response(
                 400,
                 {
-                    "message": f"Unsupported content_type {content_type!r}. "
+                    "message": f"Unsupported content_type {content_type[:60]!r}. "
                     f"Allowed: {sorted(ALLOWED_CONTENT_TYPES.keys())}"
                 },
             )
 
+        if customer_id is None or customer_id == "":
+            customer_id = UNASSIGNED
+        elif not isinstance(customer_id, str) or not CUSTOMER_ID_RE.match(customer_id):
+            return _response(400, {"message": "customer_id is not valid"})
+        if customer_id != UNASSIGNED:
+            # The customer becomes a folder in the key, so it must be one of this advisor's own.
+            profile = dynamodb.Table(PROFILES_TABLE).get_item(Key={"customer_id": customer_id}).get("Item")
+            if not profile or profile.get("advisor_id") != advisor_id:
+                return _response(404, {"message": "Customer not found for this advisor"})
+
         # Stable customer scoping in the key. The "unassigned" namespace is
         # used when the advisor uploads in "+ New Prospect" mode before any
-        # customer record exists; later the agent can move the file to the
-        # right customer namespace if we ever needed permanent storage,
-        # but with 24h lifecycle expiry that's a non-issue.
+        # customer record exists. Uploads expire after 24 hours, so they are
+        # never moved to a customer namespace.
         document_id = uuid.uuid4().hex
         ext = ALLOWED_CONTENT_TYPES[content_type]
         s3_key = (
@@ -152,31 +209,26 @@ def handler(event, context):
             f"{document_id}.{ext}"
         )
 
-        # Generate presigned PUT URL.
+        # Generate the presigned POST form.
         #
-        # IMPORTANT: only sign Bucket/Key/ContentType. Anything we add to
-        # Params is folded into the SigV4 canonical request and MUST be
-        # echoed by the browser as a matching header. We deliberately do
-        # NOT sign Metadata — the browser fetch() doesn't send arbitrary
-        # x-amz-meta-* headers, which would cause SignatureDoesNotMatch
-        # (surfaces as a 403 with no body in CORS contexts).
-        #
-        # The audit trail we care about (advisor_id, customer_id,
-        # document_id) is already encoded in the S3 key path, so dropping
-        # the object metadata loses nothing: extract_policy parses the key,
-        # and S3 access logs + CloudTrail capture the key as well.
+        # The signed policy pins the object key and Content-Type and bounds the size with
+        # a content-length-range condition, so S3 rejects an empty or oversized file even
+        # though this Lambda never sees the bytes. Metadata is deliberately not signed: the
+        # audit trail (advisor_id, customer_id, document_id) is already encoded in the S3
+        # key path, and S3 access logs and CloudTrail capture the key as well.
         try:
-            presigned_url = s3_client.generate_presigned_url(
-                "put_object",
-                Params={
-                    "Bucket": DOCUMENTS_BUCKET,
-                    "Key": s3_key,
-                    "ContentType": content_type,
-                },
+            post = s3_client.generate_presigned_post(
+                Bucket=DOCUMENTS_BUCKET,
+                Key=s3_key,
+                Fields={"Content-Type": content_type},
+                Conditions=[
+                    {"Content-Type": content_type},
+                    ["content-length-range", MIN_UPLOAD_BYTES, MAX_SIZE_BYTES],
+                ],
                 ExpiresIn=PRESIGN_EXPIRES_SECONDS,
             )
         except ClientError as e:
-            print(f"presign error: {e}")
+            print(f"presign error: {type(e).__name__}")
             return _response(500, {"message": "Could not issue upload URL"})
 
         return _response(
@@ -184,16 +236,14 @@ def handler(event, context):
             {
                 "document_id": document_id,
                 "s3_key": s3_key,
-                "presigned_put_url": presigned_url,
+                "upload_url": post["url"],
+                "upload_fields": post["fields"],
                 "expires_in_seconds": PRESIGN_EXPIRES_SECONDS,
                 "max_size_bytes": MAX_SIZE_BYTES,
                 "content_type": content_type,
                 "filename": filename,
             },
         )
-
     except Exception as e:  # noqa: BLE001
-        import traceback
-        print(f"Error in documents handler: {e}")
-        traceback.print_exc()
+        print(f"Error in documents handler: {type(e).__name__}")
         return _response(500, {"message": "Internal error"})

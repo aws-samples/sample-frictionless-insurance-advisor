@@ -28,6 +28,16 @@ import boto3
 from botocore.exceptions import ClientError
 from strands import tool
 
+from form_rules import (
+    assistant_may_handle,
+    describe_condition,
+    is_required,
+    is_visible,
+    missing_required,
+    newly_visible,
+    without_secret_values,
+)
+
 logger = logging.getLogger(__name__)
 
 FORMS_BUCKET = os.environ.get("FORMS_BUCKET", "")
@@ -117,6 +127,39 @@ def _describe(field: dict[str, Any]) -> str:
     return "  " + " — ".join(bits)
 
 
+def outstanding_lines(fields: list[dict[str, Any]], filled: dict[str, str]) -> list[str]:
+    """What is still to be answered, split the way the rules split it.
+
+    Descriptive lines only (see the note in open_application_form about instructions inside tool
+    results). Fields the advisor types themselves are named but never listed with a path, and
+    fields that only apply after a related answer are listed with the condition in words.
+    """
+    labels = {f["path"]: f["label"] for f in fields}
+    handled = [f for f in fields if assistant_may_handle(f)]
+    manual = [f for f in fields if not assistant_may_handle(f)]
+    shown = [f for f in handled if is_visible(f, filled)]
+    waiting = [f for f in handled if not is_visible(f, filled)]
+    outstanding = [f for f in shown if f["path"] not in filled]
+    required = [f for f in outstanding if is_required(f, filled)]
+    optional = [f for f in outstanding if not is_required(f, filled)]
+    lines = ["Required fields not yet answered:"]
+    lines += [_describe(f) for f in required] if required else ["  none"]
+    lines += ["Optional fields not yet answered:"]
+    lines += [_describe(f) for f in optional] if optional else ["  none"]
+    if waiting:
+        lines += ["Fields that appear once a related answer calls for them:"]
+        lines += [
+            f"{_describe(f)} — appears when {describe_condition(f.get('visible_when'), labels)}"
+            for f in waiting
+        ]
+    if manual:
+        lines += [
+            "Typed by the advisor directly on the form, not available to the assistant: "
+            + ", ".join(f["label"] for f in manual) + "."
+        ]
+    return lines
+
+
 def coerce_value(field: dict[str, Any], raw: str) -> tuple[str | None, str]:
     """Map a typed value onto the exact value the form expects.
 
@@ -178,18 +221,24 @@ def form_state_note(form_ctx: dict[str, Any] | None) -> str:
         logger.warning("form_state_note: schema %s unavailable", form_ctx["product_type"])
         return ""
     fields = _fields_of(schema)
-    values = form_ctx["values"]
+    # Whatever the browser sent, a secret field's value never reaches the model.
+    values = without_secret_values(schema, form_ctx["values"])
     by_path = {f["path"]: f for f in fields}
     filled = [
         f'{by_path[p]["label"]} = {v}' for p, v in sorted(values.items()) if p in by_path
     ]
-    missing = [f["label"] for f in fields if f.get("required") and f["path"] not in values]
+    # Required and shown right now, per the form rules, minus the fields only the advisor types.
+    missing = [f["label"] for f in missing_required(schema, values) if assistant_may_handle(f)]
+    manual = [f["label"] for f in fields if not assistant_may_handle(f)]
     lines = [
         f'[Application form open on the advisor\'s screen: {schema.get("title", form_ctx["product_type"])} '
         f'(product_type {form_ctx["product_type"]}).',
         "Already on the form: " + ("; ".join(filled) if filled else "nothing yet") + ".",
-        "Required and still empty: " + (", ".join(missing) if missing else "none") + ".]",
+        "Required and still empty: " + (", ".join(missing) if missing else "none") + ".",
     ]
+    if manual:
+        lines.append("Typed by the advisor on the form, not available to you: " + ", ".join(manual) + ".")
+    lines[-1] += "]"
     return "\n".join(lines)
 
 
@@ -204,11 +253,12 @@ def make_form_tools(
     form_ctx:  the form already open in the browser, if any (from parse_form_context)
     prefill:   field values known from the customer's record
     """
-    session: dict[str, Any] = {"product_type": None, "fields": {}, "filled": {}}
+    session: dict[str, Any] = {"product_type": None, "fields": {}, "filled": {}, "schema": None}
 
     def _adopt(schema: dict[str, Any], product_type: str) -> list[dict[str, Any]]:
         fields = _fields_of(schema)
         session["product_type"] = product_type
+        session["schema"] = schema
         session["fields"] = {f["path"]: f for f in fields}
         return fields
 
@@ -216,7 +266,7 @@ def make_form_tools(
     if form_ctx:
         try:
             _adopt(load_form_schema(form_ctx["product_type"]), form_ctx["product_type"])
-            session["filled"] = dict(form_ctx["values"])
+            session["filled"] = without_secret_values(session["schema"], form_ctx["values"])
         except Exception:  # noqa: BLE001
             logger.warning("Could not restore form %s", form_ctx["product_type"])
 
@@ -254,7 +304,10 @@ def make_form_tools(
         emit({"type": "form_open", "productType": requested, "schema": schema})
 
         valid = set(session["fields"])
-        on_file = {p: v for p, v in prefill.items() if p in valid and v not in (None, "")}
+        on_file = {
+            p: v for p, v in prefill.items()
+            if p in valid and v not in (None, "") and assistant_may_handle(session["fields"][p])
+        }
         for p, v in on_file.items():
             session["filled"].setdefault(p, str(v))
         carried = [
@@ -262,9 +315,6 @@ def make_form_tools(
             for p in session["filled"]
             if p in valid and p not in on_file
         ]
-        outstanding = [f for f in fields if f["path"] not in session["filled"]]
-        required = [f for f in outstanding if f.get("required")]
-        optional = [f for f in outstanding if not f.get("required")]
 
         # Descriptive data only. The rules for how to use it live in the system
         # prompt. Instructions to the model inside a tool result (two or more
@@ -282,10 +332,7 @@ def make_form_tools(
             lines += ["", f"Already filled from the customer's record: {already}."]
         if previous and previous != requested:
             lines += ["", f"Switched from {previous}. Already answered: {', '.join(sorted(carried)) or 'none'}."]
-        lines += ["", "Required fields not yet answered:"]
-        lines += [_describe(f) for f in required] if required else ["  none"]
-        lines += ["Optional fields not yet answered:"]
-        lines += [_describe(f) for f in optional] if optional else ["  none"]
+        lines += [""] + outstanding_lines(fields, session["filled"])
         return "\n".join(lines)
 
     @tool
@@ -309,6 +356,9 @@ def make_form_tools(
         field = session["fields"].get(path)
         if field is None:
             return f"'{path}' is not a field on this form. Use one of the exact paths from the list."
+        if not assistant_may_handle(field):
+            # Never echo or store the value: the advisor types this field on the form.
+            return f"{field['label']} is typed by the advisor directly on the form and is not available to the assistant."
         coerced, why = coerce_value(field, str(value))
         if coerced is None:
             return f"Could not set {field['label']} to '{value}'. {why} Call fill_form_field again with a valid value."
@@ -323,7 +373,16 @@ def make_form_tools(
             "confidence": score,
             "source": (source or "")[:200],
         })
+        before = dict(session["filled"])
         session["filled"][path] = coerced
-        return f"{field['label']} set to '{coerced}'."
+        note = ""
+        if session.get("schema"):
+            opened = [
+                f for f in newly_visible(session["schema"], before, session["filled"])
+                if assistant_may_handle(f)
+            ]
+            if opened:
+                note = " Now applicable: " + "; ".join(f'"{f["label"]}" -> {f["path"]}' for f in opened) + "."
+        return f"{field['label']} set to '{coerced}'.{note}"
 
     return [open_application_form, fill_form_field]

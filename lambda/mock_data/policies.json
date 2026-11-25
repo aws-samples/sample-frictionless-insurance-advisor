@@ -244,6 +244,11 @@
       "cash_value_estimate": 18400,
       "current_credited_rate": "4.25%",
       "guaranteed_minimum_rate": "2.00%",
+      "guarantee_to_age": 95,
+      "required_no_lapse_premium": 7212,
+      "riders": [
+        "waiver_of_premium"
+      ],
       "beneficiary": "Spouse and Children",
       "smoker": false
     }
@@ -412,6 +417,11 @@
       "cash_value_estimate": 9800,
       "current_credited_rate": "4.25%",
       "guaranteed_minimum_rate": "2.00%",
+      "guarantee_to_age": 121,
+      "required_no_lapse_premium": 4252,
+      "riders": [
+        "guaranteed_purchase_option"
+      ],
       "beneficiary": "Spouse and Children",
       "smoker": false
     }

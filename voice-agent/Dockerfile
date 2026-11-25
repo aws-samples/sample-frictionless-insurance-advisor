@@ -1,13 +1,13 @@
-# ARM64 Python base (required by AgentCore Runtime). Pinned by digest for reproducible builds.
+# ARM64 Python 3.13.18 base on Debian 13 (required by AgentCore Runtime). Pinned by tag and digest for reproducible builds.
 # nosemgrep: avoid-platform-with-from -- AgentCore Runtime requires linux/arm64; pin is intentional
-FROM --platform=linux/arm64 public.ecr.aws/docker/library/python:3.13-slim@sha256:e544a7fcbdf8555eceda66bf86cafb006c736339f76141918bcb812f3174c00a
+FROM --platform=linux/arm64 public.ecr.aws/docker/library/python:3.13.18-slim-trixie@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
 
 WORKDIR /app
 
 COPY requirements.txt constraints.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
-COPY app.py consent.py transcripts.py wire.py roleplay.py identity_guard.py ./
+COPY app.py consent.py transcripts.py wire.py identity_guard.py note_guard.py write_guard.py form_rules.py container_cache.py customer_access.py verified_advisor.py limits.py ./
 
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser

@@ -1,0 +1,547 @@
+{
+  "assistant": {
+    "sidebar": {
+      "heading": "Kunden",
+      "collapse": "Seitenleiste einklappen",
+      "expand": "Seitenleiste ausklappen",
+      "newProspect": "+ Neuer Interessent",
+      "home": "Startseite"
+    },
+    "welcome": {
+      "heading": "Willkommen",
+      "body": "Wählen Sie in der Seitenleiste einen Kunden aus, um Profil und Policen zu sehen und einen Chat zu starten.",
+      "totalCustomers": "Kunden insgesamt",
+      "activePolicies": "Aktive Policen"
+    },
+    "customer": {
+      "contactSection": "Kontakt",
+      "accountSection": "Konto",
+      "policiesSection": "Policen",
+      "thirdPartyPoliciesSection": "Policen anderer Versicherer",
+      "recommendationSection": "Analyse der Deckungslücken",
+      "fields": {
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "address": "Adresse",
+        "joinDate": "Kunde seit",
+        "policiesCount": "Policen",
+        "occupation": "Beruf",
+        "maritalStatus": "Familienstand",
+        "gender": "Geschlecht",
+        "firstName": "Vorname",
+        "middleName": "Zweiter Vorname",
+        "lastName": "Nachname",
+        "dateOfBirth": "Geburtsdatum",
+        "street": "Straße und Hausnummer",
+        "city": "Ort",
+        "state": "Bundesstaat",
+        "zip": "Postleitzahl",
+        "citizenship": "Staatsangehörigkeit",
+        "tobaccoStatus": "Tabakkonsum",
+        "dependents": "Unterhaltsberechtigte",
+        "employmentStatus": "Beschäftigungsstatus",
+        "annualIncome": "Jahreseinkommen",
+        "netWorthBand": "Vermögen",
+        "homeOwner": "Wohneigentümer",
+        "medicalConditions": "Vorerkrankungen"
+      },
+      "dataFreshness": {
+        "badge": "Aktualität prüfen",
+        "tooltip": "Dieses Profil wurde seit mehr als {{days}} Tagen nicht überprüft. Bestätigen Sie, dass die Angaben des Kunden noch aktuell sind, bevor Sie sich auf die Deckungsanalyse stützen."
+      },
+      "actions": {
+        "gapAnalysis": {
+          "button": "Lückenanalyse erstellen",
+          "menuTitle": "Deckung analysieren für",
+          "resultTitle": "Lückenanalyse: {{line}}",
+          "close": "Analyse schließen"
+        },
+        "form": {
+          "button": "Antragsformular öffnen",
+          "menuTitle": "Antragsformular für",
+          "error": "Das Formular konnte nicht geöffnet werden: {{message}}"
+        }
+      },
+      "details": {
+        "show": "Details anzeigen",
+        "hide": "Details ausblenden"
+      }
+    },
+    "policies": {
+      "emptyProspect": "Noch keine Policen – dies ist ein Interessent.",
+      "id": "ID",
+      "insurer": "Versicherer",
+      "coverage": "Deckung",
+      "renews": "Verlängerung",
+      "perFrequency": "{{amount}} / {{frequency}}",
+      "details": {
+        "sectionTitle": "Details",
+        "vehicle": {
+          "title": "Fahrzeug",
+          "make": "Marke",
+          "model": "Modell",
+          "year": "Baujahr",
+          "registration": "Kennzeichen"
+        },
+        "property": {
+          "title": "Objekt",
+          "address": "Adresse",
+          "type": "Art",
+          "yearBuilt": "Baujahr",
+          "size": "Größe",
+          "squareFeet": "{{value}} sq ft"
+        },
+        "health": {
+          "title": "Tarif",
+          "tier": "Stufe",
+          "network": "Netzwerk",
+          "dependents": "Mitversicherte"
+        },
+        "disability": {
+          "title": "Deckung",
+          "benefitPeriod": "Leistungsdauer",
+          "benefitYears": "{{count}} Jahre",
+          "waitingPeriod": "Wartezeit",
+          "waitingDays": "{{count}} Tage",
+          "occupationClass": "Berufsklasse"
+        },
+        "life": {
+          "title": "Police",
+          "lifeType": "Art der Lebensversicherung",
+          "beneficiary": "Begünstigter",
+          "smoker": "Raucher",
+          "smokerYes": "Ja",
+          "smokerNo": "Nein",
+          "termYears": "Laufzeit",
+          "termYearsValue": "{{count}} Jahre",
+          "premiumSchedule": "Prämienzahlung",
+          "dividendOption": "Dividendenoption",
+          "deathBenefitOption": "Todesfalloption",
+          "currentCreditedRate": "Aktuell gutgeschriebener Zins",
+          "guaranteedMinimumRate": "Garantierter Mindestzins",
+          "cashValueEstimate": "Rückkaufswert (geschätzt)",
+          "subAccountAllocation": "Aufteilung auf Teilkonten",
+          "guaranteeToAge": "Garantie gegen Erlöschen",
+          "guaranteeAge": "Bis Alter {{age}}",
+          "guaranteeLifetime": "Lebenslang (Alter 121)",
+          "requiredPremium": "Erforderliche Prämie für die Garantie (pro Jahr)",
+          "riders": "Zusatzbausteine"
+        },
+        "subAccounts": {
+          "equity_growth": "Aktien – Wachstum",
+          "equity_international": "Aktien – International",
+          "fixed_income": "Festverzinslich",
+          "money_market": "Geldmarkt",
+          "balanced": "Ausgewogen",
+          "equity_value": "Aktien – Substanzwerte"
+        }
+      }
+    },
+    "chat": {
+      "textHeading": "Text-Assistent",
+      "voiceHeading": "Sprach-Assistent",
+      "selectCustomer": "Wählen Sie einen Kunden aus, um einen Chat zu starten.",
+      "emptyPlaceholder": "Stellen Sie eine Frage oder wählen Sie unten einen Vorschlag.",
+      "messageLabel": "Nachricht",
+      "placeholderCustomer": "Fragen zu den Policen...",
+      "placeholderProspect": "Fragen zu diesem Interessenten...",
+      "userBubbleLabel": "Sie",
+      "assistantBubbleLabel": "Assistent",
+      "thinking": "Denkt nach...",
+      "guardrailBlocked": "Der Compliance-Filter hat diese Antwort blockiert. Bitte versuchen Sie es erneut oder formulieren Sie Ihre Frage um, zum Beispiel indem Sie ein Produkt nennen oder fragen, was das Kundenprofil zeigt.",
+      "quickQuestions": "Schnellfragen",
+      "attachDocument": "Policendokument anhängen (PDF, Bild oder Text)",
+      "removeAttachment": "Anhang entfernen",
+      "uploadingFilename": "{{filename}} wird hochgeladen...",
+      "uploadFailed": "Hochladen fehlgeschlagen",
+      "placeholderWithAttachment": "Notiz hinzufügen oder einfach senden, um die Police auszulesen...",
+      "samplePolicies": {
+        "cta": "Brauchen Sie eine Testdatei? Beispiel herunterladen",
+        "heading": "Beispielpolice für {{name}}",
+        "subtext": "Synthetische Policen anderer Versicherer zum Testen des Uploads.",
+        "notice": "Fiktive Versicherer. Kein realer Versicherungsschutz."
+      },
+      "sources": {
+        "label": "Quellen",
+        "openFile": "{{title}} im Daten-Explorer öffnen (neuer Browser-Tab)",
+        "openWeb": "{{title}} öffnen (neuer Browser-Tab)"
+      }
+    },
+    "prompts": {
+      "customer": {
+        "meetingPrep": "Hilf mir, mich auf mein Gespräch mit diesem Kunden vorzubereiten",
+        "policies": "Welche Policen habe ich?",
+        "coverageGap": "Welche Deckungslücke habe ich und wie kann ich sie schließen?",
+        "premiumDelta": "Warum ist Ihre Prämie höher/niedriger als bei Wettbewerbern?",
+        "claimsModel": "Bieten Sie bargeldlose Abrechnung im Krankenhaus an oder nur Kostenerstattung?",
+        "incomeVsLumpSum": "Bieten Sie Einkommensersatz oder Einmalzahlungen an?",
+        "mentalHealthMaternity": "Sind psychische Erkrankungen, Mutterschaft oder alternative Behandlungen abgedeckt?",
+        "outpatientDentalOptical": "Sind ambulante Behandlungen, Zahnbehandlungen oder Sehhilfen abgedeckt?",
+        "dayOneCover": "Wie stehen Sofortschutz und Wartezeit im Vergleich zu anderen da?",
+        "preExistingWaiting": "Welche Wartezeit gilt bei Vorerkrankungen im Vergleich zu Wettbewerbern?",
+        "annualReview": "Erstelle eine Jahresüberprüfung für diesen Kunden",
+        "outreach": "Entwirf eine E-Mail an diesen Kunden",
+        "marketPulse": "Was gibt es diese Woche Neues auf dem Versicherungsmarkt?"
+      },
+      "prospect": {
+        "meetingPrep": "Hilf mir, mich auf mein Gespräch mit diesem Interessenten vorzubereiten",
+        "firstProducts": "Welche Versicherung sollte dieser Interessent zuerst in Betracht ziehen?",
+        "discovery": "Hilf mir, ein Bedarfsgespräch zu beginnen",
+        "bestProducts": "Welche Produkte passen am besten zu seinem Profil?",
+        "company": "Erzähl mir etwas über Awesome Insurance",
+        "whyAwesome": "Warum sollte er sich für Awesome statt für BigRival entscheiden?",
+        "qualifyQuestions": "Welche Fragen sollte ich stellen, um diesen Interessenten einzuschätzen?",
+        "outreach": "Entwirf eine Erstkontakt-E-Mail an diesen Interessenten",
+        "marketPulse": "Was gibt es diese Woche Neues auf dem Versicherungsmarkt?"
+      },
+      "application": {
+        "startTermLife": "Starte einen Antrag für eine Risikolebensversicherung"
+      }
+    },
+    "pages": {
+      "voice": {
+        "heading": "Sprache"
+      },
+      "comparator": {
+        "heading": "Vergleich",
+        "intro": "Vergleichen Sie Versicherungsprodukte von Awesome Insurance und seinen Wettbewerbern. Wählen Sie eine Produktart und dann 2 bis 4 Produkte zum Vergleich aus.",
+        "typeLabel": "Produktart",
+        "line": {
+          "label": "Produktlinie",
+          "life": "Leben",
+          "general": "Sach",
+          "health": "Gesundheit"
+        },
+        "typePlaceholder": "Produktart auswählen",
+        "productsLabel": "Zu vergleichende Produkte",
+        "productsHelp": "Wählen Sie zwischen {{min}} und {{max}} Produkten aus.",
+        "selectType": "Wählen Sie eine Produktart, um die vergleichbaren Produkte zu sehen.",
+        "noProductsForType": "Für diese Art sind keine Produkte verfügbar.",
+        "tierBadge": "Stufe {{tier}}",
+        "selectedCount": "{{count}} ausgewählt",
+        "compareButton": "Vergleichen",
+        "clearButton": "Auswahl aufheben",
+        "comparing": "Vergleich wird erstellt...",
+        "comparingHint": "Das dauert 10–20 Sekunden, während der Assistent jedes Produktdokument liest.",
+        "errorTitle": "Vergleich fehlgeschlagen",
+        "errorRetry": "Erneut versuchen",
+        "resultSummary": "Überblick",
+        "carrier": "Versicherer",
+        "disclaimer": "KI-generierter Vergleich",
+        "minProducts": "Wählen Sie mindestens {{min}} Produkte aus.",
+        "maxProducts": "Sie können höchstens {{max}} Produkte vergleichen.",
+        "internalUseOnly": "Nur für den internen Gebrauch",
+        "staleNotice": "Einige Quelldaten sind möglicherweise veraltet – prüfen Sie sie, bevor Sie sie an einen Kunden weitergeben.",
+        "productStale": "Daten älter als {{days}} Tage",
+        "productUpdated": "Quelle aktualisiert am {{date}}",
+        "brochure": {
+          "title": "Broschüre eines Wettbewerbers hinzufügen (optional)",
+          "help": "Laden Sie eine PDF-Broschüre eines anderen Versicherers hoch, um sie in diesen Vergleich aufzunehmen. Sie wird einmal gelesen, nur für diesen Vergleich verwendet und innerhalb von 48 Stunden automatisch gelöscht.",
+          "choose": "PDF auswählen",
+          "uploading": "Wird hochgeladen…",
+          "reading": "Broschüre wird gelesen…",
+          "remove": "Entfernen",
+          "badge": "Hochgeladene Broschüre",
+          "notes": "{{count}} Hinweis(e) aus dem Lesen der Broschüre",
+          "pdfOnly": "Bitte wählen Sie eine PDF-Datei aus.",
+          "tooLarge": "Dieses PDF ist größer als 4,5 MB. Verwenden Sie eine kleinere Datei.",
+          "noRoom": "Deaktivieren Sie ein Produkt, um Platz zu schaffen (bis zu 4 sind vergleichbar).",
+          "sampleLabel": "Keine Broschüre zur Hand? Probieren Sie ein Beispiel:",
+          "sampleButton": "{{name}} herunterladen (PDF)"
+        },
+        "uploadedNotice": "{{name}} stammt aus einer von Ihnen hochgeladenen Broschüre. Sie wurde automatisch gelesen und nicht überprüft. Prüfen Sie die Angaben anhand der Broschüre, bevor Sie sich darauf verlassen.",
+        "ratings": {
+          "title": "Finanzkraft der Versicherer",
+          "outlook": "Ausblick",
+          "notStated": "Nicht angegeben",
+          "illustrativeNote": "Die für Wettbewerber gezeigten Ratings sind veranschaulichende Demonstrationsdaten, keine realen Werte.",
+          "brochureNote": "Die Ratings der hochgeladenen Broschüre entsprechen den Angaben darin und wurden nicht überprüft.",
+          "asOf": "Ratings, Stand {{date}}."
+        },
+        "pdf": {
+          "button": "PDF herunterladen",
+          "hint": "Ein PDF für den Kunden, ohne den Vermerk für den internen Gebrauch",
+          "preparing": "Wird vorbereitet…",
+          "failed": "Das PDF konnte nicht erstellt werden: {{message}}",
+          "heading": "Produktvergleich",
+          "prepared": "Erstellt am {{date}}",
+          "advisor": "Berater: {{name}}",
+          "uploadedNote": "{{name}} wurde aus einer Broschüre gelesen, die Ihr Berater bereitgestellt hat, und wurde nicht überprüft.",
+          "customerDisclaimer": "Auf Grundlage der Produktdokumentation, Stand {{date}}. Dieser Vergleich dient nur der Information. Er ist weder ein Angebot noch eine Zusage und zeigt möglicherweise nicht jedes Leistungsmerkmal und jeden Ausschluss. Bitte prüfen Sie die Einzelheiten beim jeweiligen Versicherer, bevor Sie sich entscheiden."
+        },
+        "typesLoading": "Produktarten werden geladen…"
+      },
+      "data": {
+        "heading": "Daten-Explorer",
+        "intro": "Durchsuchen Sie die Referenzdokumente, auf denen die Antworten des Assistenten beruhen – Produktportfolio, Unternehmensinformationen, Wettbewerbspositionierung, Wettbewerbsprodukte, Aktionen und Schemas der Antragsformulare.",
+        "searchPlaceholder": "Dateien durchsuchen...",
+        "clearSearch": "Suche löschen",
+        "fileCount": "{{count}} Dateien",
+        "matchCount": "{{count}} von {{total}} Dateien",
+        "noMatches": "Keine Dateien passen zu „{{query}}“.",
+        "selectFile": "Wählen Sie ein Dokument aus der Liste, um seinen Inhalt anzuzeigen.",
+        "loadingList": "Dokumente werden geladen...",
+        "loadingFile": "Dokument wird geladen...",
+        "emptyList": "Keine Dokumente verfügbar.",
+        "viewRendered": "Dargestellt",
+        "viewRaw": "Rohdaten",
+        "lastUpdated": "Zuletzt aktualisiert am {{date}}",
+        "internalUseOnly": "Nur für den internen Gebrauch",
+        "form": {
+          "sectionCount": "{{count}} Abschnitte",
+          "fieldCount": "{{count}} Felder",
+          "requiredCount": "{{count}} erforderlich",
+          "required": "Erforderlich",
+          "optional": "Optional",
+          "options": "Optionen",
+          "product": "Produkt",
+          "formId": "Formular-ID"
+        },
+        "folders": {
+          "portfolio": "Produktportfolio",
+          "company": "Unternehmensinfos",
+          "competitive": "Wettbewerbspositionierung",
+          "competitors": "Wettbewerbsprodukte",
+          "promotion": "Aktionen",
+          "forms": "Antragsformulare",
+          "pricing": "Preistabellen",
+          "brochures": "Broschüren",
+          "transcripts": "Sprachprotokolle",
+          "applications": "Gespeicherte Anträge"
+        },
+        "pdf": {
+          "download": "PDF herunterladen",
+          "open": "In neuem Tab öffnen",
+          "note": "Einseitige Broschüre zur Weitergabe an Kunden. Sie enthält keine Preise.",
+          "fallback": "Ihr Browser konnte das PDF hier nicht anzeigen. Verwenden Sie „PDF herunterladen“ oder „In neuem Tab öffnen“."
+        },
+        "pricing": {
+          "ageBand": "Altersgruppe",
+          "ratePerUnit": "Jahresrate pro {{unit}}",
+          "scaledNote": "Die Beträge gelten für {{amount}} Deckung und skalieren mit der gewählten Summe.",
+          "interpolatedNote": "Beträge zwischen den Zeilen werden interpoliert.",
+          "monthlyBenefit": "Monatliche Leistung",
+          "baseAnnual": "Jahresgrundprämie",
+          "geography": "Region",
+          "perDay": "Pro Tag und Reisendem",
+          "annualMulti": "Jahres-Mehrfachreise, pro Reisendem",
+          "addonPct": "+{{pct}} % der Prämie",
+          "addonFlat": "+{{amount}} pro Jahr",
+          "addonPerUnit": "+{{amount}} je {{per}} Versicherungssumme",
+          "addonOnAmount": "+{{pct}} % des eingegebenen Betrags",
+          "indicative": "Nur unverbindlich",
+          "effective": "Gültig ab {{date}}",
+          "basis": "Prämienbasis: {{basis}}. Währung: {{currency}}.",
+          "dependsOn": "Wovon der Preis abhängt",
+          "option": "Option",
+          "meaning": "Bedeutung",
+          "allowed": "Zulässige Werte",
+          "defaultCol": "Standard",
+          "required": "Erforderlich",
+          "fromProfile": "aus dem Kundenprofil übernommen",
+          "baseRates": "Grundraten",
+          "factors": "Tarifmerkmale",
+          "factorsHelp": "Jedes Merkmal multipliziert die Grundrate. Merkmale, die auf die getroffene Auswahl nicht zutreffen, werden übersprungen.",
+          "addons": "Zusatzbausteine",
+          "addon": "Zusatzbaustein",
+          "effect": "Auswirkung auf die Prämie",
+          "frequency": "Zahlungsweise",
+          "paidEvery": "Zahlung",
+          "loading": "Zuschlag",
+          "noLoading": "Keiner",
+          "examples": "Rechenbeispiele",
+          "example": "Beispiel",
+          "choices": "Auswahl",
+          "annualPremium": "Jahresprämie",
+          "examplesNote": "Mit diesen Tabellen berechnet, damit die Assistenten dieselben Beträge nennen.",
+          "affordabilityTitle": "Tragbarkeitsregel",
+          "ofIncome": "des Jahreseinkommens, über alle aktiven Policen"
+        },
+        "transcript": {
+          "inProgress": "Läuft",
+          "ended": "Beendet",
+          "started": "Gestartet {{time}}",
+          "refresh": "Aktualisieren",
+          "expires": "Läuft automatisch ab, etwa 24 bis 48 Stunden nach der letzten Speicherung ({{time}}). Solange eine Sitzung geöffnet ist, wird etwa alle 30 Sekunden gespeichert.",
+          "consent": "Die Einwilligung zur Transkription wurde am {{time}} bestätigt.",
+          "empty": "In dieser Sitzung wurde noch nichts gespeichert.",
+          "about": "Über {{name}}",
+          "aboutProspect": "Über einen Interessenten",
+          "advisor": "Berater",
+          "assistant": "Assistent",
+          "typed": "getippt",
+          "prospect": "Interessent",
+          "turnCount": "{{count}} Beiträge"
+        },
+        "collapseAll": "Alle einklappen",
+        "expandAll": "Alle ausklappen",
+        "collapseFolder": "{{folder}} einklappen",
+        "expandFolder": "{{folder}} ausklappen",
+        "ratings": {
+          "carrierCount": "{{count}} Versicherer",
+          "agencyCount": "{{count}} Ratingagenturen",
+          "carrier": "Versicherer",
+          "illustrative": "Veranschaulichend"
+        },
+        "application": {
+          "status": "Zur Unterschrift gesendet",
+          "forCustomer": "Für {{name}}",
+          "forProspect": "Für einen Interessenten",
+          "answerCount": "{{count}} Antworten",
+          "hiddenCount": "{{count}} beim Speichern ausgeblendet",
+          "revision": "Revision {{revision}}, aktualisiert {{time}}",
+          "expires": "Demodaten: werden etwa 2 bis 3 Tage nach dem Speichern automatisch gelöscht.",
+          "omitted": "Nicht gespeichert: {{fields}}.",
+          "hidden": "Ausgeblendet",
+          "origin": {
+            "profile": "Aus dem Profil",
+            "voice": "Im Gespräch gehört",
+            "manual": "Von Hand eingegeben"
+          }
+        }
+      }
+    },
+    "voice": {
+      "heading": "Sprach-Chat",
+      "selectCustomer": "Wählen Sie einen Kunden aus, um ein Sprachgespräch zu starten.",
+      "startVoice": "Sprach-Chat starten",
+      "typePlaceholder": "Nachricht eingeben...",
+      "connecting": "Verbindung wird hergestellt...",
+      "emptyConnecting": "Verbindung zum Agenten wird hergestellt...",
+      "emptyConnected": "Geben Sie unten eine Nachricht ein oder drücken Sie „Sprach-Chat starten“, um zu sprechen. „Leeren“ setzt das Gespräch zurück.",
+      "hintVoice": "Der Sprach-Chat ist aktiv – der Assistent antwortet mit Sprache und Text. Drücken Sie „Sprach-Chat pausieren“, um nur zu tippen.",
+      "status": {
+        "connecting": "Verbindung wird hergestellt",
+        "connected": "Verbunden",
+        "listening": "Hört zu",
+        "speaking": "Spricht",
+        "paused": "Pausiert"
+      },
+      "consent": {
+        "question": "Vor der Aufzeichnung: Hat {{name}} zugestimmt, dass dieses Gespräch transkribiert wird und wichtige Punkte daraus für spätere Gespräche gespeichert werden?",
+        "theProspect": "der Interessent",
+        "hint": "Bis Sie bestätigen, wird nichts gespeichert oder gemerkt und kein Formular ausgefüllt. Antworten Sie mit den Schaltflächen; der Assistent kann nicht für Sie antworten.",
+        "changed": "Der Kunde hat gewechselt, daher ist die Einwilligung erneut nötig.",
+        "confirm": "Bestätigt",
+        "decline": "Abgelehnt",
+        "confirmed": "Einwilligung um {{time}} bestätigt. Dieses Gespräch wird transkribiert und etwa einen Tag lang aufbewahrt. Wichtige Punkte können 90 Tage oder länger im Gedächtnis des Kunden bleiben.",
+        "declinedMessage": "Einwilligung abgelehnt. Die Sitzung wurde beendet und nichts wurde gespeichert.",
+        "startNew": "Neue Sitzung starten"
+      },
+      "pauseVoice": "Sprach-Chat pausieren",
+      "resumeVoice": "Sprach-Chat fortsetzen",
+      "pausedNotice": "Sprach-Chat pausiert: Ihr Mikrofon ist aus und die Stimme des Assistenten schweigt. Tippen funktioniert weiterhin, die Antworten kommen als Text. Die Sitzung endet nach etwa 5 Minuten ohne Sprechen oder Tippen.",
+      "pausedExpired": "Das 5-Minuten-Limit ist abgelaufen, die Sitzung ist möglicherweise beendet. „Fortsetzen“ startet bei Bedarf eine neue, und die Frage nach der Aufzeichnungseinwilligung wird erneut gestellt.",
+      "sessionRestarted": "Die vorherige Sitzung wurde während der Pause beendet, daher wurde eine neue gestartet. Sie werden erneut nach der Aufzeichnungseinwilligung gefragt.",
+      "sessionRenewed": "Ihre Anmeldung ist abgelaufen, daher wurde die Sprachsitzung beendet und mit einer neuen Anmeldung eine neue geöffnet. Sie werden erneut nach der Aufzeichnungseinwilligung gefragt, und das Mikrofon bleibt aus, bis Sie es starten.",
+      "sessionExpired": "Ihre Anmeldung ist abgelaufen und die Sprachsitzung wurde beendet. Melden Sie sich ab und erneut an, um fortzufahren."
+    },
+    "recommendation": {
+      "loading": "Deckung wird analysiert und nach Lücken gesucht...",
+      "noGaps": "Keine wesentlichen Deckungslücken gefunden – der Kunde ist für sein Profil gut abgesichert.",
+      "error": "Die Empfehlung konnte nicht erstellt werden: {{message}}",
+      "exposureLabel": "Finanzielles Risiko",
+      "exposureIllustrative": "Veranschaulichende Schätzung"
+    },
+    "form": {
+      "progress": "{{filled}} von {{total}} Pflichtfeldern",
+      "progressLabel": "Fortschritt des Formulars",
+      "pendingReview": "{{count}} zu prüfen",
+      "looksRight": "Passt so",
+      "stillNeeded": "Noch erforderlich",
+      "carriedOver": "{{count}} übernommen",
+      "sendForSignature": "Zur Unterschrift senden",
+      "sendReadyHint": "Alle Pflichtfelder sind ausgefüllt.",
+      "sendBlocked": "Noch {{count}} Pflichtfeld(er) erforderlich.",
+      "legendProfile": "Aus dem Profil",
+      "legendHeard": "Im Gespräch gehört",
+      "legendConfirm": "Bitte bestätigen",
+      "legendManual": "Von Ihnen eingegeben",
+      "downloadPdf": "PDF herunterladen",
+      "yes": "Ja",
+      "no": "Nein",
+      "pdf": {
+        "preparing": "Wird vorbereitet…",
+        "failed": "Das PDF konnte nicht erstellt werden: {{message}}",
+        "prepared": "Erstellt am {{date}}",
+        "advisor": "Berater: {{name}}",
+        "requiredNote": "* Pflichtfeld. Lassen Sie nicht beantwortete Zeilen leer und füllen Sie sie von Hand aus.",
+        "signatureApplicant": "Unterschrift des Antragstellers",
+        "signatureAdvisor": "Unterschrift des Beraters",
+        "date": "Datum",
+        "disclaimer": "Entwurf, erstellt mit dem Berater-Assistenten von Awesome Insurance. Dies ist kein Angebot auf Versicherungsschutz. Der Schutz beginnt erst, wenn Awesome Insurance nach der Risikoprüfung eine Police ausstellt.",
+        "nlgAcknowledgment": "BESTÄTIGUNG DER GARANTIE GEGEN ERLÖSCHEN: Diese Police enthält eine Garantie gegen Erlöschen. Die Todesfallleistung ist nur dann bis zu dem in diesem Antrag genannten Alter garantiert, wenn die erforderliche Prämie pünktlich gezahlt wird. Die Zahlung nur des Mindestbetrags oder eine verspätete Zahlung kann die Garantie verringern oder dauerhaft beenden, auch wenn ein Rückkaufswert vorhanden ist. Mit der Unterschrift bestätigt der Antragsteller, eine Modellrechnung erhalten zu haben, die die erforderliche Prämie ausweist."
+      },
+      "secretNote": "Wird nur hier eingegeben. Die Assistenten können dieses Feld nicht sehen.",
+      "saved": "Gespeichert",
+      "saving": "Wird gespeichert...",
+      "editAgain": "Erneut bearbeiten",
+      "saveFailed": "Der Antrag konnte nicht gespeichert werden: {{message}}",
+      "savedHint": "Gespeichert als {{ref}}. Öffnen Sie ihn im Daten-Explorer unter „Gespeicherte Anträge“.",
+      "savedHintReplaced": "Erneut gespeichert als {{ref}}. Dies hat die frühere Speicherung ersetzt (Revision {{revision}}).",
+      "savedOmitted": "Nicht gespeichert: {{fields}}.",
+      "fillDemo": "Demodaten einfügen",
+      "fillDemoHint": "Nur für Demos: Füllt die leeren Felder für jeden Kunden mit denselben Beispielantworten. Bereits ausgefüllte Felder bleiben erhalten.",
+      "demoFilled": "{{count}} Felder mit Beispieldaten gefüllt.",
+      "demoNothing": "Nichts zu füllen: Jedes Feld hat bereits eine Antwort."
+    },
+    "notes": {
+      "heading": "Notizen",
+      "add": "Notiz hinzufügen",
+      "save": "Notiz speichern",
+      "typeLabel": "Art",
+      "type": {
+        "life_event": "Lebensereignis",
+        "interaction": "Kontakt"
+      },
+      "dateLabel": "Datum des Ereignisses (optional)",
+      "textLabel": "Notiz",
+      "textPlaceholder": "z. B. Zweites Kind im März erwartet",
+      "empty": "Noch keine Notizen.",
+      "eventOn": "Ereignis: {{date}}",
+      "addedOn": "hinzugefügt am {{date}}",
+      "byAssistant": "Vom Assistenten hinzugefügt",
+      "byAssistantHint": "Auf Wunsch des Beraters vom KI-Assistenten gespeichert",
+      "delete": "Notiz löschen",
+      "confirmDelete": "Löschen",
+      "saveFailed": "Die Notiz konnte nicht gespeichert werden: {{message}}",
+      "deleteFailed": "Die Notiz konnte nicht gelöscht werden: {{message}}"
+    },
+    "cockpit": {
+      "heading": "Prioritäten für heute",
+      "summary": "{{needing}} von {{total}} Kunden brauchen Aufmerksamkeit, die dringendsten zuerst",
+      "refresh": "Aktualisieren",
+      "loading": "Ihre Prioritäten werden geladen…",
+      "empty": "Im Moment braucht nichts Ihre Aufmerksamkeit.",
+      "error": "Ihre Prioritäten konnten nicht geladen werden: {{message}}",
+      "prospect": "Interessent",
+      "actions": {
+        "annual_review": "Jahresüberprüfung",
+        "meeting_prep": "Gespräch vorbereiten",
+        "outreach": "E-Mail entwerfen"
+      },
+      "rules": {
+        "review_overdue": "Profil zuletzt vor {{days}} Tagen überprüft",
+        "life_event_upcoming": "Lebensereignis in {{days}} Tagen: {{text}}",
+        "life_event_passed": "Lebensereignis vor {{days}} Tagen, seitdem kein Nachfassen: {{text}}",
+        "renewal_due": "{{policy}} ({{insurer}}) verlängert sich in {{days}} Tagen",
+        "renewal_due_own": "{{policy}} verlängert sich in {{days}} Tagen",
+        "renewal_passed": "{{policy}} ({{insurer}}) hat das Verlängerungsdatum vor {{days}} Tagen überschritten",
+        "renewal_passed_own": "{{policy}} hat das Verlängerungsdatum vor {{days}} Tagen überschritten",
+        "over_cap": "Die jährlichen Prämien betragen {{percent}} % des Einkommens und liegen über dem Richtwert von {{cap}} %",
+        "prospect_quiet": "Noch keine Awesome-Police und seit {{days}} Tagen kein Kontakt"
+      }
+    },
+    "meetingNote": {
+      "button": "In einer Notiz zusammenfassen",
+      "title": "Gesprächsnotiz",
+      "loading": "Aus diesem Gespräch wird eine Notiz entworfen…",
+      "intro": "Prüfen und bearbeiten Sie den Entwurf und speichern Sie ihn dann in den Notizen des Kunden. Es wird nichts gespeichert, bis Sie auf „Speichern“ drücken.",
+      "insufficient": "Dieses Gespräch enthält noch nicht genug, um eine Notiz zu schreiben.",
+      "error": "Die Notiz konnte nicht entworfen werden: {{message}}",
+      "saved": "Notiz in der Kundenakte gespeichert.",
+      "trimmed": "Gekürzt, um die Grenze von 1.000 Zeichen einzuhalten.",
+      "dateLabel": "Datum der Nachverfolgung (optional)"
+    }
+  }
+}

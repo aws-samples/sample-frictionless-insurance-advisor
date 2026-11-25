@@ -17,9 +17,8 @@ export default defineConfig({
         // <link rel="modulepreload"> even though the page-chunk
         // dynamic import is what should trigger it.
         //
-        // Vite 8 uses Rolldown, where the old object-form `manualChunks`
-        // is replaced by `codeSplitting.groups` with regex `test`
-        // matchers on module ids.
+        // Vite 8 uses Rolldown, which groups chunks with
+        // `codeSplitting.groups` and regex `test` matchers on module ids.
         codeSplitting: {
           groups: [
             // Auth + AWS SDK pieces — referenced from AuthGate (eager
@@ -40,6 +39,10 @@ export default defineConfig({
         },
       },
     },
+    // The audio worklet is loaded with audioWorklet.addModule(url). Vite would inline a file this small as a
+    // data: URL, which the Content-Security-Policy (script-src 'self') does not allow, so it is always emitted
+    // as a hashed file under assets/. Every other asset keeps the default inline limit.
+    assetsInlineLimit: (filePath) => (filePath.endsWith('.worklet.js') ? false : undefined),
     // Keep Vite's default warning threshold but raise it slightly so the
     // first vendor chunk (aws-amplify, ~400 KB pre-gzip) doesn't trigger
     // false alarms after we've explicitly chunked it.

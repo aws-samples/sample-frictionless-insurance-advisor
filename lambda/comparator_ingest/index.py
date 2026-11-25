@@ -38,7 +38,6 @@ import datetime
 import json
 import os
 import re
-import traceback
 import uuid
 from typing import Any
 
@@ -54,6 +53,11 @@ USER_POOL_ID = os.environ.get("USER_POOL_ID", "")
 
 # Converse accepts documents up to 4.5 MB.
 MAX_DOCUMENT_BYTES = 4_500_000
+# Largest upload read into memory. The documents Lambda signs the same limit into the upload form.
+try:
+    MAX_UPLOAD_BYTES = min(50 * 1024 * 1024, max(1024, int(os.environ.get("MAX_UPLOAD_BYTES", ""))))
+except ValueError:
+    MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 DOCUMENT_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 TEXT_EXTS = ("md", "txt")
 STRING_MAX = 200
@@ -144,6 +148,25 @@ def _response(status: int, body: dict) -> dict:
     }
 
 
+def _verified_email(user):
+    """The email address stored for a Cognito user, exactly as stored, or None.
+
+    `user` is an AdminGetUser response. Only a user that is enabled, CONFIRMED and has a
+    verified email address counts as an advisor: an address Cognito has not verified is
+    text the user typed in, so it must never become an advisor id. The address is returned
+    as stored, with no case folding or trimming.
+    """
+    if not isinstance(user, dict) or user.get("Enabled") is not True or user.get("UserStatus") != "CONFIRMED":
+        print("The user is not enabled and confirmed")
+        return None
+    attributes = {a.get("Name"): a.get("Value") for a in user.get("UserAttributes") or []}
+    email = attributes.get("email")
+    if attributes.get("email_verified") != "true" or not isinstance(email, str) or not email:
+        print("The user has no verified email address")
+        return None
+    return email
+
+
 def advisor_from_token(event: dict) -> str | None:
     """Advisor email from the verified sign-in token. No request-supplied fallback."""
     try:
@@ -152,9 +175,7 @@ def advisor_from_token(event: dict) -> str | None:
         return None
     try:
         user = boto3.client("cognito-idp").admin_get_user(UserPoolId=USER_POOL_ID, Username=username)
-        for attr in user["UserAttributes"]:
-            if attr["Name"] == "email":
-                return attr["Value"]
+        return _verified_email(user)
     except Exception as e:  # noqa: BLE001
         print(f"Cognito lookup failed: {type(e).__name__}")
     return None
@@ -178,16 +199,35 @@ def catalog_types() -> set[str]:
     return _catalog_types
 
 
-def guardrail_config() -> dict | None:
+class GuardrailUnavailable(RuntimeError):
+    """The guardrail id or version cannot be resolved, so the model is not called."""
+
+
+GUARDRAIL_UNAVAILABLE_MESSAGE = (
+    "The assistant's safety filter is temporarily unavailable. Please try again in a few minutes."
+)
+
+
+def guardrail_config() -> dict:
+    """Build the Converse `guardrailConfig` block.
+
+    Raises GuardrailUnavailable when the guardrail id is not configured or its
+    version cannot be resolved: the model is never called without a guardrail.
+    """
     global _guardrail_version
     if not GUARDRAIL_ID or not GUARDRAIL_VERSION_PARAM_NAME:
-        return None
+        print("Guardrail id or version parameter not configured - refusing the model call")
+        raise GuardrailUnavailable()
     if _guardrail_version is None:
         try:
-            _guardrail_version = _ssm.get_parameter(Name=GUARDRAIL_VERSION_PARAM_NAME)["Parameter"]["Value"]
+            value = (_ssm.get_parameter(Name=GUARDRAIL_VERSION_PARAM_NAME)["Parameter"]["Value"] or "").strip()
         except Exception as e:  # noqa: BLE001
             print(f"Could not resolve guardrail version: {type(e).__name__}")
-            return None
+            value = ""
+        if not value or value == "DRAFT":
+            print("Guardrail version not resolved - refusing the model call")
+            raise GuardrailUnavailable()
+        _guardrail_version = value
     return {"guardrailIdentifier": GUARDRAIL_ID, "guardrailVersion": _guardrail_version, "trace": "enabled"}
 
 
@@ -225,9 +265,7 @@ def build_request(raw: bytes, ext: str, expected_type: str) -> dict:
             "toolChoice": {"tool": {"name": "emit_brochure"}},
         },
     }
-    g = guardrail_config()
-    if g:
-        request["guardrailConfig"] = g
+    request["guardrailConfig"] = guardrail_config()
     return request
 
 
@@ -321,7 +359,10 @@ def handler(event, context):
         if not found:
             return _response(404, {"message": "Upload not found. It may have expired (uploads are deleted after a day); upload it again."})
         key, ext = found
-        raw = s3_client.get_object(Bucket=DOCUMENTS_BUCKET, Key=key)["Body"].read()
+        obj = s3_client.get_object(Bucket=DOCUMENTS_BUCKET, Key=key)
+        if (obj.get("ContentLength") or 0) > MAX_UPLOAD_BYTES:
+            return _response(413, {"message": "This file is too large to read. Use a smaller file."})
+        raw = obj["Body"].read()
         if ext == "pdf" and len(raw) > MAX_DOCUMENT_BYTES:
             return _response(413, {"message": "This PDF is too large to read (limit 4.5 MB). Use a smaller file or a one-page summary."})
 
@@ -355,7 +396,8 @@ def handler(event, context):
             ContentType="application/json",
         )
         return _response(200, {"temp_id": temp_id, "product": product, "warnings": warnings})
-    except Exception as e:  # noqa: BLE001
-        print(f"Error in comparator ingest handler: {type(e).__name__}: {e}")
-        traceback.print_exc()
+    except GuardrailUnavailable:
+        return _response(503, {"message": GUARDRAIL_UNAVAILABLE_MESSAGE})
+    except Exception as e:  # noqa: BLE001 - the caller gets a generic message, never the exception text
+        print(f"Error in comparator ingest handler: {type(e).__name__}")
         return _response(502, {"message": "Unable to read the brochure"})

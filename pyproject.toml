@@ -7,21 +7,27 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     # AgentCore resources come from aws-cdk-lib's stable aws_bedrockagentcore
-    # module (L1 Cfn* only). The alpha package that used to be required here
-    # is gone: it forced an exact version pairing with aws-cdk-lib and is
-    # slated for removal in CDK v3.
+    # module (L1 Cfn* only), so no alpha package is required (an alpha package
+    # would force an exact version pairing with aws-cdk-lib).
     #
     # aws-cdk-lib stays exactly pinned and is bumped only together with the
     # CDK CLI: an older CLI cannot read the cloud-assembly schema a newer
-    # aws-cdk-lib emits (CLI 2.1122.0 stops at schema 53; aws-cdk-lib 2.266.0
-    # already emits 54). The matching CLI version is pinned in deploy.sh and
+    # aws-cdk-lib emits. The matching CLI version is pinned in deploy.sh and
     # destroy.sh (CDK_CLI_VERSION) so the pair always moves together.
     "aws-cdk-lib==2.272.0",
     "boto3>=1.42.21",
-    # cdk-nag 3.x removed NagSuppressions, which app.py uses for every
-    # suppression. Stay on 2.x until the suppressions are migrated.
+    # cdk-nag 3.x has no NagSuppressions, which app.py uses for every
+    # suppression, so the dependency stays on 2.x.
     "cdk-nag>=2.37.55,<3",
     "constructs>=10.5.0",
     "requests>=2.33.0",
     "urllib3>=2.7.0",
+]
+
+[dependency-groups]
+# Tooling that builds the sample-policy PDFs (s3-data/mock-policies/build-pdfs.sh).
+# Pinned exactly; uv.lock records the file hashes and the script runs with --frozen.
+dev = [
+    "fpdf2==2.9.0",
+    "markdown==3.11.3",
 ]

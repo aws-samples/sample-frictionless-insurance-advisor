@@ -18,14 +18,17 @@ import {
   confirmField,
   emptySession,
   openForm,
+  rememberSavedRef,
   resetToPrefill,
   setManual,
   syncPrefill,
+  valuesOf,
   type FormFillProgress,
   type FormPrefill,
   type FormSession,
   type Sessions,
 } from './formSessions';
+import { visibleFields, withoutSecretValues } from '../lib/formRules';
 
 /**
  * Stand-in schema used only while no form is open, so progress has something to be
@@ -63,11 +66,41 @@ export function prefillFromCustomer(customer: Customer | null): FormPrefill {
   put('applicant.email', customer.email);
   put('applicant.phone', customer.phone);
   put('applicant.address', customer.address);
-  put('health.smoker', customer.smoking);
+  put('health.tobacco_status', customer.tobacco_status);
   put('health.existing_conditions', customer.medical_conditions);
   // A home owner's mailing address is normally the property being insured.
   // The advisor can change it; it is only a starting point.
   if (customer.home_owner) put('property.address', customer.address);
+
+  // The Universal Life form splits the insured's name and address into parts, so it
+  // reads the profile's parts rather than the combined display values above.
+  put('insured.first_name', customer.first_name);
+  put('insured.middle_name', customer.middle_name);
+  put('insured.last_name', customer.last_name);
+  put('insured.date_of_birth', customer.date_of_birth);
+  put('insured.gender', customer.gender);
+  put('insured.address_line1', customer.address_line1);
+  put('insured.city', customer.city);
+  put('insured.state', customer.state);
+  put('insured.zip', customer.zip);
+  put('insured.marital_status', customer.marital_status);
+  put('insured.citizenship', customer.citizenship);
+  put('insured.occupation', customer.occupation);
+  put('insured.annual_income', customer.annual_income);
+  put('insured.tobacco_status', customer.tobacco_status);
+  put('insured.email', customer.email);
+  put('insured.phone', customer.phone);
+  put('financial.net_worth', customer.net_worth_band);
+  // "Tobacco in the past 12 months": a current user says yes, never and former say no.
+  if (customer.tobacco_status) put('medical.q9', customer.tobacco_status === 'current');
+
+  // Life cover the customer already holds, from the policies table (ours and other insurers').
+  // Profile-sourced values refresh when the policies arrive, as long as nobody has edited them.
+  if (customer.policies) {
+    const life = customer.policies.filter((p) => p.type === 'Life Insurance' && p.status === 'Active');
+    put('existing.has_coverage', life.length > 0);
+    if (life.length > 0) put('existing.total_amount', life.reduce((sum, p) => sum + Number(p.coverage_amount || 0), 0));
+  }
   return prefill;
 }
 
@@ -80,6 +113,7 @@ type Action =
   | { type: 'fill'; key: string; prefill: FormPrefill; event: FormFillEvent }
   | { type: 'manual'; key: string; path: string; value: string }
   | { type: 'confirm'; key: string; path: string }
+  | { type: 'saved'; key: string; productType: string; ref: string }
   | { type: 'reset'; key: string; prefill: FormPrefill };
 
 export function sessionsReducer(state: Sessions, action: Action): Sessions {
@@ -106,6 +140,9 @@ export function sessionsReducer(state: Sessions, action: Action): Sessions {
       break;
     case 'confirm':
       next = confirmField(base, action.path);
+      break;
+    case 'saved':
+      next = rememberSavedRef(base, action.productType, action.ref);
       break;
     case 'reset':
       next = resetToPrefill(base, action.prefill);
@@ -155,6 +192,10 @@ export interface ApplicationForm {
   setFieldManually: (path: string, value: string) => void;
   /** The advisor accepts an amber value. */
   confirmField: (path: string) => void;
+  /** Reference of the last save of the open form's application, or null if it was never saved. */
+  savedRef: string | null;
+  /** Record the reference a save came back with; saving again then overwrites that save. */
+  rememberSavedRef: (productType: string, ref: string) => void;
   /** Back to the profile. The answers are kept. */
   closeForm: () => void;
   /** Throw the answers away and start again from the profile. */
@@ -211,13 +252,20 @@ export function useApplicationForm(customer: Customer | null, prospectMode = fal
   );
   const confirm = useCallback((path: string) => dispatch({ type: 'confirm', key, path }), [dispatch, key]);
   const close = useCallback(() => dispatch({ type: 'close', key }), [dispatch, key]);
+  const remember = useCallback(
+    (productType: string, ref: string) => dispatch({ type: 'saved', key, productType, ref }),
+    [dispatch, key]
+  );
   const reset = useCallback(() => dispatch({ type: 'reset', key, prefill }), [dispatch, key, prefill]);
 
   const getFormContext = useCallback(() => {
     if (!activeForm) return null;
+    const all = valuesOf(fields);
+    // Only fields that are shown right now, and never a secret one (the SSN stays on this screen).
+    const shown = new Set(visibleFields(activeForm, all).map((f) => f.path));
     const values: Record<string, string> = {};
-    for (const [path, state] of Object.entries(fields)) {
-      if (state.value !== '') values[path] = state.value;
+    for (const [path, value] of Object.entries(withoutSecretValues(activeForm, all))) {
+      if (value !== '' && shown.has(path)) values[path] = value;
     }
     return { productType: activeForm.product_type, values };
   }, [activeForm, fields]);
@@ -232,6 +280,8 @@ export function useApplicationForm(customer: Customer | null, prospectMode = fal
     fillField,
     setFieldManually,
     confirmField: confirm,
+    savedRef: activeForm ? (session.savedRefs[activeForm.product_type] ?? null) : null,
+    rememberSavedRef: remember,
     closeForm: close,
     reset,
     getFormContext,

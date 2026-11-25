@@ -1,4 +1,5 @@
-FROM python:3.13-alpine@sha256:bb1f2fdb1065c85468775c9d680dcd344f6442a2d1181ef7916b60a623f11d40
+# Python 3.13.18 on Alpine 3.24, pinned by tag and digest for reproducible builds.
+FROM python:3.13.18-alpine3.24@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
 
 # Install system dependencies
 RUN apk add --no-cache gcc musl-dev
@@ -11,7 +12,7 @@ COPY requirements.txt constraints.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 # Copy application code
-COPY app.py form_tools.py sources.py note_guard.py identity_guard.py ./
+COPY app.py form_tools.py form_rules.py sources.py note_guard.py language_reminder.py write_guard.py identity_guard.py guardrail_trace.py container_cache.py memory_prefetch.py customer_access.py verified_advisor.py input_mask.py limits.py ./
 
 # Create non-root user and switch to it
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

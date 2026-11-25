@@ -1,0 +1,101 @@
+{
+  "domain": {
+    "customerStatus": {
+      "Active": "Aktiv",
+      "Inactive": "Inaktiv",
+      "Prospect": "Interessent"
+    },
+    "policyStatus": {
+      "Active": "Aktiv",
+      "Inactive": "Inaktiv",
+      "Pending": "Ausstehend",
+      "Lapsed": "Erloschen",
+      "Cancelled": "Gekündigt"
+    },
+    "maritalStatus": {
+      "Married": "Verheiratet",
+      "Single": "Ledig",
+      "Divorced": "Geschieden",
+      "Widowed": "Verwitwet"
+    },
+    "policyType": {
+      "Auto Insurance": "Kfz-Versicherung",
+      "Home Insurance": "Wohngebäudeversicherung",
+      "Life Insurance": "Lebensversicherung",
+      "Health Insurance": "Krankenversicherung",
+      "Disability Insurance": "Berufsunfähigkeitsversicherung",
+      "Travel Insurance": "Reiseversicherung",
+      "Critical Illness Insurance": "Versicherung für schwere Krankheiten"
+    },
+    "premiumFrequency": {
+      "yearly": "jährlich",
+      "annually": "jährlich",
+      "monthly": "monatlich",
+      "quarterly": "vierteljährlich",
+      "weekly": "wöchentlich"
+    },
+    "lifeType": {
+      "Term Life": "Risikolebensversicherung",
+      "Whole Life": "Lebenslange Lebensversicherung",
+      "Universal Life": "Universal Life",
+      "Variable Life": "Variable Life"
+    },
+    "premiumSchedule": {
+      "lifetime pay": "Lebenslange Zahlung",
+      "10-pay": "10 Jahre Zahlung",
+      "20-pay": "20 Jahre Zahlung",
+      "paid-up at 65": "Beitragsfrei mit 65"
+    },
+    "dividendOption": {
+      "paid in cash": "Bar ausgezahlt",
+      "reduce premiums": "Prämien senken",
+      "left on deposit": "Auf Guthaben belassen",
+      "paid-up additions": "Beitragsfreie Zusatzleistungen"
+    },
+    "deathBenefitOption": {
+      "Option A (level face)": "Option A (gleichbleibende Versicherungssumme)",
+      "Option B (face + cash value)": "Option B (Versicherungssumme + Rückkaufswert)",
+      "Option C (face + return of premium)": "Option C (Versicherungssumme + Prämienrückgewähr)"
+    },
+    "gender": {
+      "male": "Männlich",
+      "female": "Weiblich"
+    },
+    "productLine": {
+      "life": "Lebensprodukte",
+      "general": "Sachprodukte",
+      "health": "Gesundheitsprodukte",
+      "all": "Alle Produkte"
+    },
+    "citizenship": {
+      "us_citizen": "US-Staatsbürger",
+      "permanent_resident": "Dauerhaft Aufenthaltsberechtigter",
+      "other": "Sonstige"
+    },
+    "tobaccoStatus": {
+      "never": "Nie konsumiert",
+      "former": "Ehemals",
+      "current": "Aktuell"
+    },
+    "netWorthBand": {
+      "under_100k": "Unter 100.000 $",
+      "100k_250k": "100.000 $ bis 250.000 $",
+      "250k_500k": "250.000 $ bis 500.000 $",
+      "500k_1m": "500.000 $ bis 1 Mio. $",
+      "1m_2_5m": "1 Mio. $ bis 2,5 Mio. $",
+      "over_2_5m": "Über 2,5 Mio. $"
+    },
+    "yesNo": {
+      "yes": "Ja",
+      "no": "Nein"
+    },
+    "universalRider": {
+      "waiver_of_premium": "Prämienbefreiung",
+      "accidental_death": "Unfalltodleistung",
+      "long_term_care": "Pflege / chronische Erkrankung",
+      "guaranteed_purchase_option": "Garantierte Nachversicherungsoption",
+      "no_lapse_guarantee": "Zusatz „Garantie gegen Erlöschen“",
+      "overloan_protection": "Überbelehnungsschutz"
+    }
+  }
+}

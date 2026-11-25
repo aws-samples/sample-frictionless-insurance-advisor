@@ -7,8 +7,9 @@ Resets the demo to its seed. Every run:
 2. Upserts every seed row into the profiles, policies and catalog tables.
 3. Deletes every row that is not in the seed files (prospects, policies and
    notes added during earlier demos).
-4. Clears the AgentCore long-term memory, so the assistants do not remember
-   facts from earlier demos about customers that were just reset.
+4. Clears the AgentCore long-term memory (the extracted records and the
+   stored conversation events), so the assistants do not remember facts from
+   earlier demos about customers that were just reset.
 
 It is started three ways, all with the same result:
 - the CloudFormation custom resource in `cdk/tools_stack.py`, on every deploy;
@@ -18,8 +19,8 @@ It is started three ways, all with the same result:
 
 Dates
 -----
-The seed files were written against two reference days, recorded in
-`seed_anchors.json` (profiles and policies were authored at different times).
+The seed files are dated relative to two reference days, recorded in
+`seed_anchors.json` (profiles and policies have different ones).
 On each run the dated fields are moved forward by (today - anchor) days, so a
 policy that renews 12 days after its anchor renews 12 days from today, and a
 note written 3 days before the anchor is still 3 days old. `date_of_birth` is
@@ -47,6 +48,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 import boto3
+from botocore.exceptions import ClientError
 
 PROFILES_PRIMARY_KEY = "customer_id"
 POLICIES_PRIMARY_KEY = "id"
@@ -238,24 +240,25 @@ def _memory_id():
 
 
 # Time allowed for clearing memory. The deploy-time call goes through a CDK
-# wrapper function that gives up after 120 seconds and leaves the stack waiting,
-# so the clear must finish well inside that. What is not cleared in time is
-# cleared by the next reset (the log says how many actors were left).
+# wrapper function with a 5 minute limit (cdk/tools_stack.py), and the Lambda
+# itself may run up to 5 minutes, so the clear must finish well inside that.
+# What is not cleared in time is cleared by the next reset (the log says how
+# many actors were left).
 MEMORY_BUDGET_SECONDS = float(os.environ.get("MEMORY_CLEAR_BUDGET_SECONDS", "80"))
 MEMORY_WORKERS = 8
 
 
 def clear_memory(client=None, memory_id=None, budget_seconds=None, workers=MEMORY_WORKERS):
-    """Delete every long-term memory record (summaries, preferences, facts) of
-    every actor. Actors are customer ids, so the seed customers would
-    otherwise 'remember' conversations from earlier demos.
+    """Delete every long-term memory record (summaries, preferences, facts) and
+    every stored conversation event of every actor. Actors are customer ids, so
+    the seed customers would otherwise 'remember' conversations from earlier demos.
 
     Actors are processed in parallel and the whole clear stops starting new work
     after `budget_seconds`. Never raises: a failure here must not undo the data
     reset. Returns a dict with the counts for the log; `actors_left` is the number
-    of actors not reached because the budget ran out.
+    of actors not reached, or not finished, because the budget ran out.
     """
-    result = {"deleted": 0, "failed": 0, "skipped": None}
+    result = {"deleted": 0, "failed": 0, "events_deleted": 0, "events_failed": 0, "skipped": None}
     deadline = time.monotonic() + (MEMORY_BUDGET_SECONDS if budget_seconds is None else budget_seconds)
     try:
         memory_id = memory_id or _memory_id()
@@ -275,12 +278,13 @@ def clear_memory(client=None, memory_id=None, budget_seconds=None, workers=MEMOR
                     return
 
         def clear_actor(actor_id):
-            """Delete one actor's records. Returns (deleted, failed, first_error), or None if out of time."""
+            """Delete one actor's records and events. Returns
+            (deleted, failed, first_error, events_deleted, events_failed, finished), or None if out of time."""
             if time.monotonic() > deadline:
                 return None
+            session_ids = [sess["sessionId"] for sess in pages(client.list_sessions, "sessionSummaries", memoryId=memory_id, actorId=actor_id)]
             namespaces = [f"/preferences/{actor_id}", f"/facts/{actor_id}"]
-            for sess in pages(client.list_sessions, "sessionSummaries", memoryId=memory_id, actorId=actor_id):
-                namespaces.append(f"/summaries/{actor_id}/{sess['sessionId']}")
+            namespaces.extend(f"/summaries/{actor_id}/{sid}" for sid in session_ids)
             # The same record can be listed under more than one namespace; delete
             # each id once (a second delete of the same id would count as failed).
             record_ids, seen = [], set()
@@ -303,7 +307,34 @@ def clear_memory(client=None, memory_id=None, budget_seconds=None, workers=MEMOR
                 failed += len(bad)
                 if bad and first_error is None:
                     first_error = f"{bad[0].get('errorCode')}: {bad[0].get('errorMessage')}"
-            return deleted, failed, first_error
+            # The conversation events of every session. Their ids are listed first and
+            # deleted afterwards, so deleting does not disturb the paging.
+            events_deleted = events_failed = 0
+            finished = True
+            for sid in session_ids:
+                event_ids = [
+                    ev["eventId"] for ev in pages(
+                        client.list_events, "events",
+                        memoryId=memory_id, actorId=actor_id, sessionId=sid, includePayloads=False,
+                    )
+                ]
+                for event_id in event_ids:
+                    if time.monotonic() > deadline:
+                        finished = False
+                        break
+                    try:
+                        client.delete_event(memoryId=memory_id, actorId=actor_id, sessionId=sid, eventId=event_id)
+                        events_deleted += 1
+                    except ClientError as e:
+                        # Already gone (another worker or the 90 day expiry): the outcome we want.
+                        if e.response.get("Error", {}).get("Code") == "ResourceNotFoundException":
+                            continue
+                        events_failed += 1
+                        if first_error is None:
+                            first_error = f"{e.response.get('Error', {}).get('Code')}: delete_event"
+                if not finished:
+                    break
+            return deleted, failed, first_error, events_deleted, events_failed, finished
 
         actors = [a["actorId"] for a in pages(client.list_actors, "actorSummaries", memoryId=memory_id)]
         left = 0
@@ -314,8 +345,12 @@ def clear_memory(client=None, memory_id=None, budget_seconds=None, workers=MEMOR
                     continue
                 result["deleted"] += outcome[0]
                 result["failed"] += outcome[1]
+                result["events_deleted"] += outcome[3]
+                result["events_failed"] += outcome[4]
                 if outcome[2] and "first_error" not in result:
                     result["first_error"] = outcome[2]
+                if not outcome[5]:
+                    left += 1
         if left:
             result["actors_left"] = left
             print(f"[memory] time budget reached; {left} of {len(actors)} actor(s) will be cleared by the next reset")

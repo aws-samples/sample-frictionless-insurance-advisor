@@ -27,7 +27,23 @@
         "policiesCount": "契約数",
         "occupation": "職業",
         "maritalStatus": "配偶者の有無",
-        "gender": "性別"
+        "gender": "性別",
+        "firstName": "名",
+        "middleName": "ミドルネーム",
+        "lastName": "姓",
+        "dateOfBirth": "生年月日",
+        "street": "番地",
+        "city": "市区町村",
+        "state": "州",
+        "zip": "郵便番号",
+        "citizenship": "市民権",
+        "tobaccoStatus": "喫煙状況",
+        "dependents": "扶養家族",
+        "employmentStatus": "就業状況",
+        "annualIncome": "年収",
+        "netWorthBand": "純資産",
+        "homeOwner": "持ち家",
+        "medicalConditions": "既往症"
       },
       "dataFreshness": {
         "badge": "最新情報を確認",
@@ -45,6 +61,10 @@
           "menuTitle": "申込フォームの商品",
           "error": "フォームを開けませんでした：{{message}}"
         }
+      },
+      "details": {
+        "show": "詳細を表示",
+        "hide": "詳細を非表示"
       }
     },
     "policies": {
@@ -100,7 +120,12 @@
           "currentCreditedRate": "現在の積立利率",
           "guaranteedMinimumRate": "最低保証利率",
           "cashValueEstimate": "解約返戻金(概算)",
-          "subAccountAllocation": "特別勘定の配分"
+          "subAccountAllocation": "特別勘定の配分",
+          "guaranteeToAge": "失効防止保証",
+          "guaranteeAge": "{{age}}歳まで",
+          "guaranteeLifetime": "終身（121歳まで）",
+          "requiredPremium": "必要な最低保険料（年額）",
+          "riders": "特約"
         },
         "subAccounts": {
           "equity_growth": "株式 — グロース",
@@ -113,7 +138,8 @@
       }
     },
     "chat": {
-      "heading": "AI チャット",
+      "textHeading": "テキストアシスタント",
+      "voiceHeading": "音声アシスタント",
       "selectCustomer": "チャットを開始するには顧客を選択してください。",
       "emptyPlaceholder": "質問を入力するか、下の候補から選んでください。",
       "messageLabel": "メッセージ",
@@ -122,6 +148,7 @@
       "userBubbleLabel": "あなた",
       "assistantBubbleLabel": "アシスタント",
       "thinking": "考え中...",
+      "guardrailBlocked": "コンプライアンスフィルターがこの回答をブロックしました。もう一度お試しいただくか、商品名を挙げる、またはお客様のプロフィールの内容を尋ねるなど、質問の仕方を変えてください。",
       "quickQuestions": "クイック質問",
       "attachDocument": "保険証券ファイル（PDF、画像、テキスト）を添付",
       "removeAttachment": "添付ファイルを削除",
@@ -279,7 +306,8 @@
           "forms": "申込書",
           "pricing": "料金表",
           "brochures": "パンフレット",
-          "transcripts": "音声の文字起こし"
+          "transcripts": "音声の文字起こし",
+          "applications": "保存済みの申込書"
         },
         "pdf": {
           "download": "PDFをダウンロード",
@@ -354,6 +382,22 @@
           "agencyCount": "格付機関{{count}}社",
           "carrier": "保険会社",
           "illustrative": "例示データ"
+        },
+        "application": {
+          "status": "署名のため送信済み",
+          "forCustomer": "{{name}} 様向け",
+          "forProspect": "見込み客向け",
+          "answerCount": "回答 {{count}} 件",
+          "hiddenCount": "保存時に非表示 {{count}} 件",
+          "revision": "改訂 {{revision}}、更新 {{time}}",
+          "expires": "デモデータ: 保存から約2〜3日後に自動的に削除されます。",
+          "omitted": "保存されない項目: {{fields}}。",
+          "hidden": "非表示",
+          "origin": {
+            "profile": "プロフィールから",
+            "voice": "会話から取得",
+            "manual": "手入力"
+          }
         }
       }
     },
@@ -361,32 +405,36 @@
       "heading": "音声チャット",
       "selectCustomer": "音声会話を始めるには顧客を選択してください。",
       "startVoice": "音声チャット開始",
-      "stopVoice": "音声チャット停止",
       "typePlaceholder": "メッセージを入力...",
       "connecting": "接続中...",
       "emptyConnecting": "エージェントに接続中...",
       "emptyConnected": "下にメッセージを入力するか、音声チャット開始を押して話しかけてください。クリアで会話をリセットします。",
-      "hintText": "アシスタントはテキストのみで応答します。音声チャット開始を押して話しかけると音声で応答します。",
-      "hintVoice": "音声チャットが有効です — アシスタントは音声とテキストで応答します。音声チャット停止でテキストのみに戻ります。",
+      "hintVoice": "音声チャットが有効です — アシスタントは音声とテキストで応答します。音声チャットを一時停止でテキストのみに戻ります。",
       "status": {
         "connecting": "接続中",
         "connected": "接続済み",
         "listening": "リスニング中",
-        "speaking": "応答中"
+        "speaking": "応答中",
+        "paused": "一時停止中"
       },
-      "mute": "音声をミュート",
-      "unmute": "ミュート解除",
       "consent": {
-        "question": "録音の前に：{{name}} さんはこの会話の文字起こしに同意しましたか？",
+        "question": "録音の前に：{{name}} さんはこの会話の文字起こしと、要点を今後の会話のためにメモリに保存することに同意しましたか？",
         "theProspect": "見込み客",
-        "hint": "確認するまで、何も保存・記憶されず、フォームも入力されません。アシスタントに声で答えるか、ボタンを使ってください。",
+        "hint": "確認するまで、何も保存・記憶されず、フォームも入力されません。ボタンで回答してください。アシスタントが代わりに答えることはできません。",
         "changed": "顧客が変わったため、再度の同意確認が必要です。",
         "confirm": "同意あり",
         "decline": "同意なし",
-        "confirmed": "{{time}} に同意を確認しました。この会話は文字起こしされ、24時間保存されます。",
+        "confirmed": "{{time}} に同意を確認しました。この会話は文字起こしされ、約1日間保存されます。要点は顧客のメモリに90日以上残ることがあります。",
         "declinedMessage": "同意が得られませんでした。セッションを終了し、何も保存していません。",
         "startNew": "新しいセッションを開始"
-      }
+      },
+      "pauseVoice": "音声チャットを一時停止",
+      "resumeVoice": "音声チャットを再開",
+      "pausedNotice": "音声チャットを一時停止中: マイクはオフ、アシスタントの音声も消音です。入力は引き続き可能で、返信はテキストで届きます。音声も入力もない状態が約5分続くとセッションは終了します。",
+      "pausedExpired": "5分が経過したため、セッションが終了している可能性があります。再開すると必要に応じて新しいセッションが始まり、録音の同意が再度確認されます。",
+      "sessionRestarted": "一時停止中に前のセッションが終了したため、新しいセッションを開始しました。録音の同意を再度確認します。",
+      "sessionRenewed": "サインインの有効期限が切れたため、音声セッションを終了し、新しいサインインで新しいセッションを開始しました。録音の同意を再度確認します。マイクは開始するまでオフのままです。",
+      "sessionExpired": "サインインの有効期限が切れ、音声セッションが終了しました。続けるには、サインアウトしてからもう一度サインインしてください。"
     },
     "recommendation": {
       "loading": "補償内容を分析し、不足を確認しています...",
@@ -403,8 +451,6 @@
       "stillNeeded": "未入力の項目",
       "carriedOver": "{{count}} 件を引き継ぎ",
       "sendForSignature": "署名用に送信",
-      "sent": "署名用に送信しました",
-      "sentHint": "デモのみ — 実際には送信されていません。",
       "sendReadyHint": "必須項目はすべて入力済みです。",
       "sendBlocked": "必須項目が残り {{count}} 件あります。",
       "legendProfile": "プロフィールから",
@@ -423,8 +469,21 @@
         "signatureApplicant": "申込者の署名",
         "signatureAdvisor": "アドバイザーの署名",
         "date": "日付",
-        "disclaimer": "Awesome Insurance のアドバイザーアシスタントで作成した下書きです。補償の申し出ではありません。補償は、引受審査後に Awesome Insurance が保険証券を発行した時点で開始します。"
-      }
+        "disclaimer": "Awesome Insurance のアドバイザーアシスタントで作成した下書きです。補償の申し出ではありません。補償は、引受審査後に Awesome Insurance が保険証券を発行した時点で開始します。",
+        "nlgAcknowledgment": "失効防止保証に関する確認事項：本保険には失効防止保証があります。死亡給付金は、必要な保険料を期日どおりに払い込んだ場合に限り、この申込書に記載の年齢まで保証されます。最低限の保険料のみの払込み、または払込みの遅れにより、解約返戻金があっても保証が減少または完全に終了することがあります。署名により、申込者は必要な保険料が示されたイラストレーションを受領したことを確認します。"
+      },
+      "secretNote": "ここでのみ入力します。アシスタントにはこの項目は見えません。",
+      "saved": "保存済み",
+      "saving": "保存中...",
+      "editAgain": "再編集",
+      "saveFailed": "申込書を保存できませんでした: {{message}}",
+      "savedHint": "{{ref}} として保存しました。データエクスプローラーの「保存済みの申込書」で開けます。",
+      "savedHintReplaced": "{{ref}} として再保存しました。以前の保存内容を置き換えました(改訂 {{revision}})。",
+      "savedOmitted": "保存されない項目: {{fields}}。",
+      "fillDemo": "デモデータを入力",
+      "fillDemoHint": "デモ専用: どのお客様でも同じサンプル回答で空欄を埋めます。入力済みの項目はそのまま残ります。",
+      "demoFilled": "{{count}} 項目にサンプルデータを入力しました。",
+      "demoNothing": "入力する項目はありません。すべての項目に回答があります。"
     },
     "notes": {
       "heading": "メモ",
@@ -483,55 +542,6 @@
       "saved": "お客様の記録にメモを保存しました。",
       "trimmed": "1,000文字の上限に合わせて短縮しました。",
       "dateLabel": "フォローアップ日(任意)"
-    },
-    "roleplay": {
-      "button": "練習する",
-      "setupTitle": "{{name}}さんで練習",
-      "setupIntro": "アシスタントが記録をもとにこのお客様を演じます。実際の面談のように進め、終了するとフィードバックが届きます。",
-      "difficulty": "難易度",
-      "level": {
-        "friendly": "友好的",
-        "neutral": "標準",
-        "sceptical": "懐疑的"
-      },
-      "focusLabel": "主な懸念",
-      "focus": {
-        "any": "おまかせ",
-        "cost": "費用が高い",
-        "work": "職場の保障がある",
-        "young": "まだ若いので必要ない",
-        "compare": "今の保険会社と比べたい",
-        "think": "考えさせてほしい"
-      },
-      "privacy": "練習セッションの内容は録音も保存もされず、お客様の記録にも追加されません。健康情報はアシスタントに共有されません。",
-      "start": "練習を始める",
-      "banner": "練習セッション: アシスタントが{{name}}さんを演じています",
-      "bannerHint": "マイクを開始するとお客様が挨拶します。途中で止めるには「end exercise」と言ってください。",
-      "leave": "練習をやめる",
-      "endAndScore": "終了して採点",
-      "feedbackTitle": "コーチングのフィードバック",
-      "scoring": "会話を確認中…",
-      "scoreError": "フィードバックを作成できませんでした: {{message}}",
-      "insufficient": "フィードバックには会話が短すぎました。もう少し話してもう一度お試しください。",
-      "claimsTitle": "確認した商品の説明",
-      "verdict": {
-        "supported": "資料と一致",
-        "contradicted": "資料と異なる",
-        "not_in_sheets": "資料にない"
-      },
-      "nextTime": "次回試すこと",
-      "coachingNote": "ご自身の練習のためのAI生成のフィードバックです。業績評価ではなく、保存されません。",
-      "finish": "終了",
-      "again": "もう一度練習",
-      "criteria": {
-        "rapport": "導入と信頼関係",
-        "discovery": "ヒアリング",
-        "needs_link": "ニーズと保障の結び付け",
-        "objections": "反論への対応",
-        "accuracy": "正確さ",
-        "compliance": "コンプライアンス",
-        "closing": "クロージング"
-      }
     }
   }
 }

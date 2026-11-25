@@ -5,7 +5,7 @@ required, so this runs anywhere Python runs (no pango / glib like
 WeasyPrint, no Chromium like puppeteer).
 
 Usage:
-    uv run --with markdown --with fpdf2 python s3-data/mock-policies/build_pdfs.py
+    uv run --frozen python s3-data/mock-policies/build_pdfs.py
 
 Or via the wrapper: ./s3-data/mock-policies/build-pdfs.sh
 """

@@ -9,6 +9,7 @@ import {
   uploadDocument,
 } from '../lib/api';
 import { Alert, Badge, Button, Spinner } from '../ui';
+import { isSafeHttpUrl } from '../lib/safeUrl';
 import type { IngestedBrochure, SampleBrochure } from '../types';
 
 /** The model reads PDFs up to 4.5 MB. */
@@ -91,7 +92,7 @@ export function BrochureUpload({ productType, brochure, onChange, slotsFull }: B
     setError(null);
     try {
       const doc = await loadDataFile('samples', sample.key);
-      if (!doc.download_url) throw new Error('No download link');
+      if (!isSafeHttpUrl(doc.download_url)) throw new Error('No download link');
       const a = document.createElement('a');
       a.href = doc.download_url;
       a.rel = 'noopener';

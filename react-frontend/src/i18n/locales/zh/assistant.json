@@ -27,7 +27,23 @@
         "policiesCount": "保单",
         "occupation": "职业",
         "maritalStatus": "婚姻状况",
-        "gender": "性别"
+        "gender": "性别",
+        "firstName": "名",
+        "middleName": "中间名",
+        "lastName": "姓",
+        "dateOfBirth": "出生日期",
+        "street": "街道地址",
+        "city": "城市",
+        "state": "州",
+        "zip": "邮政编码",
+        "citizenship": "公民身份",
+        "tobaccoStatus": "烟草使用",
+        "dependents": "受抚养人",
+        "employmentStatus": "就业状况",
+        "annualIncome": "年收入",
+        "netWorthBand": "净资产",
+        "homeOwner": "是否自有住房",
+        "medicalConditions": "既往病史"
       },
       "dataFreshness": {
         "badge": "核实最新信息",
@@ -45,6 +61,10 @@
           "menuTitle": "申请表产品",
           "error": "无法打开申请表：{{message}}"
         }
+      },
+      "details": {
+        "show": "显示详情",
+        "hide": "隐藏详情"
       }
     },
     "policies": {
@@ -100,7 +120,12 @@
           "currentCreditedRate": "当前结算利率",
           "guaranteedMinimumRate": "保证最低利率",
           "cashValueEstimate": "现金价值（估算）",
-          "subAccountAllocation": "子账户配置"
+          "subAccountAllocation": "子账户配置",
+          "guaranteeToAge": "不失效保证",
+          "guaranteeAge": "至{{age}}岁",
+          "guaranteeLifetime": "终身（121岁）",
+          "requiredPremium": "所需最低保费（每年）",
+          "riders": "附加险"
         },
         "subAccounts": {
           "equity_growth": "股票——成长型",
@@ -113,7 +138,8 @@
       }
     },
     "chat": {
-      "heading": "AI 对话",
+      "textHeading": "文本助手",
+      "voiceHeading": "语音助手",
       "selectCustomer": "选择一位客户开始对话。",
       "emptyPlaceholder": "提出问题或从下方选择一个建议。",
       "messageLabel": "消息",
@@ -122,6 +148,7 @@
       "userBubbleLabel": "您",
       "assistantBubbleLabel": "助手",
       "thinking": "思考中...",
+      "guardrailBlocked": "合规过滤器拦截了该回答。请重试，或换一种方式提问，例如提及某个产品，或询问客户资料中显示了什么。",
       "quickQuestions": "快捷问题",
       "attachDocument": "附上保单文件（PDF、图片或文本）",
       "removeAttachment": "移除附件",
@@ -279,7 +306,8 @@
           "forms": "投保申请表",
           "pricing": "费率表",
           "brochures": "宣传册",
-          "transcripts": "语音转录"
+          "transcripts": "语音转录",
+          "applications": "已保存的申请"
         },
         "pdf": {
           "download": "下载 PDF",
@@ -354,6 +382,22 @@
           "agencyCount": "{{count}}家评级机构",
           "carrier": "保险公司",
           "illustrative": "示例数据"
+        },
+        "application": {
+          "status": "已发送待签署",
+          "forCustomer": "客户：{{name}}",
+          "forProspect": "潜在客户",
+          "answerCount": "{{count}} 项答案",
+          "hiddenCount": "保存时隐藏 {{count}} 项",
+          "revision": "修订 {{revision}}，更新于 {{time}}",
+          "expires": "演示数据：保存后约 2 至 3 天自动删除。",
+          "omitted": "未存储：{{fields}}。",
+          "hidden": "已隐藏",
+          "origin": {
+            "profile": "来自档案",
+            "voice": "对话中获得",
+            "manual": "手动输入"
+          }
         }
       }
     },
@@ -361,32 +405,36 @@
       "heading": "语音对话",
       "selectCustomer": "选择一位客户开始语音对话。",
       "startVoice": "开始语音对话",
-      "stopVoice": "停止语音对话",
       "typePlaceholder": "输入消息...",
       "connecting": "连接中...",
       "emptyConnecting": "正在连接到智能体...",
       "emptyConnected": "在下方输入消息，或点击“开始语音对话”进行语音交流。点击清除可重置对话。",
-      "hintText": "助手仅以文本回复。点击“开始语音对话”即可语音交流并听取回复。",
-      "hintVoice": "语音对话已开启——助手将以语音和文本回复。点击“停止语音对话”可切换为仅文本模式。",
+      "hintVoice": "语音对话已开启——助手将以语音和文本回复。点击“暂停语音聊天”可切换为仅文本模式。",
       "status": {
         "connecting": "连接中",
         "connected": "已连接",
         "listening": "聆听中",
-        "speaking": "回复中"
+        "speaking": "回复中",
+        "paused": "已暂停"
       },
-      "mute": "静音",
-      "unmute": "取消静音",
       "consent": {
-        "question": "录音前请确认：{{name}} 是否同意对本次对话进行转录？",
+        "question": "录音前请确认：{{name}} 是否同意对本次对话进行转录，并同意将要点保存在记忆中供日后对话使用？",
         "theProspect": "潜在客户",
-        "hint": "在您确认之前，不会保存或记忆任何内容，也不会填写任何表单。可向助手口头回答，或使用按钮。",
+        "hint": "在您确认之前，不会保存或记忆任何内容，也不会填写任何表单。请使用按钮回答，助手无法代您回答。",
         "changed": "客户已更换，需要重新确认同意。",
         "confirm": "已同意",
         "decline": "不同意",
-        "confirmed": "已于 {{time}} 确认同意。本次对话将被转录并保存 24 小时。",
+        "confirmed": "已于 {{time}} 确认同意。本次对话将被转录并保存约一天。要点可能在客户的记忆中保留 90 天或更久。",
         "declinedMessage": "已拒绝同意。会话已结束，未保存任何内容。",
         "startNew": "开始新会话"
-      }
+      },
+      "pauseVoice": "暂停语音聊天",
+      "resumeVoice": "恢复语音聊天",
+      "pausedNotice": "语音聊天已暂停：麦克风已关闭，助手的声音已静音。仍可输入文字，助手以文字回复。约 5 分钟没有说话或输入，会话将结束。",
+      "pausedExpired": "已超过 5 分钟，会话可能已结束。恢复时如有需要会开启新会话，并再次询问录音同意。",
+      "sessionRestarted": "暂停期间上一个会话已结束，因此已开启新会话。系统将再次询问录音同意。",
+      "sessionRenewed": "您的登录已过期，因此语音会话已结束，并已使用刷新后的登录开启新会话。系统将再次询问录音同意，麦克风保持关闭，直到您启动它。",
+      "sessionExpired": "您的登录已过期，语音会话已结束。请退出登录后重新登录以继续。"
     },
     "recommendation": {
       "loading": "正在分析保障情况并查找缺口...",
@@ -403,8 +451,6 @@
       "stillNeeded": "仍需填写",
       "carriedOver": "{{count}} 项已沿用",
       "sendForSignature": "发送以供签署",
-      "sent": "已发送签署",
-      "sentHint": "仅为演示——并未实际发送。",
       "sendReadyHint": "所有必填字段已完成。",
       "sendBlocked": "仍有 {{count}} 个必填字段待填写。",
       "legendProfile": "来自档案",
@@ -423,8 +469,21 @@
         "signatureApplicant": "申请人签名",
         "signatureAdvisor": "顾问签名",
         "date": "日期",
-        "disclaimer": "本草稿由 Awesome Insurance 顾问助手生成，并非承保要约。只有在核保后由 Awesome Insurance 出具保单，保障才会生效。"
-      }
+        "disclaimer": "本草稿由 Awesome Insurance 顾问助手生成，并非承保要约。只有在核保后由 Awesome Insurance 出具保单，保障才会生效。",
+        "nlgAcknowledgment": "不失效保证确认：本保单具有不失效保证。只有按时缴纳所需保费，身故保险金才会保证至本申请书所示年龄。即使有现金价值，仅缴最低保费或延迟缴费也可能减少或永久终止该保证。签署即表示申请人确认已收到显示所需保费的利益演示。"
+      },
+      "secretNote": "仅在此处输入。助手无法看到此字段。",
+      "saved": "已保存",
+      "saving": "保存中...",
+      "editAgain": "再次编辑",
+      "saveFailed": "无法保存申请：{{message}}",
+      "savedHint": "已保存为 {{ref}}。可在数据浏览器的“已保存的申请”中打开。",
+      "savedHintReplaced": "已再次保存为 {{ref}}。已替换之前的保存（修订 {{revision}}）。",
+      "savedOmitted": "未保存：{{fields}}。",
+      "fillDemo": "填充演示数据",
+      "fillDemoHint": "仅用于演示：用适用于所有客户的同一套示例答案填充空白字段，已填写的字段保持不变。",
+      "demoFilled": "已用示例数据填充 {{count}} 个字段。",
+      "demoNothing": "无需填充：所有字段都已有答案。"
     },
     "notes": {
       "heading": "备注",
@@ -483,55 +542,6 @@
       "saved": "备注已保存到客户记录。",
       "trimmed": "已缩短以符合1000字符的限制。",
       "dateLabel": "跟进日期(可选)"
-    },
-    "roleplay": {
-      "button": "练习",
-      "setupTitle": "与{{name}}练习",
-      "setupIntro": "助手会根据客户记录扮演这位客户。请像真实面谈一样进行,结束后可获得辅导反馈。",
-      "difficulty": "难度",
-      "level": {
-        "friendly": "友好",
-        "neutral": "一般",
-        "sceptical": "持怀疑态度"
-      },
-      "focusLabel": "主要异议",
-      "focus": {
-        "any": "随机",
-        "cost": "费用太高",
-        "work": "我已有公司提供的保障",
-        "young": "我还年轻,不需要",
-        "compare": "我想和现在的保险公司比较",
-        "think": "我需要考虑一下"
-      },
-      "privacy": "练习过程不会被录音或保存,也不会添加到客户记录。健康信息不会分享给助手。",
-      "start": "开始练习",
-      "banner": "练习环节:助手正在扮演{{name}}",
-      "bannerHint": "开启麦克风后客户会向您问好。说\"end exercise\"可提前结束。",
-      "leave": "退出练习",
-      "endAndScore": "结束并评分",
-      "feedbackTitle": "辅导反馈",
-      "scoring": "正在回顾对话…",
-      "scoreError": "无法生成反馈:{{message}}",
-      "insufficient": "对话内容太少,无法给出反馈。请再试一次并多说一些。",
-      "claimsTitle": "已核对的产品说法",
-      "verdict": {
-        "supported": "与资料一致",
-        "contradicted": "与资料不符",
-        "not_in_sheets": "资料中没有"
-      },
-      "nextTime": "下次尝试",
-      "coachingNote": "这是AI为您自己的练习生成的辅导反馈,不是绩效评估,也不会被保存。",
-      "finish": "完成",
-      "again": "再练一次",
-      "criteria": {
-        "rapport": "开场与亲和力",
-        "discovery": "需求挖掘提问",
-        "needs_link": "将需求与保障挂钩",
-        "objections": "处理异议",
-        "accuracy": "准确性",
-        "compliance": "合规",
-        "closing": "收尾"
-      }
     }
   }
 }

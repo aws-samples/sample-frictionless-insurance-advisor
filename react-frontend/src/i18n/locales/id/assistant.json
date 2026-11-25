@@ -27,7 +27,23 @@
         "policiesCount": "Polis",
         "occupation": "Pekerjaan",
         "maritalStatus": "Status pernikahan",
-        "gender": "Jenis kelamin"
+        "gender": "Jenis kelamin",
+        "firstName": "Nama depan",
+        "middleName": "Nama tengah",
+        "lastName": "Nama belakang",
+        "dateOfBirth": "Tanggal lahir",
+        "street": "Alamat",
+        "city": "Kota",
+        "state": "Negara bagian",
+        "zip": "Kode pos",
+        "citizenship": "Kewarganegaraan",
+        "tobaccoStatus": "Penggunaan tembakau",
+        "dependents": "Tanggungan",
+        "employmentStatus": "Status pekerjaan",
+        "annualIncome": "Penghasilan tahunan",
+        "netWorthBand": "Kekayaan bersih",
+        "homeOwner": "Pemilik rumah",
+        "medicalConditions": "Kondisi medis"
       },
       "dataFreshness": {
         "badge": "Verifikasi info terkini",
@@ -45,6 +61,10 @@
           "menuTitle": "Formulir pengajuan untuk",
           "error": "Formulir tidak dapat dibuka: {{message}}"
         }
+      },
+      "details": {
+        "show": "Tampilkan detail",
+        "hide": "Sembunyikan detail"
       }
     },
     "policies": {
@@ -100,7 +120,12 @@
           "currentCreditedRate": "Tingkat kredit saat ini",
           "guaranteedMinimumRate": "Minimum terjamin",
           "cashValueEstimate": "Nilai tunai (perk.)",
-          "subAccountAllocation": "Alokasi sub-akun"
+          "subAccountAllocation": "Alokasi sub-akun",
+          "guaranteeToAge": "Jaminan tidak lapse",
+          "guaranteeAge": "Hingga usia {{age}}",
+          "guaranteeLifetime": "Seumur hidup (usia 121)",
+          "requiredPremium": "Premi minimum yang diperlukan (per tahun)",
+          "riders": "Rider"
         },
         "subAccounts": {
           "equity_growth": "Ekuitas — Pertumbuhan",
@@ -113,7 +138,8 @@
       }
     },
     "chat": {
-      "heading": "Obrolan AI",
+      "textHeading": "Asisten Teks",
+      "voiceHeading": "Asisten Suara",
       "selectCustomer": "Pilih pelanggan untuk memulai obrolan.",
       "emptyPlaceholder": "Ajukan pertanyaan atau pilih saran di bawah ini.",
       "messageLabel": "Pesan",
@@ -122,6 +148,7 @@
       "userBubbleLabel": "Anda",
       "assistantBubbleLabel": "Asisten",
       "thinking": "Sedang berpikir...",
+      "guardrailBlocked": "Filter kepatuhan memblokir jawaban tersebut. Silakan coba lagi atau ubah pertanyaan Anda, misalnya dengan menyebutkan nama produk atau menanyakan apa yang ditampilkan profil pelanggan.",
       "quickQuestions": "Pertanyaan cepat",
       "attachDocument": "Lampirkan dokumen polis (PDF, gambar, atau teks)",
       "removeAttachment": "Hapus lampiran",
@@ -279,7 +306,8 @@
           "forms": "Formulir Pengajuan",
           "pricing": "Tabel Harga",
           "brochures": "Brosur",
-          "transcripts": "Transkrip suara"
+          "transcripts": "Transkrip suara",
+          "applications": "Aplikasi tersimpan"
         },
         "pdf": {
           "download": "Unduh PDF",
@@ -354,6 +382,22 @@
           "agencyCount": "{{count}} lembaga pemeringkat",
           "carrier": "Perusahaan asuransi",
           "illustrative": "Ilustrasi"
+        },
+        "application": {
+          "status": "Dikirim untuk tanda tangan",
+          "forCustomer": "Untuk {{name}}",
+          "forProspect": "Untuk calon nasabah",
+          "answerCount": "{{count}} jawaban",
+          "hiddenCount": "{{count}} tersembunyi saat disimpan",
+          "revision": "Revisi {{revision}}, diperbarui {{time}}",
+          "expires": "Data demo: dihapus otomatis sekitar 2 hingga 3 hari setelah disimpan.",
+          "omitted": "Tidak disimpan: {{fields}}.",
+          "hidden": "Tersembunyi",
+          "origin": {
+            "profile": "Dari profil",
+            "voice": "Terdengar dalam percakapan",
+            "manual": "Diisi manual"
+          }
         }
       }
     },
@@ -361,32 +405,36 @@
       "heading": "Obrolan Suara",
       "selectCustomer": "Pilih pelanggan untuk memulai percakapan suara.",
       "startVoice": "Mulai obrolan suara",
-      "stopVoice": "Hentikan obrolan suara",
       "typePlaceholder": "Ketik pesan...",
       "connecting": "Menghubungkan...",
       "emptyConnecting": "Menghubungkan ke agen...",
       "emptyConnected": "Ketik pesan di bawah, atau tekan Mulai obrolan suara untuk berbicara. Bersihkan akan mengatur ulang percakapan.",
-      "hintText": "Asisten hanya merespons dalam teks. Tekan Mulai obrolan suara untuk berbicara dan mendengar respons.",
-      "hintVoice": "Obrolan suara aktif — asisten akan merespons dengan suara dan teks. Tekan Hentikan obrolan suara untuk mengetik saja.",
+      "hintVoice": "Obrolan suara aktif — asisten akan merespons dengan suara dan teks. Tekan Jeda obrolan suara untuk mengetik saja.",
       "status": {
         "connecting": "Menghubungkan",
         "connected": "Terhubung",
         "listening": "Mendengarkan",
-        "speaking": "Berbicara"
+        "speaking": "Berbicara",
+        "paused": "Dijeda"
       },
-      "mute": "Bisukan suara",
-      "unmute": "Aktifkan suara",
       "consent": {
-        "question": "Sebelum merekam: apakah {{name}} setuju percakapan ini ditranskripsikan?",
+        "question": "Sebelum merekam: apakah {{name}} setuju percakapan ini ditranskripsikan dan poin-poin penting disimpan dalam memori untuk percakapan berikutnya?",
         "theProspect": "calon nasabah",
-        "hint": "Tidak ada yang disimpan atau diingat, dan tidak ada formulir yang diisi, sampai Anda mengonfirmasi. Jawab asisten dengan suara atau gunakan tombol.",
+        "hint": "Tidak ada yang disimpan atau diingat, dan tidak ada formulir yang diisi, sampai Anda mengonfirmasi. Jawab dengan tombol; asisten tidak dapat menjawab untuk Anda.",
         "changed": "Nasabah berganti, jadi persetujuan diperlukan lagi.",
         "confirm": "Dikonfirmasi",
         "decline": "Ditolak",
-        "confirmed": "Persetujuan dikonfirmasi pukul {{time}}. Percakapan ini ditranskripsikan dan disimpan selama 24 jam.",
+        "confirmed": "Persetujuan dikonfirmasi pukul {{time}}. Percakapan ini ditranskripsikan dan disimpan sekitar satu hari. Poin penting dapat tetap berada di memori nasabah selama 90 hari atau lebih.",
         "declinedMessage": "Persetujuan ditolak. Sesi telah berakhir dan tidak ada yang disimpan.",
         "startNew": "Mulai sesi baru"
-      }
+      },
+      "pauseVoice": "Jeda obrolan suara",
+      "resumeVoice": "Lanjutkan obrolan suara",
+      "pausedNotice": "Obrolan suara dijeda: mikrofon mati dan suara asisten dibisukan. Mengetik tetap bisa dan balasan berupa teks. Sesi berakhir setelah sekitar 5 menit tanpa suara atau ketikan.",
+      "pausedExpired": "Batas 5 menit telah lewat, jadi sesi mungkin sudah berakhir. Melanjutkan akan membuka sesi baru bila perlu, dan persetujuan rekaman ditanyakan lagi.",
+      "sessionRestarted": "Sesi sebelumnya berakhir saat dijeda, jadi sesi baru dimulai. Anda akan diminta persetujuan rekaman lagi.",
+      "sessionRenewed": "Masuk Anda telah kedaluwarsa, jadi sesi suara diakhiri dan sesi baru dibuka dengan masuk yang diperbarui. Anda akan diminta persetujuan rekaman lagi, dan mikrofon tetap mati sampai Anda memulainya.",
+      "sessionExpired": "Masuk Anda telah kedaluwarsa dan sesi suara telah berakhir. Keluar lalu masuk lagi untuk melanjutkan."
     },
     "recommendation": {
       "loading": "Menganalisis perlindungan dan mencari kesenjangan...",
@@ -403,8 +451,6 @@
       "stillNeeded": "Masih diperlukan",
       "carriedOver": "{{count}} dibawa dari sebelumnya",
       "sendForSignature": "Kirim untuk Tanda Tangan",
-      "sent": "Terkirim untuk tanda tangan",
-      "sentHint": "Hanya demo — tidak ada yang benar-benar dikirim.",
       "sendReadyHint": "Semua bidang wajib telah lengkap.",
       "sendBlocked": "{{count}} bidang wajib masih diperlukan.",
       "legendProfile": "Dari profil",
@@ -423,8 +469,21 @@
         "signatureApplicant": "Tanda tangan pemohon",
         "signatureAdvisor": "Tanda tangan penasihat",
         "date": "Tanggal",
-        "disclaimer": "Draf yang disiapkan dengan asisten penasihat Awesome Insurance. Ini bukan penawaran pertanggungan. Pertanggungan baru berlaku setelah Awesome Insurance menerbitkan polis setelah underwriting."
-      }
+        "disclaimer": "Draf yang disiapkan dengan asisten penasihat Awesome Insurance. Ini bukan penawaran pertanggungan. Pertanggungan baru berlaku setelah Awesome Insurance menerbitkan polis setelah underwriting.",
+        "nlgAcknowledgment": "PENGAKUAN JAMINAN TIDAK LAPSE: Polis ini memiliki jaminan tidak lapse. Manfaat meninggal dijamin hingga usia yang tertera pada aplikasi ini hanya jika premi yang diperlukan dibayar tepat waktu. Membayar hanya jumlah minimum, atau membayar terlambat, dapat mengurangi atau mengakhiri jaminan secara permanen meskipun masih ada nilai tunai. Dengan menandatangani, pemohon menyatakan telah menerima ilustrasi yang menunjukkan premi yang diperlukan."
+      },
+      "secretNote": "Diketik di sini saja. Asisten tidak dapat melihat kolom ini.",
+      "saved": "Tersimpan",
+      "saving": "Menyimpan...",
+      "editAgain": "Edit lagi",
+      "saveFailed": "Aplikasi tidak dapat disimpan: {{message}}",
+      "savedHint": "Disimpan sebagai {{ref}}. Buka di Penjelajah Data pada Aplikasi tersimpan.",
+      "savedHintReplaced": "Disimpan lagi sebagai {{ref}}. Menggantikan simpanan sebelumnya (revisi {{revision}}).",
+      "savedOmitted": "Tidak disimpan: {{fields}}.",
+      "fillDemo": "Isi data demo",
+      "fillDemoHint": "Hanya demo: mengisi kolom kosong dengan jawaban contoh yang sama untuk setiap nasabah. Kolom yang sudah terisi dipertahankan.",
+      "demoFilled": "{{count}} kolom diisi dengan data contoh.",
+      "demoNothing": "Tidak ada yang perlu diisi: semua kolom sudah terisi."
     },
     "notes": {
       "heading": "Catatan",
@@ -483,55 +542,6 @@
       "saved": "Catatan disimpan ke data nasabah.",
       "trimmed": "Dipersingkat agar sesuai batas 1.000 karakter.",
       "dateLabel": "Tanggal tindak lanjut (opsional)"
-    },
-    "roleplay": {
-      "button": "Berlatih",
-      "setupTitle": "Berlatih dengan {{name}}",
-      "setupIntro": "Asisten berperan sebagai nasabah ini berdasarkan datanya. Jalankan percakapan seperti sungguhan, lalu akhiri untuk mendapat umpan balik.",
-      "difficulty": "Tingkat kesulitan",
-      "level": {
-        "friendly": "Ramah",
-        "neutral": "Netral",
-        "sceptical": "Skeptis"
-      },
-      "focusLabel": "Keberatan utama",
-      "focus": {
-        "any": "Biarkan bervariasi",
-        "cost": "Terlalu mahal",
-        "work": "Saya sudah dilindungi lewat kantor",
-        "young": "Saya masih terlalu muda",
-        "compare": "Saya ingin membandingkan dengan perusahaan saya",
-        "think": "Saya perlu memikirkannya"
-      },
-      "privacy": "Tidak ada dari sesi latihan yang direkam atau disimpan, dan tidak ada yang ditambahkan ke data nasabah. Data kesehatan tidak dibagikan ke asisten.",
-      "start": "Mulai latihan",
-      "banner": "Sesi latihan: asisten berperan sebagai {{name}}",
-      "bannerHint": "Nyalakan mikrofon dan nasabah akan menyapa Anda. Ucapkan \"end exercise\" untuk berhenti lebih awal.",
-      "leave": "Keluar dari latihan",
-      "endAndScore": "Akhiri dan nilai",
-      "feedbackTitle": "Umpan balik pelatihan",
-      "scoring": "Meninjau percakapan…",
-      "scoreError": "Tidak dapat membuat umpan balik: {{message}}",
-      "insufficient": "Percakapan terlalu singkat untuk diberi umpan balik. Coba lagi dan bicara lebih banyak.",
-      "claimsTitle": "Pernyataan produk yang diperiksa",
-      "verdict": {
-        "supported": "Sesuai lembar produk",
-        "contradicted": "Berbeda dari lembar produk",
-        "not_in_sheets": "Tidak ada di lembar produk"
-      },
-      "nextTime": "Coba lain kali",
-      "coachingNote": "Umpan balik pelatihan untuk latihan Anda sendiri, dibuat oleh AI. Ini bukan penilaian kinerja dan tidak disimpan.",
-      "finish": "Selesai",
-      "again": "Berlatih lagi",
-      "criteria": {
-        "rapport": "Pembukaan dan hubungan baik",
-        "discovery": "Pertanyaan penggalian",
-        "needs_link": "Menghubungkan kebutuhan dan perlindungan",
-        "objections": "Menangani keberatan",
-        "accuracy": "Ketepatan",
-        "compliance": "Kepatuhan",
-        "closing": "Penutup"
-      }
     }
   }
 }

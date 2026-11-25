@@ -7,6 +7,7 @@ import {
   FileCode2,
   FileText,
   FolderOpen,
+  ClipboardCheck,
   Mic,
   Search,
   X,
@@ -33,6 +34,8 @@ import {
   parsePricingFile,
 } from './PricingCardView';
 import { SplitWorkspace } from './SplitWorkspace';
+import { isSafeHttpUrl } from '../lib/safeUrl';
+import { ApplicationView, parseApplication } from './ApplicationView';
 import { TranscriptView, parseTranscript } from './TranscriptView';
 
 /**
@@ -236,9 +239,8 @@ export function DataPage({ initialFile }: { initialFile?: { folder: string; key:
       {/* Panes */}
       <div className="min-h-0 flex-1">
         <SplitWorkspace
-          // v2: the initial release shipped a mismatched panel budget that
-          // rendered the list ~72% wide. Bumping the key discards layouts
-          // persisted from that build so users get the corrected default.
+          // The storage key is versioned: changing it discards pane sizes
+          // persisted under the previous key, so users get the default layout.
           storageId="insadv.data.split.v2"
           defaultLeftSize={30}
           minLeftSize={20}
@@ -474,7 +476,8 @@ function FileList({
                     const id = fileId(file);
                     const isSelected = id === selectedId;
                     const isTranscript = file.content_type === 'transcript';
-                    const Icon = isTranscript ? Mic : file.content_type === 'json' ? FileCode2 : FileText;
+                    const isApplication = file.content_type === 'application';
+                    const Icon = isTranscript ? Mic : isApplication ? ClipboardCheck : file.content_type === 'json' ? FileCode2 : FileText;
                     return (
                       <li key={id}>
                         <button
@@ -493,8 +496,17 @@ function FileList({
                             <span className="block truncate font-medium text-foreground">
                               {isTranscript
                                 ? fmtDateTime(file.meta?.started_at ?? file.last_modified, locale) || file.name
-                                : file.name}
+                                : isApplication
+                                  ? file.meta?.ref ?? file.name
+                                  : file.name}
                             </span>
+                            {isApplication ? (
+                              <span className="block truncate text-[10px] text-foreground-muted">
+                                {file.meta?.customer ?? t('assistant.pages.data.transcript.prospect')}
+                                {' · '}
+                                {fmtDateTime(file.meta?.updated_at ?? file.meta?.saved_at ?? file.last_modified, locale)}
+                              </span>
+                            ) : null}
                             {isTranscript ? (
                               <span className="block truncate text-[10px] text-foreground-muted">
                                 {file.meta?.customer ?? t('assistant.pages.data.transcript.prospect')}
@@ -579,13 +591,16 @@ function DocumentViewer({
     doc && contentType === 'json' ? parseCarrierRatingsFile(doc.content) : null;
   const transcript =
     doc && contentType === 'transcript' ? parseTranscript(doc.content) : null;
+  const application =
+    doc && contentType === 'application' ? parseApplication(doc.content) : null;
   const canRender =
     isMarkdown ||
     schema !== null ||
     pricing !== null ||
     affordability !== null ||
     ratings !== null ||
-    transcript !== null;
+    transcript !== null ||
+    application !== null;
   const isPdf = contentType === 'pdf';
 
   return (
@@ -652,7 +667,7 @@ function DocumentViewer({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-foreground-muted">{t('assistant.pages.data.pdf.note')}</p>
               <div className="flex items-center gap-2">
-                {doc.view_url ? (
+                {isSafeHttpUrl(doc.view_url) ? (
                   <a
                     href={doc.view_url}
                     target="_blank"
@@ -662,7 +677,7 @@ function DocumentViewer({
                     {t('assistant.pages.data.pdf.open')}
                   </a>
                 ) : null}
-                {doc.download_url ? (
+                {isSafeHttpUrl(doc.download_url) ? (
                   <a
                     href={doc.download_url}
                     className="inline-flex h-8 items-center rounded-md bg-gradient-to-br from-brand-2 to-brand-1 px-3 text-xs font-semibold text-white hover:opacity-90"
@@ -672,7 +687,7 @@ function DocumentViewer({
                 ) : null}
               </div>
             </div>
-            {doc.view_url ? (
+            {isSafeHttpUrl(doc.view_url) ? (
               <object
                 data={doc.view_url}
                 type="application/pdf"
@@ -692,6 +707,8 @@ function DocumentViewer({
               </Card>
             ) : transcript ? (
               <TranscriptView data={transcript} onRefresh={onRefresh} />
+            ) : application ? (
+              <ApplicationView data={application} />
             ) : pricing ? (
               <PricingCardView data={pricing} />
             ) : affordability ? (

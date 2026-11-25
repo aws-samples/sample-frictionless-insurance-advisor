@@ -27,6 +27,11 @@ import frAuth from './locales/fr/auth.json';
 import frAssistant from './locales/fr/assistant.json';
 import frDomain from './locales/fr/domain.json';
 
+import deCommon from './locales/de/common.json';
+import deAuth from './locales/de/auth.json';
+import deAssistant from './locales/de/assistant.json';
+import deDomain from './locales/de/domain.json';
+
 import zhCommon from './locales/zh/common.json';
 import zhAuth from './locales/zh/auth.json';
 import zhAssistant from './locales/zh/assistant.json';
@@ -61,6 +66,7 @@ export const SUPPORTED_LOCALES: readonly { code: string; label: string }[] = [
   { code: 'ko', label: '한국어' },
   { code: 'es', label: 'Español' },
   { code: 'fr', label: 'Français' },
+  { code: 'de', label: 'Deutsch' },
   { code: 'zh', label: '简体中文' },
   { code: 'ms', label: 'Bahasa Melayu' },
   { code: 'th', label: 'ไทย' },
@@ -92,6 +98,7 @@ void i18n
       ko: { translation: mergeBundles(koCommon, koAuth, koAssistant, koDomain) },
       es: { translation: mergeBundles(esCommon, esAuth, esAssistant, esDomain) },
       fr: { translation: mergeBundles(frCommon, frAuth, frAssistant, frDomain) },
+      de: { translation: mergeBundles(deCommon, deAuth, deAssistant, deDomain) },
       zh: { translation: mergeBundles(zhCommon, zhAuth, zhAssistant, zhDomain) },
       ms: { translation: mergeBundles(msCommon, msAuth, msAssistant, msDomain) },
       th: { translation: mergeBundles(thCommon, thAuth, thAssistant, thDomain) },
@@ -105,7 +112,7 @@ void i18n
     ns: ['translation'],
     defaultNS: 'translation',
     // Disable the namespace separator so callers always use a single
-    // dotted path (e.g. `t('common.actions.send')`) instead of the legacy
+    // dotted path (e.g. `t('common.actions.send')`) instead of i18next's
     // `<ns>:` colon syntax.
     nsSeparator: false,
     interpolation: { escapeValue: false },
@@ -118,14 +125,12 @@ void i18n
   });
 
 /**
- * Wire the Amplify Authenticator's vocabulary to the active i18next language.
- * We merge Amplify UI's built-in translations first, then overlay our own
- * `auth.json` so we can add keys Amplify doesn't ship and override wording.
+ * Language-change hook for the auth UI. The sign-in screen is the custom
+ * AuthGate, which takes its text from the `auth.json` bundle through i18next,
+ * so there is no Amplify vocabulary to sync and the function is empty.
  */
 function syncAmplifyLanguage(_lng: string): void {
-  // Amplify Authenticator no longer used. Auth UI is custom now (AuthGate).
-  // Keeping this hook in place lets us re-introduce vocabulary syncing if
-  // we ever bring back the Amplify <Authenticator>.
+  // Intentionally empty (see above).
 }
 
 syncAmplifyLanguage(i18n.language);

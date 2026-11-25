@@ -12,7 +12,7 @@
  */
 import { fetchAuthSession } from 'aws-amplify/auth';
 
-import type { FormFillEvent, FormSchema, RoleplayConfig } from '../types';
+import type { FormFillEvent, FormSchema } from '../types';
 
 export type TranscriptRole = 'user' | 'assistant';
 
@@ -28,6 +28,12 @@ export interface ConsentEvent {
   reason?: string;
 }
 
+/**
+ * Close code the voice runtime sends when the access token the session was opened with expires.
+ * It is in the application range (4000-4999). The page reconnects with a fresh token.
+ */
+export const VOICE_TOKEN_EXPIRED_CLOSE_CODE = 4401;
+
 export interface ConnectOptions {
   customerId: string | null;
   customerName: string | null;
@@ -36,8 +42,6 @@ export interface ConnectOptions {
    * agent so it knows not to ask the advisor for details already on screen.
    */
   formPrefill?: Record<string, string>;
-  /** Start a practice session in which the runtime plays the customer. */
-  roleplay?: RoleplayConfig | null;
   onAudioChunk: (audioBase64: string, format: string, sampleRate: number) => void;
   onTranscript: (text: string, isFinal: boolean, role: TranscriptRole) => void;
   onInterruption?: () => void;
@@ -88,7 +92,9 @@ export async function connectVoice(options: ConnectOptions): Promise<VoiceConnec
   if (!runtimeArn) throw new Error('VITE_VOICE_RUNTIME_ARN is not set');
   if (!region) throw new Error('VITE_AWS_REGION is not set');
 
-  const session = await fetchAuthSession();
+  // A new access token for every connection, so the session starts with the token's full lifetime
+  // (the runtime closes the socket when the token expires) instead of what is left of the stored one.
+  const session = await fetchAuthSession({ forceRefresh: true });
   const token = session.tokens?.accessToken?.toString();
   if (!token) throw new Error('Not authenticated');
 
@@ -131,8 +137,6 @@ export async function connectVoice(options: ConnectOptions): Promise<VoiceConnec
         customerId: options.customerId,
         customerName: options.customerName,
         prefill: options.formPrefill ?? {},
-        // Practice mode: the runtime plays the customer. Sent only on connect.
-        ...(options.roleplay ? { mode: 'roleplay', roleplay: options.roleplay } : {}),
       });
       options.onConnected?.();
       if (!settled) {

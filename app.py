@@ -6,17 +6,23 @@ Deploys authentication, tools, and AgentCore infrastructure
 import aws_cdk as cdk
 from cdk.auth_stack import AuthStack
 from cdk.tools_stack import ToolsStack
-from cdk.agentcore_stack import AgentCoreStack
-from cdk.voice_stack import VoiceStack
-from cdk.frontend_stack import FrontendStack
+from cdk.agentcore_stack import AgentCoreStack, GATEWAY_NAME, RUNTIME_NAME as TEXT_RUNTIME_NAME
+from cdk.voice_stack import VoiceStack, RUNTIME_NAME as VOICE_RUNTIME_NAME
+from cdk.frontend_stack import FrontendStack, REACT_DIST_DIR
+from cdk.iam_helpers import RUNTIME_GATEWAY_PROVIDER_NAME
+from cdk.log_retention import apply_helper_log_retention
 from pathlib import Path
 # CDK NAG imports
-from aws_cdk import Aspects
+from aws_cdk import Aspects, aws_lambda as lambda_
 import cdk_nag
-from cdk_nag import NagSuppressions
+from cdk_nag import NagPackSuppression, NagSuppressions, RegexAppliesTo
 
 # Initialize CDK app
 app = cdk.App()
+
+# The helper Lambdas of the CDK library (the AwsCustomResource provider and the BucketDeployment
+# handler) get log groups with a retention of 731 days; this gives them 90 days.
+apply_helper_log_retention(app)
 
 # Deploy stacks in order with dependencies
 auth_stack = AuthStack(app, "insadv-01-auth")
@@ -32,10 +38,19 @@ voice_stack = VoiceStack(app, "insadv-04-voice",
 # (deploy.sh handles the ordering: backend stacks → npm build → frontend stack).
 # Skipping it on a cold synth keeps `cdk deploy insadv-01-auth` etc. usable
 # before any frontend build exists.
-react_dist = Path("react-frontend/dist")
+react_dist = Path(REACT_DIST_DIR)
 frontend_stack = None
 if react_dist.exists() and any(react_dist.iterdir()):
-    frontend_stack = FrontendStack(app, "insadv-05-frontend")
+    # The Content-Security-Policy names the API and the two buckets that presigned URLs point at.
+    # Termination protection keeps the stack, and with it the CloudFront URL, from an
+    # accidental delete; destroy.sh switches it off only when DESTROY_FRONTEND=1 is set.
+    frontend_stack = FrontendStack(
+        app, "insadv-05-frontend",
+        api=tools_stack.api,
+        documents_bucket=tools_stack.documents_bucket,
+        brochures_bucket=tools_stack.brochures_bucket,
+        termination_protection=True,
+    )
 
 # CDK NAG configuration
 Aspects.of(app).add(cdk_nag.AwsSolutionsChecks(verbose=True))
@@ -43,13 +58,33 @@ Aspects.of(app).add(cdk_nag.AwsSolutionsChecks(verbose=True))
 # =================================================================
 # CDK NAG SUPPRESSIONS (consolidated)
 # =================================================================
+# A suppression with `applies_to` covers only the findings it lists. It is built as a
+# NagPackSuppression: a plain dict would lose the `applies_to` key on its way into cdk-nag,
+# and the suppression would then cover every finding of its rule.
+
+def _suppress(rule, reason, applies_to=None):
+    return NagPackSuppression(id=f"AwsSolutions-{rule}", reason=reason, applies_to=applies_to)
+
+
+def _regex(pattern):
+    return RegexAppliesTo(regex=f"/{pattern}/")
+
+
+_AGENTCORE_ARN = "arn:aws:bedrock-agentcore:<AWS::Region>:<AWS::AccountId>"
+_LOGS_ARN = "arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore"
+_SECRETS_ARN = "arn:aws:secretsmanager:<AWS::Region>:<AWS::AccountId>:secret:bedrock-agentcore-identity!default/oauth2"
+_ECR_ARN = "arn:aws:ecr:<AWS::Region>:<AWS::AccountId>:repository/*"
+_L1_APPLICATION_FUNCTION = (
+    "The function runs on Python 3.13, the version its code targets. cdk-nag expects the "
+    "newest Python runtime; moving to it is a separate change that needs the function re-verified"
+)
 
 # --- Auth Stack ---
 NagSuppressions.add_resource_suppressions(
     auth_stack.user_pool,
     [
         {"id": "AwsSolutions-COG3", "reason": "Advanced Security Mode requires Plus feature plan which is not needed for this demo - UserPool"},
-        # COG8 arrived with cdk-nag 2.38: same Plus-tier requirement as COG3, same rationale.
+        # COG8 (cdk-nag 2.38 and later): same Plus-tier requirement as COG3, same rationale.
         {"id": "AwsSolutions-COG8", "reason": "Plus feature plan is not needed for this demo - UserPool"},
         {"id": "AwsSolutions-COG2", "reason": "MFA intentionally disabled for demo ease of use - UserPool"},
     ]
@@ -69,28 +104,44 @@ NagSuppressions.add_resource_suppressions(
     [{"id": "AwsSolutions-S1", "reason": "This is the server access log bucket itself - enabling access logs on it would create an infinite loop"}]
 )
 
-# CDK-managed internal roles - runtime/policies not directly controllable
-for stack in [auth_stack, tools_stack, agentcore_stack, voice_stack]:
+# The Lambda service roles that CDK creates (the default role of a Function and the handlers
+# of AwsCustomResource and BucketDeployment) use AWSLambdaBasicExecutionRole, which writes logs.
+for stack in [tools_stack, agentcore_stack, voice_stack]:
     NagSuppressions.add_stack_suppressions(stack, [
-        {"id": "AwsSolutions-IAM4", "reason": "AWS managed policy attached by CDK-managed constructs (AwsCustomResource, BucketDeployment, Lambda Function service roles) - not directly controllable",
-         "applies_to": ["Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]}
+        _suppress("IAM4", "The CDK-created Lambda service roles use the managed policy AWSLambdaBasicExecutionRole, which only writes logs",
+                  ["Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]),
     ])
 
-# --- Tools Stack: CDK-managed grant wildcards ---
+# --- Tools Stack: S3 and DynamoDB grants generated by CDK ---
 NagSuppressions.add_stack_suppressions(tools_stack, [
-    {"id": "AwsSolutions-IAM5", "reason": "Wildcard permissions generated by CDK grant_read/grant_read_write_data/BucketDeployment constructs - not directly controllable",
-     "applies_to": [
-         "Action::s3:GetBucket*", "Action::s3:GetObject*", "Action::s3:List*",
-         "Action::s3:Abort*", "Action::s3:DeleteObject*",
-         "Resource::arn:<AWS::Partition>:s3:::cdk-hnb659fds-assets-<AWS::AccountId>-<AWS::Region>/*",
-         "Resource::<PortfolioBucketCEAA46CF.Arn>/*",
-         "Resource::<PromotionBucket9C5C2113.Arn>/*",
-         "Resource::<ProfilesTable3B48B4C6.Arn>/index/*",
-         "Resource::<PoliciesTableB128A423.Arn>/index/*",
-     ]},
-    {"id": "AwsSolutions-IAM5", "reason": "MockDataCustomResourceRole needs /aws/lambda/* because CDK auto-generates the Lambda function name",
-     "applies_to": ["Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/lambda/*"]},
+    _suppress("IAM5", "CDK grant_read, grant_read_write_data and BucketDeployment generate these S3 actions with a wildcard suffix, on single buckets",
+              ["Action::s3:GetBucket*", "Action::s3:GetObject*", "Action::s3:List*", "Action::s3:Abort*", "Action::s3:DeleteObject*"]),
+    _suppress("IAM5", "The same CDK grants add the object level (bucket/*, bucket/ingest/*) of one bucket and the index level (table/index/*) of one table",
+              [_regex(r"^Resource::<[A-Za-z0-9]+(Bucket|Table)[0-9A-F]{8}\.Arn>/(\*|ingest/\*|index/\*)$")]),
+    _suppress("IAM5", "BucketDeployment reads the CDK bootstrap bucket that holds the deployment assets",
+              ["Resource::arn:<AWS::Partition>:s3:::cdk-hnb659fds-assets-<AWS::AccountId>-<AWS::Region>/*"]),
 ])
+# The memory id is generated by the agentcore stack, which is created after this one.
+NagSuppressions.add_resource_suppressions(
+    tools_stack.mock_data_lambda,
+    [_suppress("IAM5", "The function lists and deletes the records of the AgentCore memory. Memory ids are generated by the agentcore stack, which depends on this stack, so the grant names every memory of the account and region",
+               [f"Resource::{_AGENTCORE_ARN}:memory/*"])],
+    apply_to_children=True,
+)
+
+# The tools stack has one CDK-managed handler (BucketDeployment) next to its application functions.
+for _fn in tools_stack.node.find_all():
+    if (
+        isinstance(_fn, lambda_.Function)
+        and _fn.runtime.family == lambda_.RuntimeFamily.PYTHON
+        and not _fn.node.id.startswith("Custom::")
+    ):
+        NagSuppressions.add_resource_suppressions(_fn, [_suppress("L1", _L1_APPLICATION_FUNCTION)])
+NagSuppressions.add_resource_suppressions_by_path(
+    tools_stack,
+    "/insadv-02-tools/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/Resource",
+    [_suppress("L1", "The runtime of the BucketDeployment handler is set by the CDK library")],
+)
 
 NagSuppressions.add_resource_suppressions(
     tools_stack.api,
@@ -114,80 +165,91 @@ if tools_stack.public_signup_enabled:
         ],
     )
 
-# --- AgentCore Stack: service-level wildcards ---
-NagSuppressions.add_stack_suppressions(agentcore_stack, [
-    {"id": "AwsSolutions-IAM5", "reason": "CloudWatch PutMetricData and X-Ray APIs do not support resource-level permissions - wildcard resource required",
-     "applies_to": ["Resource::*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "bedrock-agentcore:* action required for AgentCore Runtime and custom resource to manage runtime lifecycle",
-     "applies_to": ["Action::bedrock-agentcore:*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "Log group wildcard needed to cover log streams within the specific log group prefix",
-     "applies_to": [
-         "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/gateways/insurance-advisor-gateway*",
-         "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/runtimes/insurance_advisor_agent*",
-     ]},
-    {"id": "AwsSolutions-IAM5", "reason": "Workload identity wildcard required to access any workload identity in the default directory",
-     "applies_to": ["Resource::arn:aws:bedrock-agentcore:<AWS::Region>:<AWS::AccountId>:workload-identity-directory/default/workload-identity/*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "Token vault sub-resource wildcard required for AgentCore Identity to resolve OAuth2 credential providers registered in the default vault",
-     "applies_to": [
-         "Resource::arn:aws:bedrock-agentcore:<AWS::Region>:<AWS::AccountId>:token-vault/default/*",
-         "Resource::arn:aws:bedrock-agentcore:<AWS::Region>:<AWS::AccountId>:token-vault/default/oauth2credentialprovider/*",
-     ]},
-    {"id": "AwsSolutions-IAM5", "reason": "AgentCore Identity manages its own secrets under the bedrock-agentcore-identity!default/oauth2/ namespace with unpredictable suffixes; wildcard is required for IAM delegation when the Token Vault reads secrets on behalf of the runtime role",
-     "applies_to": ["Resource::arn:aws:secretsmanager:<AWS::Region>:<AWS::AccountId>:secret:bedrock-agentcore-identity!default/oauth2/*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "Gateway sub-resource wildcard required to access gateway targets",
-     "applies_to": ["Resource::arn:aws:bedrock-agentcore:<AWS::Region>:<AWS::AccountId>:gateway/<InsuranceAdvisorGateway066E037D.GatewayIdentifier>/*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "grant_invoke covers both the function ARN and its :* qualified form, so the gateway can invoke published versions/aliases of each tool Lambda",
-     "applies_to": ["Resource::<PortfolioLambda015C4EC4.Arn>:*", "Resource::<PromotionsLambda491A7234.Arn>:*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "Log group ARN :* suffix required by CloudWatch Logs for log stream access",
-     "applies_to": ["Resource::<ApiGatewayOAuthProviderOAuth2ProviderLogGroupDBF77067.Arn>:*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "Service-linked role ARN uses account wildcard as required by AWS",
-     "applies_to": ["Resource::arn:aws:iam::*:role/aws-service-role/runtime-identity.bedrock-agentcore.amazonaws.com/AWSServiceRoleForBedrockAgentCoreRuntimeIdentity"]},
-])
+# --- AgentCore Stack ---
+_RUNTIME_NO_RESOURCE_LEVEL = (
+    "ecr:GetAuthorizationToken, the X-Ray calls and cloudwatch:PutMetricData accept no resource ARN; "
+    "a condition limits PutMetricData to the AgentCore namespaces"
+)
+_FORMS_BUCKET_OBJECTS = _regex(r"^Resource::<FormsBucket[0-9A-F]{8}\.Arn>/\*$")
+_S3_READ_ACTIONS = ["Action::s3:GetBucket*", "Action::s3:GetObject*", "Action::s3:List*"]
 
-# CDK-managed internal Lambdas (AwsCustomResource/BucketDeployment) - runtime not controllable
-NagSuppressions.add_stack_suppressions(auth_stack, [
-    {"id": "AwsSolutions-L1", "reason": "Lambda runtime is managed by CDK AwsCustomResource construct and cannot be directly controlled", "applies_to": ["*AWS679f53fac002430cb0da5b7982bd2287*"]}
-])
-NagSuppressions.add_stack_suppressions(tools_stack, [
-    {"id": "AwsSolutions-L1", "reason": "Lambda runtime is managed by CDK BucketDeployment/AwsCustomResource construct and cannot be directly controlled"}
-])
-NagSuppressions.add_stack_suppressions(agentcore_stack, [
-    {"id": "AwsSolutions-L1", "reason": "Lambda runtime is managed by CDK AwsCustomResource construct and cannot be directly controlled"}
-])
+NagSuppressions.add_resource_suppressions(
+    agentcore_stack.gateway_role,
+    [
+        _suppress("IAM5", "The X-Ray calls and cloudwatch:PutMetricData accept no resource ARN; a condition limits PutMetricData to the AgentCore namespace", ["Resource::*"]),
+        _suppress("IAM5", "The service creates the gateway's log group with a name that starts with the gateway name; the prefix limits the grant to that group and its streams",
+                  [f"Resource::{_LOGS_ARN}/gateways/{GATEWAY_NAME}*"]),
+        _suppress("IAM5", "AgentCore names the gateway's workload identity after the gateway followed by a generated suffix",
+                  [f"Resource::{_AGENTCORE_ARN}:workload-identity-directory/default/workload-identity/{GATEWAY_NAME}-*"]),
+        _suppress("IAM5", "grant_invoke covers each tool function and also its published versions and aliases (function ARN followed by :*)",
+                  [_regex(r"^Resource::<[A-Za-z0-9]+Lambda[0-9A-F]{8}\.Arn>:\*$")]),
+    ],
+    apply_to_children=True,
+)
+NagSuppressions.add_resource_suppressions(
+    agentcore_stack.runtime_role,
+    [
+        _suppress("IAM5", _RUNTIME_NO_RESOURCE_LEVEL, ["Resource::*"]),
+        _suppress("IAM5", "The image comes from the CDK bootstrap repository, whose name depends on the bootstrap qualifier; the grant is limited to this account and region",
+                  [f"Resource::{_ECR_ARN}"]),
+        _suppress("IAM5", "The service creates the runtime's log group, named after the runtime id; the prefix limits the grant to this runtime's group and its streams",
+                  [f"Resource::{_LOGS_ARN}/runtimes/{TEXT_RUNTIME_NAME}*"]),
+        _suppress("IAM5", "CDK grant_read on the forms bucket: read-only on one bucket, with the object level (bucket/*)",
+                  _S3_READ_ACTIONS + [_FORMS_BUCKET_OBJECTS]),
+        _suppress("IAM5", "AgentCore names the runtime's workload identity after the runtime followed by a generated suffix",
+                  [f"Resource::{_AGENTCORE_ARN}:workload-identity-directory/default/workload-identity/{TEXT_RUNTIME_NAME}-*"]),
+        _suppress("IAM5", "Secrets Manager appends a generated suffix to the name of the secret that holds the gateway provider's client secret",
+                  [f"Resource::{_SECRETS_ARN}/{RUNTIME_GATEWAY_PROVIDER_NAME}*"]),
+    ],
+    apply_to_children=True,
+)
+for _provider in [agentcore_stack.oauth_provider, agentcore_stack.runtime_gateway_oauth_provider]:
+    NagSuppressions.add_resource_suppressions(
+        _provider.lambda_role,
+        [
+            _suppress("IAM5", "CloudWatch Logs needs the log group ARN followed by :* for the function's log streams",
+                      [_regex(r"^Resource::<[A-Za-z0-9]+OAuth2ProviderLogGroup[0-9A-F]{8}\.Arn>:\*$")]),
+            _suppress("IAM5", "Secrets Manager appends a generated suffix to the name of the secret that holds the provider's client secret",
+                      [f"Resource::{_SECRETS_ARN}/{_provider.provider_name}*"]),
+        ],
+        apply_to_children=True,
+    )
+    NagSuppressions.add_resource_suppressions(_provider.function, [_suppress("L1", _L1_APPLICATION_FUNCTION)])
+NagSuppressions.add_resource_suppressions(agentcore_stack.interceptor_lambda, [_suppress("L1", _L1_APPLICATION_FUNCTION)])
 
-# --- Voice Stack: same AgentCore service-level wildcards as main runtime ---
-NagSuppressions.add_stack_suppressions(voice_stack, [
-    {"id": "AwsSolutions-IAM5", "reason": "CloudWatch/X-Ray APIs do not support resource-level permissions",
-     "applies_to": ["Resource::*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "bedrock-agentcore:* required for runtime custom resource lifecycle",
-     "applies_to": ["Action::bedrock-agentcore:*"]},
-    {"id": "AwsSolutions-IAM5", "reason": "Log group wildcard needed for log streams in the voice runtime log group",
-     "applies_to": [
-         "Resource::arn:aws:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/bedrock-agentcore/runtimes/insurance_voice_agent*",
-     ]},
-    {"id": "AwsSolutions-IAM5", "reason": "Service-linked role ARN uses account wildcard as required by AWS",
-     "applies_to": ["Resource::arn:aws:iam::*:role/aws-service-role/runtime-identity.bedrock-agentcore.amazonaws.com/AWSServiceRoleForBedrockAgentCoreRuntimeIdentity"]},
-    {"id": "AwsSolutions-IAM5", "reason": "InvokeAgentRuntime requires sub-resource wildcard for qualifiers/endpoints",
-     "applies_to": [
-         "Resource::<insadv03agentcoreInsuranceAdvisorRuntimeAgentRuntimeF05FDDC2.Ref>/*",
-     ]},
-    {"id": "AwsSolutions-L1", "reason": "Lambda runtime is managed by CDK AwsCustomResource construct and cannot be directly controlled"},
-])
+# --- Voice Stack ---
+NagSuppressions.add_resource_suppressions(
+    voice_stack.runtime_role,
+    [
+        _suppress("IAM5", _RUNTIME_NO_RESOURCE_LEVEL, ["Resource::*"]),
+        _suppress("IAM5", "The image comes from the CDK bootstrap repository, whose name depends on the bootstrap qualifier; the grant is limited to this account and region",
+                  [f"Resource::{_ECR_ARN}"]),
+        _suppress("IAM5", "The service creates the runtime's log group, named after the runtime id; the prefix limits the grant to this runtime's group and its streams",
+                  [f"Resource::{_LOGS_ARN}/runtimes/{VOICE_RUNTIME_NAME}*"]),
+        _suppress("IAM5", "CDK grant_read on the forms bucket: read-only on one bucket, with the object level (bucket/*)",
+                  _S3_READ_ACTIONS + [_FORMS_BUCKET_OBJECTS]),
+        _suppress("IAM5", "CDK grant_put on the transcripts bucket: write-only on one bucket, with the object level (bucket/*)",
+                  ["Action::s3:Abort*", _regex(r"^Resource::<TranscriptsBucket[0-9A-F]{8}\.Arn>/\*$")]),
+        _suppress("IAM5", "AgentCore names the runtime's workload identity after the runtime followed by a generated suffix",
+                  [f"Resource::{_AGENTCORE_ARN}:workload-identity-directory/default/workload-identity/{VOICE_RUNTIME_NAME}-*"]),
+        _suppress("IAM5", "Secrets Manager appends a generated suffix to the name of the secret that holds the gateway provider's client secret",
+                  [f"Resource::{_SECRETS_ARN}/{RUNTIME_GATEWAY_PROVIDER_NAME}*"]),
+    ],
+    apply_to_children=True,
+)
 
 # --- Frontend Stack: S3 + CloudFront for the React app ---
 if frontend_stack is not None:
     NagSuppressions.add_stack_suppressions(frontend_stack, [
-        {"id": "AwsSolutions-IAM4", "reason": "AWS managed policy attached by CDK-managed BucketDeployment Lambda - not directly controllable",
-         "applies_to": ["Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]},
-        {"id": "AwsSolutions-IAM5", "reason": "Wildcard permissions generated by CDK BucketDeployment construct (s3:GetBucket*, s3:GetObject*, s3:List*, s3:Abort*, s3:DeleteObject*, CloudFront CreateInvalidation on the distribution) - not directly controllable",
-         "applies_to": [
-             "Action::s3:GetBucket*", "Action::s3:GetObject*", "Action::s3:List*",
-             "Action::s3:Abort*", "Action::s3:DeleteObject*",
-             "Resource::arn:<AWS::Partition>:s3:::cdk-hnb659fds-assets-<AWS::AccountId>-<AWS::Region>/*",
-             "Resource::<SiteBucket397A1860.Arn>/*",
-         ]},
-        {"id": "AwsSolutions-IAM5", "reason": "BucketDeployment custom resource Lambda needs /aws/lambda/* because CDK auto-generates the function name",
-         "applies_to": ["Resource::arn:<AWS::Partition>:logs:<AWS::Region>:<AWS::AccountId>:log-group:/aws/lambda/*"]},
+        _suppress("IAM4", "The CDK-created BucketDeployment handler role uses the managed policy AWSLambdaBasicExecutionRole, which only writes logs",
+                  ["Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]),
+        _suppress("IAM5", "CDK BucketDeployment generates these S3 actions with a wildcard suffix, on the site bucket and the CDK bootstrap bucket that holds the deployment assets",
+                  ["Action::s3:GetBucket*", "Action::s3:GetObject*", "Action::s3:List*",
+                   "Action::s3:Abort*", "Action::s3:DeleteObject*",
+                   "Resource::arn:<AWS::Partition>:s3:::cdk-hnb659fds-assets-<AWS::AccountId>-<AWS::Region>/*",
+                   _regex(r"^Resource::<SiteBucket[0-9A-F]{8}\.Arn>/\*$")]),
+        _suppress("IAM5", "BucketDeployment grants the CloudFront invalidation calls it makes after a deployment on all resources",
+                  ["Resource::*"]),
         {"id": "AwsSolutions-L1", "reason": "Lambda runtime is managed by CDK BucketDeployment construct and cannot be directly controlled"},
         # Server access logs on the access-log buckets themselves would loop,
         # so they are intentionally not configured.
@@ -196,7 +258,7 @@ if frontend_stack is not None:
         {"id": "AwsSolutions-CFR1", "reason": "Geo restrictions are not required for this internal demo / advisor portal"},
         {"id": "AwsSolutions-CFR2", "reason": "WAF is not attached to CloudFront for this demo. The React app is a static SPA; the API Gateway it calls is already protected by AWS WAFv2 (see ToolsStack) and Cognito JWT authorization"},
         {"id": "AwsSolutions-CFR3", "reason": "CloudFront access logging is enabled to a dedicated log bucket - CDK Nag false positive when log_bucket is set via the L2 Distribution construct"},
-        {"id": "AwsSolutions-CFR4", "reason": "Distribution uses the default CloudFront domain (*.cloudfront.net), which only supports the default certificate. Custom domain + ACM cert is out of scope for this demo"},
+        {"id": "AwsSolutions-CFR4", "reason": "Without the custom_domain context the distribution uses the default CloudFront domain (*.cloudfront.net), which only supports the default certificate. With it, the distribution uses an ACM certificate and TLS 1.3 as the minimum protocol"},
         {"id": "AwsSolutions-CFR7", "reason": "Origin Access Control (OAC) is used via S3BucketOrigin.with_origin_access_control - CDK Nag false positive that does not detect the new OAC construct"},
     ])
 

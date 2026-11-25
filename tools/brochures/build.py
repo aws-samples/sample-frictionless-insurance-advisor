@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["playwright", "pymupdf"]
+# dependencies = ["playwright==1.65.1", "pymupdf==2.1"]
 # ///
 """Build the one-page product brochures (PDF) that are committed to the repo.
 
@@ -13,7 +13,7 @@ s3-data/brochures/ and uploaded by the CDK app. Nothing here runs in AWS.
 
 Outputs
   s3-data/brochures/awesome/<product>.pdf     10 Awesome brochures. No prices.
-  s3-data/brochures/samples/corvane-*.pdf    10 sample brochures from a fictitious
+  s3-data/brochures/samples/corvane-*.pdf    11 sample brochures from a fictitious
                                               competitor, with indicative prices
   s3-data/brochures/samples/index.json        manifest the comparator lists
 
@@ -23,7 +23,7 @@ and the contact details in s3-data/company/customer_service.md. Brand graphics
 only: no photos and no generated images.
 
 Chromium: uses Playwright's browser. If it is not installed, run
-`uv run --with playwright python -m playwright install chromium`, or point
+`uv run --with playwright==1.65.1 python -m playwright install chromium`, or point
 CHROME_PATH at an existing Chrome/Chromium binary.
 """
 from __future__ import annotations

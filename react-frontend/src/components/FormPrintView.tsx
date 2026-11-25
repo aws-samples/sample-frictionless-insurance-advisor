@@ -2,6 +2,8 @@ import { forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PDF_CONTENT_WIDTH_PX, PDF_TEXT_STYLE } from '../lib/pdf';
 import type { FormFieldDef, FormFieldState, FormSchema } from '../types';
+import { valuesOf } from '../hooks/formSessions';
+import { isRequired, isVisible, maskSecret, sensitivity } from '../lib/formRules';
 
 interface FormPrintViewProps {
   schema: FormSchema;
@@ -16,8 +18,9 @@ interface FormPrintViewProps {
  * It is mounted off-screen just long enough to be rendered into the PDF, then
  * removed (see FormPanel).
  *
- * Every field is listed. A field with no answer shows a blank line the
- * customer can write on. Each `data-pdf-block` is kept whole on a page.
+ * Every field that is shown on screen is listed (see lib/formRules.ts for what that means). A
+ * field with no answer shows a blank line the customer can write on. A secret field (the SSN)
+ * prints only its last four characters. Each `data-pdf-block` is kept whole on a page.
  */
 
 const INK = '#1f2937';
@@ -33,6 +36,7 @@ function displayValue(
   no: string
 ): string {
   if (raw === undefined || raw === '') return '';
+  if (sensitivity(field) === 'secret') return maskSecret(raw);
   if (field.type === 'boolean') return raw === 'true' ? yes : raw === 'false' ? no : '';
   if (field.type === 'select') {
     return field.options?.find((o) => o.value === raw)?.label ?? '';
@@ -54,6 +58,7 @@ export const FormPrintView = forwardRef<HTMLDivElement, FormPrintViewProps>(
     });
     const yes = t('assistant.form.yes');
     const no = t('assistant.form.no');
+    const values = valuesOf(fields);
 
     return (
       <div
@@ -98,7 +103,10 @@ export const FormPrintView = forwardRef<HTMLDivElement, FormPrintViewProps>(
           </div>
         </div>
 
-        {schema.sections.map((section) => (
+        {schema.sections.map((section) => {
+          const shown = section.fields.filter((f) => isVisible(f, values));
+          if (shown.length === 0) return null;
+          return (
           <div
             key={section.id}
             data-pdf-block
@@ -124,13 +132,13 @@ export const FormPrintView = forwardRef<HTMLDivElement, FormPrintViewProps>(
                 rowGap: 10,
               }}
             >
-              {section.fields.map((field) => {
+              {shown.map((field) => {
                 const value = displayValue(field, fields[field.path]?.value, yes, no);
                 return (
                   <div key={field.path}>
                     <div style={{ fontSize: 10.5, color: MUTED }}>
                       {field.label}
-                      {field.required ? ' *' : ''}
+                      {isRequired(field, values) ? ' *' : ''}
                     </div>
                     <div
                       style={{
@@ -148,9 +156,24 @@ export const FormPrintView = forwardRef<HTMLDivElement, FormPrintViewProps>(
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
 
         <div data-pdf-block style={{ padding: '14px 0 0', background: '#ffffff' }}>
+          {schema.product_type === 'universal_life' ? (
+            <div
+              style={{
+                fontSize: 10.5,
+                lineHeight: 1.45,
+                marginBottom: 16,
+                padding: '8px 10px',
+                border: `1px solid ${RULE}`,
+                borderRadius: 4,
+              }}
+            >
+              {t('assistant.form.pdf.nlgAcknowledgment')}
+            </div>
+          ) : null}
           <div style={{ fontSize: 10.5, color: MUTED, marginBottom: 18 }}>
             {t('assistant.form.pdf.requiredNote')}
           </div>

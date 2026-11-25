@@ -5,7 +5,7 @@
     },
     "nav": {
       "assistant": "텍스트 어시스턴트",
-      "voice": "텍스트+음성 어시스턴트",
+      "voice": "음성 어시스턴트",
       "comparator": "비교",
       "data": "데이터 탐색기",
       "signOut": "로그아웃",
@@ -25,7 +25,18 @@
       "comingSoon": "곧 제공될 예정입니다."
     },
     "errors": {
-      "loadFailed": "데이터를 불러오지 못했습니다: {{message}}"
+      "loadFailed": "데이터를 불러오지 못했습니다: {{message}}",
+      "requestFailed": "요청을 완료하지 못했습니다. 다시 시도해 주세요.",
+      "serviceUnavailable": "서비스를 일시적으로 사용할 수 없습니다. 몇 분 후에 다시 시도해 주세요.",
+      "unauthorized": "로그아웃되었거나 이 작업을 할 권한이 없습니다. 다시 로그인해 주세요.",
+      "tooManyRequests": "요청이 너무 많습니다. 잠시 기다린 후 다시 시도해 주세요.",
+      "reference": "참조: {{id}}",
+      "chat": {
+        "guardrailUnavailable": "어시스턴트를 일시적으로 사용할 수 없습니다. 몇 분 후에 다시 시도해 주세요.",
+        "promptTooLong": "메시지가 너무 깁니다. 줄여서 다시 시도해 주세요.",
+        "limitReached": "이 요청은 어시스턴트가 허용하는 단계 수를 초과했습니다. 더 작은 부분으로 요청해 주세요.",
+        "internal": "요청을 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요."
+      }
     },
     "errorBoundary": {
       "title": "문제가 발생했습니다",

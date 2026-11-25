@@ -34,7 +34,7 @@ const SIGNUP_ENABLED = import.meta.env.VITE_ENABLE_SIGNUP === 'true';
  *    `enable_public_signup=true`, a public POST /signup Lambda (admin_create_user
  *    + admin_set_user_password) is available and this screen shows a "Create
  *    account" tab; otherwise there is only sign-in.
- * 2. Custom auth UI lets us match the new design system end-to-end (no
+ * 2. A custom auth UI matches the design system end-to-end (no
  *    Amplify CSS overrides needed).
  *
  * After successful sign-up we sign the user straight in — the Lambda sets

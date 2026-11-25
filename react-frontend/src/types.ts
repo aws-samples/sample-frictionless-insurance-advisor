@@ -3,25 +3,38 @@
 
 export interface Customer {
   customer_id: string;
-  name: string;
   email: string;
   phone: string;
+  /** Display name. Derived by the profile service from first_name + last_name. */
+  name: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  /** One-line address ("street, city, ST zip"). Derived from the four parts below. */
   address: string;
+  address_line1?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   date_of_birth?: string;
   /** Needed for life-insurance rates and the application forms. */
   gender?: 'male' | 'female';
-  marital_status?: string;
+  marital_status?: 'Single' | 'Married' | 'Divorced' | 'Widowed';
+  citizenship?: 'us_citizen' | 'permanent_resident' | 'other';
+  /** "former" = quit more than 12 months ago; only "current" is rated as a smoker. */
+  tobacco_status?: 'never' | 'former' | 'current';
+  /** Approximate net worth band, for the financial section of life applications. */
+  net_worth_band?: 'under_100k' | '100k_250k' | '250k_500k' | '500k_1m' | '1m_2_5m' | 'over_2_5m';
   dependents?: number;
   occupation?: string;
   employment_status?: string;
   annual_income?: number;
   home_owner?: boolean;
-  smoking?: boolean;
   medical_conditions?: string;
   join_date: string;
   // When the advisor last confirmed this profile is current (ISO date).
   // Drives the "verify current info" staleness badge. Distinct
-  // from join_date (enrollment). May be absent on legacy records.
+  // from join_date (enrollment). May be absent.
   last_reviewed?: string;
   status: string; // "Active" | "Inactive" — used for the badge UNLESS the customer has no Awesome-issued policies (every policy has third_party=true), in which case the UI labels them "Prospect".
   advisor_id: string;
@@ -128,6 +141,12 @@ export interface LifeDetails {
   // Universal
   current_credited_rate?: string;
   guaranteed_minimum_rate?: string;
+  /** No-lapse guarantee: the age the death benefit is guaranteed to (121 = lifetime). */
+  guarantee_to_age?: number;
+  /** Least yearly premium that keeps the guarantee, as set when the policy was issued. */
+  required_no_lapse_premium?: number;
+  /** Rider codes, e.g. waiver_of_premium. */
+  riders?: string[];
   // Variable
   sub_account_allocation?: Record<string, number>;
 }
@@ -148,9 +167,11 @@ export interface ChatMessage {
   error?: string;
   /** Documents and pages the answer names, from the agent's `sources` event. */
   sources?: ChatSource[];
+  /** The compliance guardrail replaced this answer with its canned sentence. */
+  guardrailBlocked?: boolean;
 }
 
-export type Page = 'assistant' | 'voice' | 'comparator' | 'data';
+export type Page = 'home' | 'assistant' | 'voice' | 'comparator' | 'data';
 
 // ---------------------------------------------------------------------------
 // Data explorer — read-only browser over the reference documents that ground
@@ -168,8 +189,9 @@ export type DataFolder =
   | 'forms'
   | 'pricing'
   | 'brochures'
-  | 'transcripts';
-export type DataContentType = 'markdown' | 'json' | 'text' | 'pdf' | 'transcript';
+  | 'transcripts'
+  | 'applications';
+export type DataContentType = 'markdown' | 'json' | 'text' | 'pdf' | 'transcript' | 'application';
 
 /** What the list shows for one of the advisor's voice transcripts. */
 export interface TranscriptMeta {
@@ -182,6 +204,20 @@ export interface TranscriptMeta {
   ended?: boolean;
 }
 
+/** What the list shows for one of the advisor's saved applications. */
+export interface ApplicationMeta {
+  ref?: string | null;
+  product_type?: string | null;
+  saved_at?: string | null;
+  /** When it was last saved; differs from saved_at once it has been saved again. */
+  updated_at?: string | null;
+  /** 1 for the first save, +1 each time the same application is saved again. */
+  revision?: number;
+  /** Customer id, or null for a prospect. */
+  customer_id?: string | null;
+  /** Number of answers saved. */
+  fields?: number;
+}
 /** One browsable document, as returned by the listing endpoint. */
 export interface DataFile {
   folder: DataFolder;
@@ -194,8 +230,8 @@ export interface DataFile {
   content_type: DataContentType;
   size_bytes: number;
   last_modified?: string;
-  /** Transcripts only. */
-  meta?: TranscriptMeta;
+  /** Transcripts and applications only. `customer` is the customer's name, null for a prospect. */
+  meta?: TranscriptMeta & ApplicationMeta;
 }
 
 /** A folder and the documents it contains. */
@@ -235,7 +271,7 @@ export interface VoiceMessage {
 }
 
 // Document attached by the advisor via the chat composer's 📎 button.
-// The browser uploads the binary directly to S3 via a presigned PUT URL
+// The browser uploads the binary directly to S3 via a presigned POST form
 // that the backend issues; this client-side type tracks the upload state
 // and the eventual document_id the agent uses to call the
 // extract_policy_from_document tool.
@@ -270,7 +306,7 @@ export interface RecommendationExposure {
 export interface RecommendationGap {
   gap: string;
   why: string;
-  /** Optional so a response without it (older Lambda, model omission) still renders. */
+  /** Optional so a response without it (model omission) still renders. */
   financial_exposure?: RecommendationExposure;
   recommendations: RecommendationProduct[];
 }
@@ -381,6 +417,16 @@ export interface FormFieldOption {
   label: string;
 }
 
+/**
+ * When a field is shown or required. A map of field path -> expected value (every entry must
+ * match; an expected value may be a list meaning "any of"), or a list of such maps (any one
+ * holds). Rules: see lib/formRules.ts.
+ */
+export type FormConditionValue = string | number | boolean;
+export type FormConditionMap = Record<string, FormConditionValue | FormConditionValue[]>;
+export type FormCondition = FormConditionMap | FormConditionMap[];
+/** "secret": never seen by the assistants (SSN). "health": assistants may fill it, never logged. */
+export type FormSensitivity = 'secret' | 'health';
 export interface FormFieldDef {
   /** Dot path, e.g. "applicant.full_name". Also the key used by fill events. */
   path: string;
@@ -389,6 +435,11 @@ export interface FormFieldDef {
   required: boolean;
   hint?: string;
   options?: FormFieldOption[];
+  /** Shown only while this holds. Absent: always shown. */
+  visible_when?: FormCondition;
+  /** Required while this holds (and the field is shown). */
+  required_when?: FormCondition;
+  sensitive?: FormSensitivity;
 }
 
 export interface FormSectionDef {
@@ -485,50 +536,41 @@ export interface MeetingSummaryResponse {
   truncated: boolean;
 }
 
-// ---- Practice mode (voice-agent/roleplay.py) and its scoring (lambda/roleplay_score) ----
-export type RoleplayDifficulty = 'friendly' | 'neutral' | 'sceptical';
-
-/** What the AI customer knows about itself. Taken from the record already on screen. */
-export interface RoleplayPersona {
-  name: string;
-  age?: number;
-  marital_status?: string;
-  dependents?: number;
-  occupation?: string;
-  employment_status?: string;
-  annual_income?: number;
-  home_owner?: boolean;
-  notes: { type: CustomerNoteType; text: string }[];
-  policies: { product_name?: string; type?: string; insurer?: string; third_party?: boolean }[];
+// ---- Saved applications (lambda/applications) ----
+/** What the form sends for one answered field when the application is saved. */
+export interface ApplicationFieldInput {
+  value: string;
+  origin: FieldOrigin;
+  /** False for a field that was hidden by the form's rules when it was saved. */
+  visible: boolean;
 }
-
-export interface RoleplayConfig {
-  difficulty: RoleplayDifficulty;
-  focus: string;
-  persona: RoleplayPersona;
+export interface SubmitApplicationResponse {
+  ref: string;
+  saved_at: string;
+  updated_at?: string;
+  revision?: number;
+  /** True when the save overwrote an earlier one instead of adding a new application. */
+  replaced?: boolean;
+  /** Paths of secret fields that are never stored (the Social Security number). */
+  omitted: string[];
 }
-
-export type RoleplayCriterionId =
-  | 'rapport'
-  | 'discovery'
-  | 'needs_link'
-  | 'objections'
-  | 'accuracy'
-  | 'compliance'
-  | 'closing';
-
-export interface RoleplayCriterion {
-  id: RoleplayCriterionId;
-  score: number;
-  quote: string;
-  suggestion: string;
-}
-
-export interface RoleplayScoreResponse {
-  insufficient: boolean;
-  overall?: number;
-  criteria?: RoleplayCriterion[];
-  claims_check?: { claim: string; verdict: 'supported' | 'contradicted' | 'not_in_sheets'; note: string }[];
-  next_time?: string[];
-  summary?: string;
+/** One saved application, as written to the applications bucket. */
+export interface SavedApplication {
+  ref: string;
+  saved_at: string;
+  updated_at?: string;
+  revision?: number;
+  status: string;
+  product_type: string;
+  product_name?: string | null;
+  form_title?: string | null;
+  advisor?: string;
+  customer: { customer_id: string; name?: string | null } | null;
+  omitted: { path: string; label: string; reason: string }[];
+  answers: Record<string, string>;
+  sections: {
+    id: string;
+    title: string;
+    fields: { path: string; label: string; value: string; display: string; origin: FieldOrigin; visible: boolean; sensitive?: string }[];
+  }[];
 }

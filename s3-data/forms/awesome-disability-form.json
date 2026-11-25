@@ -248,10 +248,25 @@
       "title": "Health",
       "fields": [
         {
-          "path": "health.smoker",
-          "label": "Smoker",
-          "type": "boolean",
-          "required": true
+          "path": "health.tobacco_status",
+          "label": "Tobacco / nicotine use",
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "never",
+              "label": "Never used"
+            },
+            {
+              "value": "former",
+              "label": "Former (quit more than 12 months ago)"
+            },
+            {
+              "value": "current",
+              "label": "Current (used in the last 12 months)"
+            }
+          ],
+          "hint": "A current user is rated as a smoker."
         },
         {
           "path": "health.height_cm",

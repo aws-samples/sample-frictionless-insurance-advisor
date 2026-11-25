@@ -66,6 +66,36 @@
       "general": "General products",
       "health": "Health products",
       "all": "All products"
+    },
+    "citizenship": {
+      "us_citizen": "US citizen",
+      "permanent_resident": "Permanent resident",
+      "other": "Other"
+    },
+    "tobaccoStatus": {
+      "never": "Never used",
+      "former": "Former",
+      "current": "Current"
+    },
+    "netWorthBand": {
+      "under_100k": "Under $100K",
+      "100k_250k": "$100K to $250K",
+      "250k_500k": "$250K to $500K",
+      "500k_1m": "$500K to $1M",
+      "1m_2_5m": "$1M to $2.5M",
+      "over_2_5m": "Over $2.5M"
+    },
+    "yesNo": {
+      "yes": "Yes",
+      "no": "No"
+    },
+    "universalRider": {
+      "waiver_of_premium": "Waiver of premium",
+      "accidental_death": "Accidental death benefit",
+      "long_term_care": "Long-term care / chronic illness",
+      "guaranteed_purchase_option": "Guaranteed purchase option",
+      "no_lapse_guarantee": "No-lapse guarantee rider",
+      "overloan_protection": "Overloan protection"
     }
   }
 }

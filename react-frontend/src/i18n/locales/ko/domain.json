@@ -66,6 +66,36 @@
       "general": "일반 상품",
       "health": "건강 상품",
       "all": "전체 상품"
+    },
+    "citizenship": {
+      "us_citizen": "미국 시민",
+      "permanent_resident": "영주권자",
+      "other": "기타"
+    },
+    "tobaccoStatus": {
+      "never": "비흡연",
+      "former": "과거 흡연",
+      "current": "현재 흡연"
+    },
+    "netWorthBand": {
+      "under_100k": "10만 달러 미만",
+      "100k_250k": "10만~25만 달러",
+      "250k_500k": "25만~50만 달러",
+      "500k_1m": "50만~100만 달러",
+      "1m_2_5m": "100만~250만 달러",
+      "over_2_5m": "250만 달러 초과"
+    },
+    "yesNo": {
+      "yes": "예",
+      "no": "아니요"
+    },
+    "universalRider": {
+      "waiver_of_premium": "보험료 납입 면제",
+      "accidental_death": "재해 사망 급부",
+      "long_term_care": "장기요양/만성질환",
+      "guaranteed_purchase_option": "보증 추가 가입 옵션",
+      "no_lapse_guarantee": "실효 방지 보증 특약",
+      "overloan_protection": "초과 대출 보호"
     }
   }
 }

@@ -8,7 +8,6 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
-  message: string | null;
 }
 
 /**
@@ -22,14 +21,12 @@ interface ErrorBoundaryState {
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, message: null };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-    return {
-      hasError: true,
-      message: error instanceof Error ? error.message : String(error),
-    };
+  static getDerivedStateFromError(): ErrorBoundaryState {
+    // The error itself is logged in componentDidCatch; the page does not show its text.
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
@@ -38,7 +35,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   private handleReload = () => {
-    this.setState({ hasError: false, message: null });
+    this.setState({ hasError: false });
     window.location.reload();
   };
 
@@ -64,11 +61,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             "The app hit an unexpected error and couldn't render this view. Your data is safe — reloading usually fixes it."
           )}
         </p>
-        {this.state.message ? (
-          <pre className="max-w-md overflow-x-auto rounded-md bg-background-muted px-3 py-2 text-left text-xs text-foreground-muted">
-            {this.state.message}
-          </pre>
-        ) : null}
         <button
           type="button"
           onClick={this.handleReload}

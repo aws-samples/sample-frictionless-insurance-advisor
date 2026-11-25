@@ -66,6 +66,36 @@
       "general": "損害保険商品",
       "health": "医療・健康商品",
       "all": "すべての商品"
+    },
+    "citizenship": {
+      "us_citizen": "米国市民",
+      "permanent_resident": "永住者",
+      "other": "その他"
+    },
+    "tobaccoStatus": {
+      "never": "吸ったことがない",
+      "former": "過去に喫煙",
+      "current": "現在喫煙中"
+    },
+    "netWorthBand": {
+      "under_100k": "10万ドル未満",
+      "100k_250k": "10万〜25万ドル",
+      "250k_500k": "25万〜50万ドル",
+      "500k_1m": "50万〜100万ドル",
+      "1m_2_5m": "100万〜250万ドル",
+      "over_2_5m": "250万ドル超"
+    },
+    "yesNo": {
+      "yes": "はい",
+      "no": "いいえ"
+    },
+    "universalRider": {
+      "waiver_of_premium": "保険料払込免除",
+      "accidental_death": "災害死亡給付",
+      "long_term_care": "介護・慢性疾患",
+      "guaranteed_purchase_option": "保証付き追加購入オプション",
+      "no_lapse_guarantee": "失効防止保証特約",
+      "overloan_protection": "貸付超過保護"
     }
   }
 }

@@ -30,10 +30,10 @@ const RENDER_SCALE = 2;
  * copy of the font, separately from how the browser laid the text out. The two
  * only agree for a plain static font. The system UI font (San Francisco on Mac)
  * adjusts spacing by size, and the app's own OpenType features and tracking
- * are not applied on a canvas, so text came out with squeezed spaces and
+ * are not applied on a canvas, so text would come out with squeezed spaces and
  * overlapping letters. A static font and switched-off typographic features
  * keep layout and paint identical. Other scripts (Thai, Chinese, Japanese) fall
- * back to the system font for those characters, as before.
+ * back to the system font for those characters.
  */
 export const PDF_TEXT_STYLE = {
   fontFamily: 'Arial, "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif',

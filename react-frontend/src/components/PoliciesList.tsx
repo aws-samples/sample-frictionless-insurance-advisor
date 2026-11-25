@@ -76,7 +76,7 @@ export function PoliciesList({ policies, showInsurer, emptyMessage }: PoliciesLi
                     <div className="mt-0.5 text-sm text-foreground-muted">{policy.product_name}</div>
                   ) : null}
                   {showInsurer && policy.insurer ? (
-                    <div className="mt-1 inline-flex items-center gap-1.5 text-xs">
+                    <div className="mt-1 flex items-center gap-1.5 text-xs">
                       <Briefcase className="h-3 w-3 text-foreground-muted" />
                       <span className="text-foreground-muted">
                         {t('assistant.policies.insurer')}:
@@ -84,7 +84,7 @@ export function PoliciesList({ policies, showInsurer, emptyMessage }: PoliciesLi
                       <span className="font-medium">{policy.insurer}</span>
                     </div>
                   ) : null}
-                  <div className="mt-1 inline-flex items-center gap-1 text-xs text-foreground-muted">
+                  <div className="mt-1 flex items-center gap-1 text-xs text-foreground-muted">
                     <span>{t('assistant.policies.id')}:</span>
                     <span className="font-mono">{policy.id}</span>
                   </div>

@@ -231,6 +231,23 @@ function LifeView({ life }: { life: LifeDetails }) {
         </Field>
       ) : null}
 
+      {isUniversal && life.guarantee_to_age !== undefined ? (
+        <Field label={t('assistant.policies.details.life.guaranteeToAge')}>
+          {life.guarantee_to_age >= 121
+            ? t('assistant.policies.details.life.guaranteeLifetime')
+            : t('assistant.policies.details.life.guaranteeAge', { age: life.guarantee_to_age })}
+        </Field>
+      ) : null}
+      {isUniversal && life.required_no_lapse_premium !== undefined ? (
+        <Field label={t('assistant.policies.details.life.requiredPremium')}>
+          <span className="tabular-nums">{fmtCurrency(life.required_no_lapse_premium, locale)}</span>
+        </Field>
+      ) : null}
+      {isUniversal && life.riders && life.riders.length > 0 ? (
+        <Field label={t('assistant.policies.details.life.riders')}>
+          {life.riders.map((r) => String(t(`domain.universalRider.${r}`, { defaultValue: r }))).join(', ')}
+        </Field>
+      ) : null}
       {(isWhole || isUniversal || isVariable) && life.cash_value_estimate !== undefined ? (
         <Field label={t('assistant.policies.details.life.cashValueEstimate')}>
           <span className="tabular-nums">{fmtCurrency(life.cash_value_estimate, locale)}</span>

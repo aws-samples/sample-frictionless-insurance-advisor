@@ -1,6 +1,45 @@
 @import 'tailwindcss';
 
 /*
+ * Fonts, self-hosted from public/fonts (SIL Open Font License 1.1, see the licence files there).
+ * One variable font per subset covers every weight the UI uses: Inter 400-700, JetBrains Mono 400-500.
+ * Latin and Latin-extended cover the ten UI languages that use Latin script; Japanese, Korean,
+ * Chinese and Thai text uses the system fonts named in the font stacks below.
+ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-v20-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-v20-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-v24-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-v24-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
  * Awesome Insurance — design system
  *
  * Tailwind v4 CSS-first configuration. The `@theme` block exposes design
@@ -183,47 +222,6 @@
   .neon-pulse {
     animation: neon-pulse 1.6s ease-out infinite;
   }
-}
-
-/*
- * Amplify Authenticator overrides.
- *
- * The sign-in screen uses Amplify's default form. We don't fully restyle
- * it (that would mean reimplementing forms + validation), but we tint
- * the brand colors + surface to match our theme so the transition into
- * the app feels coherent.
- */
-[data-amplify-authenticator] {
-  --amplify-colors-brand-primary-10: rgb(var(--brand-2) / 0.1);
-  --amplify-colors-brand-primary-60: rgb(var(--brand-2) / 0.6);
-  --amplify-colors-brand-primary-80: rgb(var(--brand-2));
-  --amplify-colors-brand-primary-90: rgb(var(--brand-1));
-  --amplify-colors-brand-primary-100: rgb(var(--brand-1));
-  --amplify-colors-background-primary: rgb(var(--background-elevated));
-  --amplify-colors-background-secondary: rgb(var(--background-muted));
-  --amplify-colors-font-primary: rgb(var(--foreground));
-  --amplify-colors-font-secondary: rgb(var(--foreground-muted));
-  --amplify-colors-font-interactive: rgb(var(--brand-2));
-  --amplify-colors-border-primary: rgb(var(--border));
-  --amplify-colors-border-secondary: rgb(var(--border-strong));
-  --amplify-components-authenticator-router-background-color: rgb(var(--background-elevated));
-  --amplify-components-authenticator-router-border-color: rgb(var(--border));
-  --amplify-components-button-primary-background-color: rgb(var(--brand-2));
-  --amplify-components-button-primary-hover-background-color: rgb(var(--brand-1));
-  --amplify-components-button-primary-color: white;
-  --amplify-components-tabs-item-active-color: rgb(var(--brand-2));
-  --amplify-components-tabs-item-active-border-color: rgb(var(--brand-2));
-  --amplify-components-tabs-item-focus-color: rgb(var(--brand-2));
-  --amplify-components-fieldcontrol-focus-border-color: rgb(var(--brand-2));
-}
-
-/* Make the auth shell sit on our app background, not Amplify's white default. */
-[data-amplify-authenticator] {
-  background: rgb(var(--background));
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* Scrollbar polish on webkit browsers — subtle, theme-aware */

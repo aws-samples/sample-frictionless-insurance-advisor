@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 import { streamChat } from '../lib/agentcore';
-import type { AppEvent } from '../lib/sse';
+import { chatErrorText } from '../lib/errors';
+import { appendChunk, type AppEvent } from '../lib/sse';
 import { parseSources } from '../lib/sources';
 import type { ChatMessage, Customer, FormFillEvent, FormSchema } from '../types';
 
@@ -19,11 +21,17 @@ export interface ChatFormBridge {
   onFormFill: (event: FormFillEvent) => void;
 }
 
-interface UseAgentChatResult {
+export interface UseAgentChatResult {
   messages: ChatMessage[];
   streaming: boolean;
   send: (prompt: string) => Promise<void>;
   reset: () => void;
+  /** Session id of the chat on screen (changes when the chat is reset or another customer is selected). */
+  sessionId: string;
+  /** The unsent text in the message box of the chat on screen (empty when there is none). */
+  draft: string;
+  /** Set the unsent text for the chat on screen. An empty string drops it. */
+  setDraft: (text: string) => void;
 }
 
 interface CustomerChatEntry {
@@ -45,6 +53,9 @@ interface CustomerChatEntry {
  *   The raw user message is what's shown in the chat bubble.
  * - Session ID format: `react-<customerId>-<uuid>`. AgentCore Memory uses
  *   this as the session_id for the chat history.
+ * - The unsent text in the message box (the draft) is kept per customer the same way, so it
+ *   survives the chat panel being unmounted (Home tab, logo) and never shows for another
+ *   customer. In memory only: it can contain customer data, so it is never written to storage.
  */
 export function useAgentChat(
   customer: Customer | null,
@@ -53,6 +64,11 @@ export function useAgentChat(
   const formBridgeRef = useRef<ChatFormBridge | undefined>(formBridge);
   formBridgeRef.current = formBridge;
   const customerId = customer?.customer_id ?? '__new_prospect__';
+  // The language chosen in the language list (restored from localStorage by i18next). Every message
+  // carries it, so the assistant answers in it; useTranslation re-renders on a switch, so the next
+  // message of the same chat already uses the new one.
+  const { i18n } = useTranslation();
+  const language = baseLanguageCode(i18n.resolvedLanguage ?? i18n.language);
 
   // Per-customer chat state stored in a ref so switching customers doesn't
   // lose earlier conversations. We mirror the active customer's entry into
@@ -68,6 +84,21 @@ export function useAgentChat(
 
   const [messages, setMessages] = useState<ChatMessage[]>(activeEntry.messages);
   const [streaming, setStreaming] = useState<boolean>(false);
+
+  // Unsent message-box text, by the same key as the chat entries (the prospect has its own key).
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const draft = drafts[customerId] ?? '';
+  const setDraft = useCallback(
+    (text: string) =>
+      setDrafts((prev) => {
+        if ((prev[customerId] ?? '') === text) return prev;
+        const next = { ...prev };
+        if (text === '') delete next[customerId];
+        else next[customerId] = text;
+        return next;
+      }),
+    [customerId]
+  );
 
   // When the selected customer changes, surface the new customer's messages.
   // We use a ref + a tracking state rather than useEffect to avoid an extra
@@ -109,6 +140,18 @@ export function useAgentChat(
         { role: 'assistant', content: '' },
       ]);
       setStreaming(true);
+      // An error replaces the empty answer bubble, or follows the text already streamed.
+      const showError = (text: string) =>
+        updateActive((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last && last.role === 'assistant' && last.content === '') {
+            next[next.length - 1] = { role: 'assistant', content: '', error: text };
+          } else {
+            next.push({ role: 'assistant', content: '', error: text });
+          }
+          return next;
+        });
 
       const enrichedPrompt = buildPromptWithContext(trimmed, customer);
       const sessionId = entriesRef.current[customerId].sessionId;
@@ -116,13 +159,26 @@ export function useAgentChat(
       try {
         const bridge = formBridgeRef.current;
         const form = bridge?.getFormContext() ?? undefined;
+        // True once a tool call has started since the last text chunk: the next
+        // text is a new model turn and must not be glued to the previous one.
+        let afterTool = false;
         for await (const item of streamChat({
           prompt: enrichedPrompt,
           customerId: customer?.customer_id ?? undefined,
           sessionId,
           form,
           formPrefill: bridge?.prefill,
+          language,
         })) {
+          if (item.kind === 'tool_use') {
+            afterTool = true;
+            continue;
+          }
+          if (item.kind === 'error') {
+            // The runtime sends a code, not a sentence: show our own translated text for it.
+            showError(chatErrorText(item.code, item.correlationId));
+            continue;
+          }
           if (item.kind === 'app_event') {
             if (item.event.type === 'sources') {
               // Sources belong to the answer being streamed, not to a form.
@@ -139,36 +195,48 @@ export function useAgentChat(
               }
               continue;
             }
+            if (item.event.type === 'guardrail_blocked') {
+              // The compliance guardrail replaced the answer with its canned
+              // sentence. Flag the bubble so the panel can show a clear,
+              // translated message instead. A backend that does not send this
+              // event leaves the canned sentence as the answer.
+              // Side effect of a block: Strands rewrites the user's message in
+              // AgentCore Memory to "[User input redacted.]", so the next turn
+              // in this same chat starts from a redacted history.
+              updateActive((prev) => {
+                const next = [...prev];
+                const last = next[next.length - 1];
+                if (last && last.role === 'assistant') {
+                  next[next.length - 1] = { ...last, guardrailBlocked: true };
+                }
+                return next;
+              });
+              continue;
+            }
             applyAppEvent(item.event, formBridgeRef.current);
             continue;
           }
           const chunk = item.text;
+          const joinAfterTool = afterTool;
+          afterTool = false;
           updateActive((prev) => {
             const next = [...prev];
             const last = next[next.length - 1];
             if (last && last.role === 'assistant') {
-              next[next.length - 1] = { ...last, content: last.content + chunk };
+              next[next.length - 1] = { ...last, content: appendChunk(last.content, chunk, joinAfterTool) };
             }
             return next;
           });
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        updateActive((prev) => {
-          const next = [...prev];
-          const last = next[next.length - 1];
-          if (last && last.role === 'assistant' && last.content === '') {
-            next[next.length - 1] = { role: 'assistant', content: '', error: message };
-          } else {
-            next.push({ role: 'assistant', content: '', error: message });
-          }
-          return next;
-        });
+        // An ApiError carries a safe message; any other error here happened on this side.
+        console.error('[chat] request failed', err);
+        showError(err instanceof Error ? err.message : chatErrorText(undefined, undefined));
       } finally {
         setStreaming(false);
       }
     },
-    [customer, customerId, streaming, updateActive]
+    [customer, customerId, language, streaming, updateActive]
   );
 
   const reset = useCallback(() => {
@@ -179,7 +247,7 @@ export function useAgentChat(
     setMessages([]);
   }, [customerId]);
 
-  return { messages, streaming, send, reset };
+  return { messages, streaming, send, reset, sessionId: activeEntry.sessionId, draft, setDraft };
 }
 
 /** Route one typed event from the agent's form tools to the form on screen. */
@@ -220,6 +288,12 @@ function buildPromptWithContext(userMessage: string, customer: Customer | null):
     '',
     `Question: ${userMessage}`,
   ].join('\n');
+}
+
+/** `ko-KR` and `ko_KR` become `ko`: the agent knows the base codes of the language list. */
+function baseLanguageCode(code: string | undefined): string | undefined {
+  const base = code?.split(/[-_]/)[0]?.toLowerCase();
+  return base || undefined;
 }
 
 function makeSessionId(customerId: string): string {

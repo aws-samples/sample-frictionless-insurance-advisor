@@ -1,60 +1,51 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import type { ChatFormBridge } from '../hooks/useAgentChat';
+import { useAgentChat, type ChatFormBridge } from '../hooks/useAgentChat';
 import { useApplicationForm } from '../hooks/useApplicationForm';
 import { useCustomers } from '../hooks/useCustomers';
-import type { PriorityAction } from '../types';
+import { useSelection } from '../hooks/useSelection';
 import { Alert } from '../ui';
 
-import { ChatPanel } from './ChatPanel';
+import { ChatPanelView } from './ChatPanel';
 import { CustomerPanel } from './CustomerPanel';
 import { FormPanel } from './FormPanel';
+import { NoCustomerState } from './NoCustomerState';
 import { Sidebar } from './Sidebar';
 import { SidebarToggle } from './SidebarToggle';
 import { SplitWorkspace } from './SplitWorkspace';
 
 interface AssistantPageProps {
+  /** False while the page is kept mounted but hidden behind another tab. */
+  active?: boolean;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
 }
 
 /**
- * Assistant page: sidebar (customer list) + resizable split of profile + chat.
+ * Text Assistant page: sidebar (customer list) + resizable split of profile + chat.
  * This is the full advisor-experience surface, including the
  * "+ New Prospect" flow: when the sidebar's New Prospect button is clicked,
  * it calls onSelect(null), which puts the page in `prospectMode` and mounts
  * a ChatPanel with no customer context — the agent drives the onboarding
  * conversation and creates the DynamoDB profile through tool calls.
+ * With no customer and no prospect (the tab opened straight from Home) the main area asks
+ * the advisor to pick a customer; the Cockpit is on the Home tab only.
  */
-export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPageProps) {
+export function AssistantPage({ active = true, sidebarCollapsed, onToggleSidebar }: AssistantPageProps) {
   const { t } = useTranslation();
   const { customers, loading, error, refresh } = useCustomers();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [prospectMode, setProspectMode] = useState<boolean>(false);
-  // Set by the Cockpit: open this customer and send the matching starter prompt once.
-  const [pendingStart, setPendingStart] = useState<{ customerId: string; action: PriorityAction } | null>(null);
-
-  const handleHome = () => {
-    setSelectedId(null);
-    setProspectMode(false);
-  };
-  const handleSelect = (customerId: string | null) => {
-    if (customerId === null) {
-      setSelectedId(null);
-      setProspectMode(true);
-    } else {
-      setSelectedId(customerId);
-      setProspectMode(false);
-    }
-  };
-
-  const handleOpenFromCockpit = (customerId: string, action: PriorityAction) => {
-    setSelectedId(customerId);
-    setProspectMode(false);
-    setPendingStart({ customerId, action });
-  };
+  // Shared with the Voice page, so switching tab keeps the same customer.
+  // The Cockpit hand-off (open this customer, send the starter prompt once) is held there too,
+  // because the Cockpit lives on the Home tab and its buttons continue here.
+  const {
+    selectedId,
+    prospectMode,
+    select: handleSelect,
+    pendingStart,
+    clearPendingStart,
+  } = useSelection();
   const selectedCustomer = useMemo(
     () => customers.find((c) => c.customer_id === selectedId) ?? null,
     [customers, selectedId]
@@ -73,11 +64,11 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
     }),
     [form.getFormContext, form.prefill, form.openForm, form.fillField]
   );
-
-  const totalPolicies = useMemo(
-    () => customers.reduce((sum, c) => sum + c.policies.length, 0),
-    [customers]
-  );
+  // The chat lives here, not in the chat panel: the panel is unmounted whenever no customer is
+  // selected (the Home tab and the logo clear the selection), and every customer's history, and a
+  // response still streaming, and each customer's unsent message, must survive that. Neither the Home tab nor
+  // the logo remounts this page; a reload or signing out clears them.
+  const chat = useAgentChat(selectedCustomer, formBridge);
 
   return (
     <div className="relative flex flex-1 w-full overflow-hidden min-h-0">
@@ -87,8 +78,6 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
           selectedId={selectedId}
           loading={loading}
           error={error}
-          homeActive={selectedId === null && !prospectMode}
-          onHome={handleHome}
           onSelect={handleSelect}
           onRefresh={refresh}
         />
@@ -104,6 +93,9 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
           </div>
         ) : null}
 
+        {selectedId === null && !prospectMode && !activeForm ? (
+          <NoCustomerState kind="chat" onNewProspect={() => handleSelect(null)} />
+        ) : (
         <SplitWorkspace
           storageId="insadv.workspace.split"
           left={
@@ -117,27 +109,28 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
                 onConfirmField={form.confirmField}
                 onClose={form.closeForm}
                 customerName={selectedCustomer?.name}
+                customerId={selectedCustomer?.customer_id ?? null}
+                savedRef={form.savedRef}
+                onSaved={form.rememberSavedRef}
               />
             ) : (
               <CustomerPanel
                 customer={selectedCustomer}
-                totalCustomers={customers.length}
-                totalPolicies={totalPolicies}
-                onOpenCustomer={handleOpenFromCockpit}
                 onOpenForm={form.openForm}
               />
             )
           }
           right={
             selectedCustomer ? (
-              <ChatPanel
+              <ChatPanelView
                 customer={selectedCustomer}
-                formBridge={formBridge}
+                chat={chat}
                 pendingStart={pendingStart}
-                onPendingStartDone={() => setPendingStart(null)}
+                onPendingStartDone={clearPendingStart}
+                active={active}
               />
             ) : prospectMode ? (
-              <ChatPanel customer={null} formBridge={formBridge} />
+              <ChatPanelView customer={null} chat={chat} active={active} />
             ) : (
               <div className="p-6">
                 <Alert variant="info">{t('assistant.chat.selectCustomer')}</Alert>
@@ -145,6 +138,7 @@ export function AssistantPage({ sidebarCollapsed, onToggleSidebar }: AssistantPa
             )
           }
         />
+        )}
       </div>
     </div>
   );
